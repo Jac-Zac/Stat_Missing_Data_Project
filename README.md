@@ -1,18 +1,18 @@
-# Statistical Analysis of Missing At Random (MAR) Data
+# Statistical Analysis of Missing Data
 
 ## Project Overview
 
 This project focuses on analyzing Missing At Random (MAR) data patterns using simulated datasets. The analysis is conducted through various statistical methods to understand and handle missing data scenarios effectively.
+... (not only missing at random ...)
 
 ## Project Structure
 
 ```bash
-project/
-├── README.md
-├── analysis/
-│   └── experiments.Rmd    # Main analysis file with experimental setup
-└── data/
-└── simulated/         # Directory containing simulated datasets
+ .
+├──  analysis
+│   ├──  final_results.Rmd
+│   └──  initial_experiments.Rmd
+└──  README.md
 ```
 
 ## Description
@@ -25,14 +25,12 @@ The project investigates Missing At Random (MAR) patterns in data through simula
 - Evaluation of handling methods
 - Performance metrics and results visualization
 
-## Getting Started
+## Documentation
 
-The main analysis and experiments are contained in the `experiments.Rmd` file. This R Markdown document includes:
+Detailed documentation is available in the following notebooks:
 
-- Data simulation setup
-- Implementation of statistical methods
-- Results visualization
-- Documentation of findings
+- [`initial_experiments.Rmd`](analysis/initial_experiments.Rmd): Initial analysis and methodology validation
+- [`final_results.Rmd`](analysis/final_results.Rmd): Comprehensive results and conclusions
 
 ## Preliminary Results
 
