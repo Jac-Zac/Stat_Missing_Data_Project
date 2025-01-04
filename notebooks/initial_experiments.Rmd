@@ -1,18 +1,21 @@
 ---
-title: "Initial Experiemnts on simulated data"
+title: "Initial Experiments on simulated data"
 author: "Jacopo Zacchigna"
-date: ""
+date: ''
 output:
   html_document:
     toc: true
     toc_depth: 3
     code_fold: show
     df_print: paged
+  word_document:
+    toc: true
+    toc_depth: '3'
   pdf_document:
     toc: true
     toc_depth: 3
-editor_options: 
-  markdown: 
+editor_options:
+  markdown:
     wrap: 72
 ---
 
@@ -63,8 +66,120 @@ data_mnar <- introduce_mnar(data, prop_missing = 0.1)
 # Analyze missing patterns
 summarize_missing(data_mnar)
 ```
-### Experiments
 
-##### Input data using ...
+## Experiments
 
-###### Fit Linear regression model
+For each of the inputation methods, we can test the performances of different approaches.
+Perhaps doing a function to test them all, and we can test this with different simulated datasets.
+Then we can test the best performing one on a real dataset and discuss.
+
+Perhaps we can also showcase how missing data can lead to inaccurate conclusions when handled poorly.
+
+**BTW I would ignore timeseries data**
+
+**Test also datasets with outliers perhaps to see if this is problematic**
+
+Should we do some testing also on the fact that the type of missing data mechanism might not be known in a real-world scenario ? Sensitivity analyses ? I think this is a bit beyond the scope of what we are doing.
+
+*Inputation for model enanchment is also outside the scope I belive*
+
+#### Testing the different performance metric:
+
+
+- **Mean Absolute Error (MAE)**
+
+    MAE measures the average difference between imputed values and true values defined as:
+    
+    $$
+    MAE = \frac{1}{m}\sum_{i=1}^m|y_i - \hat{y}_i|
+    $$
+
+- **Mean Squared Error (MSE)**
+    
+    While MSE is equal to the sum of variance and squared predicted missing value as in the following equation:
+    
+    $$
+    MSE = \frac{1}{m}\sum_{i=1}^m(y_i - \hat{y}_i)^2
+    $$
+
+- **Root Mean Square Error (RMSE)**
+
+    RMSE computes the difference in imputed values and actual values as follows:
+  
+    $$
+    RMSE = \sqrt{MSE}
+    $$
+    
+- **Area under the curve (AUC)**
+
+    AUC is the representation of the degree or measure of separability and is used as a summary of the Root Receiver Operator Characteristic (ROC) curve, which is curve is a visualisation graph representing imputation performance [143]. The AUC is represented by the true positive rate (TPR) and the false positive rate (FPR). Where the TPR is the proportion of correctly imputed positives of all positives and the TPR is the proportion of all negatives that are wrongly imputed as positives [144]. The true positive rate and the false positive rate are defined as:
+    
+    $$
+    TPR = \frac{TP}{TP + FN} \tag{21}
+    $$
+    
+    $$
+    FPR = \frac{FP}{FP + TN} \tag{22}
+    $$
+
+Explain a bit the difference between the metric for inputation. And perhaps make plot to show the
+
+**Pareto front ?**
+
+> I would suggest providing a summary for each of the inputation methods.
+
+### List‑wise or case deletion
+
+##### Regression model ...
+##### Spline ...
+
+### Pairwise deletion
+
+...
+
+### Simple imputation
+
+Test the different ones
+
+...
+
+### Regression imputation
+
+Usually needs a decent amount of data (thus it is interesting to try if that is not the case what happens)
+
+...
+
+### Hot‑deck imputation
+
+...
+
+### Expectation–maximization
+
+....
+
+### Multiple imputation
+
+....
+
+## Imputation methods inspired by ML
+
+> Evaluate which of those one makes sense to actually test
+
+I think this can be explore more later
+
+#### K nearest neighbour classification (KNN)
+
+*Computationally expensive. So perhaps we might want to keep track of the computational cost for different methods*
+
+Test with different distances maybe. Iterative KNN method ... + other approaches
+High dimensional data problem
+
+#### Support vector machine (SVM)
+
+Suited for high dimensional data
+
+#### Decision tree / Random Forests
+
+#### Clustering imputation
+
+#### Ensemble methods

@@ -3,4 +3,6 @@
 *.html
 *.RData
 *.Rhistory
+*.docx
 *.zip
+*.pdf

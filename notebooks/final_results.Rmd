@@ -18,6 +18,9 @@ editor_options:
 
 ### Environment Setup 
 
-### Dataset Analyses 
+## Dataset Analyses 
 
-### Experiments
+## Experiments 
+
+Leveraging what we have learned previously in the synthetic dataset experiments
+And test the best few methods
