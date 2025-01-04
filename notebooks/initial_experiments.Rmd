@@ -1,6 +1,6 @@
 ---
 title: "Initial Experiemnts on simulated data"
-author: "Z. Jacopo"
+author: "Jacopo Zacchigna"
 date: ""
 output:
   html_document:

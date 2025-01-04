@@ -1,6 +1,6 @@
 ---
 title: "Final result on real data"
-author: "Z. Jacopo"
+author: "Jacopo Zacchigna"
 date: ""
 output:
   html_document:

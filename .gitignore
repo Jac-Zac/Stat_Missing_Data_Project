@@ -1,6 +1,6 @@
 **/.DS_Store
 **/__pycache__
-**/*.RData
-**/*.Rhistory
-**/.zip
-**/.html
+*.html
+*.RData
+*.Rhistory
+*.zip
