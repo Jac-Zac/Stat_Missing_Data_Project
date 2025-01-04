@@ -8,16 +8,21 @@ This project focuses on analyzing Missing At Random (MAR) data patterns using si
 ## Project Structure
 
 ```bash
-.
-├── analysis
+ .
+├── notebooks
 │   ├── final_results.Rmd
 │   └── initial_experiments.Rmd
+├── src
+│   ├── missing_data.R
+│   └── synthetic_data.R
 └── README.md
 ```
 
 ## Description
 
-The project investigates Missing At Random (MAR) patterns in data through simulation studies. We develop and test our methodological approach using simulated datasets before applying it to real-world scenarios. The analysis includes:
+The project investigates Missing At Random (MAR) patterns in data through simulation studies. We develop and test our methodological approach using simulated datasets before applying it to real-world scenarios.
+
+##### The analysis includes:
 
 - Data simulation procedures
 - Implementation of MAR mechanisms
@@ -29,8 +34,13 @@ The project investigates Missing At Random (MAR) patterns in data through simula
 
 Detailed documentation is available in the following notebooks:
 
-- [`initial_experiments.Rmd`](analysis/initial_experiments.Rmd): Initial analysis and methodology validation
-- [`final_results.Rmd`](analysis/final_results.Rmd): Comprehensive results and conclusions
+- [`initial_experiments.Rmd`](notebooks/initial_experiments.Rmd): Initial analysis and methodology validation
+- [`final_results.Rmd`](notebooks/final_results.Rmd): Comprehensive results and conclusions
+
+#### Utilities
+
+- [`synthetic_data.R`](src/synthetic_data.R): Functions to generate a synthetic dataset
+- [`missing_data.R`](src/missing_data.R): Functions to artificially generate missing data
 
 ## Preliminary Results
 

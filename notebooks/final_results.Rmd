@@ -1,5 +1,5 @@
 ---
-title: "Initial Experiemnts on simulated data"
+title: "Final result on real data"
 author: "Z. Jacopo"
 date: ""
 output:
@@ -15,13 +15,8 @@ editor_options:
     wrap: 72
 ---
 
-```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
-```
-
 ### Environment Setup 
 
-### Simulated data generation
+### Dataset Analyses 
 
 ### Experiments
-

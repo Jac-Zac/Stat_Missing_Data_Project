@@ -1,0 +1,62 @@
+---
+title: "Initial Experiemnts on simulated data"
+author: "Z. Jacopo"
+date: ""
+output:
+  html_document:
+    toc: true
+    toc_depth: 3
+    df_print: paged
+  pdf_document:
+    toc: true
+    toc_depth: 3
+editor_options: 
+  markdown: 
+    wrap: 72
+---
+
+### Environment Setup 
+
+```{r, echo=F}
+## Install requirements
+# install.packages("ggplot2")
+# install ...
+```
+
+```{r, echo=T}
+## Load requirements 
+library(ggplot2)
+# install ...
+
+# Load utilities
+source("../src/synthetic_data.R") 
+source("../src/missing_data.R") 
+```
+
+### Simulated data generation
+
+```{r, echo=T}
+# This will create:
+# - 5 continuous variables
+# - 3 categorical variables with 3, 4, and 5 levels respectively
+data <- generate_random_data(n_samples = 1000, 
+                           n_continuous = 5, 
+                           n_categorical = 3,
+                           n_categories = c(3, 4, 5))
+```
+
+### Artificially creating missing data
+
+```{r, echo =T}
+data_mnar <- introduce_mnar(data, prop_missing = 0.1)
+
+# Analyze missing patterns
+summarize_missing(data_mnar)
+```
+
+
+### Experiments
+
+#### Input data using ...
+
+#### Fit Linear regression model
