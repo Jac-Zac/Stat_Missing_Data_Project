@@ -6,6 +6,7 @@ output:
   html_document:
     toc: true
     toc_depth: 3
+    code_fold: show
     df_print: paged
   pdf_document:
     toc: true
@@ -32,6 +33,13 @@ library(ggplot2)
 source("../src/synthetic_data.R") 
 source("../src/missing_data.R") 
 ```
+#### Missing data functions
+
+Showcase of the functions created for missing data
+
+```{r, code = readLines("../src/missing_data.R")}
+```
+
 
 ### Simulated data generation
 
@@ -47,16 +55,16 @@ data <- generate_random_data(n_samples = 1000,
 
 ### Artificially creating missing data
 
+*Using our function to artificially create missing data*
+
 ```{r, echo =T}
 data_mnar <- introduce_mnar(data, prop_missing = 0.1)
 
 # Analyze missing patterns
 summarize_missing(data_mnar)
 ```
-
-
 ### Experiments
 
-#### Input data using ...
+##### Input data using ...
 
-#### Fit Linear regression model
+###### Fit Linear regression model
