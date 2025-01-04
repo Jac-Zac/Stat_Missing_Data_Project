@@ -8,11 +8,11 @@ This project focuses on analyzing Missing At Random (MAR) data patterns using si
 ## Project Structure
 
 ```bash
- .
-├──  analysis
-│   ├──  final_results.Rmd
-│   └──  initial_experiments.Rmd
-└──  README.md
+.
+├── analysis
+│   ├── final_results.Rmd
+│   └── initial_experiments.Rmd
+└── README.md
 ```
 
 ## Description
