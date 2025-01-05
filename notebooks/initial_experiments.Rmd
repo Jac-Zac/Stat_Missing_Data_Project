@@ -1,13 +1,19 @@
 ---
-title: "Initial Experiments on simulated data"
+title: "Missing Data Analysis: Methods and Experiments"
 author: "Jacopo Zacchigna"
-date: ''
+date: "`r format(Sys.time(), '%d %B, %Y')`"
 output:
   html_document:
     toc: true
     toc_depth: 3
-    code_fold: show
+    toc_float: true
+    # toc_float: false
+    code_fold: hide # Hidden by default unless specified otherwise
     df_print: paged
+    highlight: tango
+    theme: cosmo
+    number_sections: true
+    toc_collapsible: true  # Enable collapsible TOC
   word_document:
     toc: true
     toc_depth: '3'
@@ -19,34 +25,52 @@ editor_options:
     wrap: 72
 ---
 
-### Environment Setup 
+## Environment Setup 
 
 ```{r, echo=F}
 ## Install requirements
 # install.packages("ggplot2")
+# install.packages("GGally")
+# install.packages("reshape2")
+# install.packages("corrplot")
 # install ...
+# install.packages("pROC")
 ```
 
-```{r, echo=T}
+```{r, echo=T, class.source = 'fold-show'}
 ## Load requirements 
 library(ggplot2)
-# install ...
+suppressMessages(library(GGally))
+suppressMessages(library(pROC))
+suppressMessages(library(corrplot))
+library(reshape2)
 
 # Load utilities
 source("../src/synthetic_data.R") 
 source("../src/missing_data.R") 
-```
-#### Missing data functions
+source("../src/utils.R") 
 
-Showcase of the functions created for missing data
-
-```{r, code = readLines("../src/missing_data.R")}
+# Set seed 
+set.seed(42)
 ```
 
+### Missing data functions
 
-### Simulated data generation
+Showcase Introduce Mar function (example to show how to use print_function)
 
-```{r, echo=T}
+```{r eval=TRUE, echo=FALSE, results='asis'}
+print_function_code(introduce_mcar)
+```
+
+```{r eval=TRUE, echo=FALSE, results='asis'}
+print_function_code(plot_missing_data)
+```
+
+# Data Generation and Exploration
+
+## Synthetic Dataset Creation
+
+```{r, echo=T, class.source = 'fold-show'}
 # This will create:
 # - 5 continuous variables
 # - 3 categorical variables with 3, 4, and 5 levels respectively
@@ -54,37 +78,86 @@ data <- generate_random_data(n_samples = 1000,
                            n_continuous = 5, 
                            n_categorical = 3,
                            n_categories = c(3, 4, 5))
+
+# Visualize dataset properties
+summary(data)
 ```
 
-### Artificially creating missing data
+## Data Visualization
+> This section should be expanded to explore the dataset more in depth
 
-*Using our function to artificially create missing data*
+```{r}
+# Plot histogram for each continuous variable
+data_continuous <- data[, sapply(data, is.numeric)]
+continuous_melted <- reshape2::melt(data_continuous)
 
-```{r, echo =T}
+ggplot(continuous_melted, aes(x = value)) +
+  geom_histogram(bins = 30, fill = "skyblue", color = "black", alpha = 0.7) +
+  facet_wrap(~variable, scales = "free_x") +
+  theme_minimal() +
+  labs(title = "Distribution of Continuous Variables", x = "Value", y = "Frequency")
+```
+
+```{rm, class.source = 'fold-show'}
+# Plot pairwise relationships between continuous variables
+ggpairs(data_continuous)
+```
+
+# Missing Data Analysis
+
+## Introducing Missing Data
+> Using our function to artificially create missing data
+
+### Visualization of Missing Patterns
+
+##### Missing data in the original dataset
+> Obviously, no missing data is present in our dataset; it is synthetically generated.
+
+```{r}
+# Plot missing data patterns in the original dataset
+original_missing <- as.data.frame(sapply(data, is.na))
+original_missing$index <- 1:nrow(original_missing)
+original_missing_melted <- melt(original_missing, id.vars = "index")
+
+ggplot(original_missing_melted, aes(x = index, y = variable, fill = value)) +
+  geom_tile() +
+  scale_fill_manual(values = c("white", "red")) +
+  labs(title = "Missing Data Pattern - Original", x = "Index", y = "Variable")
+```
+
+#### Testing different Missing Data Mechanisms
+
+```{r, echo =T, class.source = 'fold-show'}
+# Artificially create missing data for all mechanisms (MCAR, MAR, MNAR)
+data_mcar <- introduce_mcar(data, prop_missing = 0.1)
+data_mar <- introduce_mar(data, prop_missing = 0.1)
 data_mnar <- introduce_mnar(data, prop_missing = 0.1)
 
-# Analyze missing patterns
-summarize_missing(data_mnar)
+# Analyze missing patterns and summarize
+print(summarize_missing(data_mcar))
+print(summary(data_mcar))
+print(summarize_missing(data_mar))
+print(summary(data_mar))
+print(summarize_missing(data_mnar))
+print(summary(data_mnar))
 ```
 
-## Experiments
+##### Plot missing data for the different mechanisms
 
-For each of the inputation methods, we can test the performances of different approaches.
-Perhaps doing a function to test them all, and we can test this with different simulated datasets.
-Then we can test the best performing one on a real dataset and discuss.
+```{r, class.source = 'fold-show'}
+## Plot for MCAR
+plot_missing_data(data_mcar, "MCAR")
 
-Perhaps we can also showcase how missing data can lead to inaccurate conclusions when handled poorly.
+# Plot for MAR
+plot_missing_data(data_mar, "MAR")
 
-**BTW I would ignore timeseries data**
+# Plot for MNAR
+plot_missing_data(data_mnar, "MNAR")
+```
 
-**Test also datasets with outliers perhaps to see if this is problematic**
+# Imputation Methods
 
-Should we do some testing also on the fact that the type of missing data mechanism might not be known in a real-world scenario ? Sensitivity analyses ? I think this is a bit beyond the scope of what we are doing.
-
-*Inputation for model enanchment is also outside the scope I belive*
-
-#### Testing the different performance metric:
-
+## Performance metrics
 
 - **Mean Absolute Error (MAE)**
 
@@ -121,6 +194,55 @@ Should we do some testing also on the fact that the type of missing data mechani
     $$
     FPR = \frac{FP}{FP + TN} \tag{22}
     $$
+    
+#### Function implementation for different performance metrics
+    
+```{r}
+mse <- function(actual, predicted) {
+  if (length(actual) != length(predicted)) {
+    stop("The lengths of actual and predicted vectors must be the same.")
+  }
+  
+  mse <- mean((actual - predicted)^2)
+  
+  return(mse)
+}
+
+
+rmse <- function(actual, predicted) {
+  if (length(actual) != length(predicted)) {
+    stop("The lengths of actual and predicted vectors must be the same.")
+  }
+  
+  mse <- mean((actual - predicted)^2)
+  rmse <- sqrt(mse)
+  
+  return(rmse)
+}
+
+# library(pROC)
+# roc_obj <- roc(actual, predicted)
+# auc_value <- auc(roc_obj)
+```
+
+
+#### NOTES:
+
+For each of the inputation methods, we can test the performances of different approaches.
+Perhaps doing a function to test them all, and we can test this with different simulated datasets.
+Then we can test the best performing one on a real dataset and discuss.
+
+Perhaps we can also showcase how missing data can lead to inaccurate conclusions when handled poorly.
+
+**BTW I would ignore timeseries data**
+
+**Test also datasets with outliers perhaps to see if this is problematic**
+
+Should we do some testing also on the fact that the type of missing data mechanism might not be known in a real-world scenario ? Sensitivity analyses ? I think this is a bit beyond the scope of what we are doing.
+
+*Inputation for model enanchment is also outside the scope I belive*
+
+#### Testing the different performance metric:
 
 Explain a bit the difference between the metric for inputation. And perhaps make plot to show the
 
@@ -128,58 +250,85 @@ Explain a bit the difference between the metric for inputation. And perhaps make
 
 > I would suggest providing a summary for each of the inputation methods.
 
-### List‑wise or case deletion
+## List‑wise or case deletion
 
-##### Regression model ...
-##### Spline ...
+### Regression model ...
+### Spline ...
 
-### Pairwise deletion
+## Pairwise deletion
 
 ...
 
-### Simple imputation
+## Simple imputation
 
 Test the different ones
 
 ...
 
-### Regression imputation
+## Regression imputation
 
 Usually needs a decent amount of data (thus it is interesting to try if that is not the case what happens)
 
 ...
 
-### Hot‑deck imputation
+## Hot‑deck imputation
 
 ...
 
-### Expectation–maximization
+## Expectation–maximization
 
 ....
 
-### Multiple imputation
+## Multiple imputation
 
 ....
 
-## Imputation methods inspired by ML
+# Imputation methods inspired by ML
 
 > Evaluate which of those one makes sense to actually test
 
 I think this can be explore more later
 
-#### K nearest neighbour classification (KNN)
+## K nearest neighbour classification (KNN)
 
 *Computationally expensive. So perhaps we might want to keep track of the computational cost for different methods*
 
 Test with different distances maybe. Iterative KNN method ... + other approaches
 High dimensional data problem
 
-#### Support vector machine (SVM)
+## Support vector machine (SVM)
 
 Suited for high dimensional data
 
-#### Decision tree / Random Forests
+## Decision tree / Random Forests
 
-#### Clustering imputation
+## Clustering imputation
 
-#### Ensemble methods
+## Ensemble methods
+
+# Results and Discussion
+
+## Imputation Performance Comparison
+
+## Computational Performance
+
+# Conclusions and Recommendations
+
+(Add your conclusions and recommendations based on the analysis results)
+
+## Appendix
+
+#### Notes on Missing Data Mechanisms
+
+- MCAR: Missingness is unrelated to data values.
+- MAR: Missingness depends on observed values.
+- MNAR: Missingness depends on unobserved data.
+
+#### References
+
+```{r}
+citation("pROC")
+```
+
+- ...
+

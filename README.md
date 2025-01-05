@@ -5,6 +5,13 @@
 This project focuses on analyzing Missing At Random (MAR) data patterns using simulated datasets. The analysis is conducted through various statistical methods to understand and handle missing data scenarios effectively.
 ... (not only missing at random ...)
 
+## TODO
+
+> Currently many functions are just template pre-made to test things out
+
+- [ ] Review functions inside [`synthetic_data.R`](src/synthetic_data.R)
+- [ ] Review functions inside [`missing_data.R`](src/missing_data.R)
+
 ## Project Structure
 
 ```bash
@@ -15,6 +22,7 @@ This project focuses on analyzing Missing At Random (MAR) data patterns using si
 ├── src
 │   ├── missing_data.R
 │   └── synthetic_data.R
+│   └── utils.R
 └── README.md
 ```
 
@@ -41,6 +49,7 @@ Detailed documentation is available in the following notebooks:
 
 - [`synthetic_data.R`](src/synthetic_data.R): Functions to generate a synthetic dataset
 - [`missing_data.R`](src/missing_data.R): Functions to artificially generate missing data
+- [`utils.R`](src/utils.R): Functions that are general utilities
 
 ## Preliminary Results
 

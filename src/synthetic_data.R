@@ -128,8 +128,7 @@ generate_cluster_data <- function(n_clusters = 3, n_per_cluster = 50, cluster_st
 
 # Example usage
 # # Generate random data with 3 continuous and 2 categorical variables
-# random_data <- generate_random_data(n_samples = 100,  n_continuous = 3,
-#                                     n_categorical = 2, n_categories= c(2, 3))
+# random_data <- generate_random_data(n_samples = 100,  n_continuous = 3, n_categorical = 2, n_categories= c(2, 3))
 #
 # # Generate data with linear relationship
 # linear_data <- generate_linear_data(n_samples = 200,  coefficients = c(2, -1, 0.5))

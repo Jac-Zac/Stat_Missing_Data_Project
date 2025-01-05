@@ -1,18 +1,26 @@
 ---
-title: "Final result on real data"
+title: "Final result on real data:"
 author: "Jacopo Zacchigna"
-date: ""
+date: "`r format(Sys.time(), '%d %B, %Y')`"
 output:
   html_document:
     toc: true
     toc_depth: 3
-    code_fold: show
+    toc_float: true
+    code_fold: hide # Hidden by default unless specified otherwise
     df_print: paged
+    highlight: tango
+    theme: cosmo
+    number_sections: true
+    toc_collapsible: true  # Enable collapsible TOC
+  word_document:
+    toc: true
+    toc_depth: '3'
   pdf_document:
     toc: true
     toc_depth: 3
-editor_options: 
-  markdown: 
+editor_options:
+  markdown:
     wrap: 72
 ---
 
