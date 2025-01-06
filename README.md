@@ -11,6 +11,13 @@ This project focuses on analyzing Missing At Random (MAR) data patterns using si
 
 - [ ] Review functions inside [`synthetic_data.R`](src/synthetic_data.R)
 - [ ] Review functions inside [`missing_data.R`](src/missing_data.R)
+- [ ] Test with around to 5% - 20% missing data (standard)
+- [ ] Perhaps use something like mice. Might be very interesting for things like `md.pattern(data)` function
+
+Useful resources for mice:
+
+- [First](https://www.youtube.com/watch?v=MpnxwNXGV-E)
+- [Second](https://www.youtube.com/watch?v=sNNoTd7xI-4)
 
 ## Project Structure
 

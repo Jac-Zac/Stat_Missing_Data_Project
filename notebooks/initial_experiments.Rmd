@@ -35,6 +35,11 @@ editor_options:
 # install.packages("corrplot")
 # install ...
 # install.packages("pROC")
+
+# Inputation methods
+# install.packages("mice")
+# Other alternative
+# install.packages("VIM") # (Visualization and Imputation of Missing Values) 
 ```
 
 ```{r, echo=T, class.source = 'fold-show'}
@@ -44,6 +49,9 @@ suppressMessages(library(GGally))
 suppressMessages(library(pROC))
 suppressMessages(library(corrplot))
 library(reshape2)
+library(mice)
+library(VIM)
+library(RColorBrewer)
 
 # Load utilities
 source("../src/synthetic_data.R") 
@@ -153,6 +161,28 @@ plot_missing_data(data_mar, "MAR")
 
 # Plot for MNAR
 plot_missing_data(data_mnar, "MNAR")
+```
+
+```{r, class.source = 'fold-show'}
+md.pattern(data)
+# Rotate variable names for better readability
+md.pattern( data_mar,  rotate.names = TRUE)
+md.pattern(data_mar)
+md.pattern(data_mnar)
+```
+
+```{r, class.source = 'fold-show'}
+# Create a custom color palette (we can choose the color pallet for the entire project if we want)
+my_palette <- brewer.pal(3, "Set2")
+
+# For the original data
+aggr(data, plot = TRUE, numbers = TRUE, prop = FALSE, col = my_palette)
+
+# For data_mar
+aggr(data_mar, plot = TRUE, numbers = TRUE, prop = FALSE, col = my_palette)
+
+# For data_mnar
+aggr(data_mnar, plot = TRUE, numbers = TRUE, prop = FALSE, col = my_palette)
 ```
 
 # Imputation Methods
