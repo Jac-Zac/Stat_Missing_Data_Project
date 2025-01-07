@@ -5,13 +5,39 @@
 This project focuses on analyzing Missing At Random (MAR) data patterns using simulated datasets. The analysis is conducted through various statistical methods to understand and handle missing data scenarios effectively.
 ... (not only missing at random ...)
 
+# Work summary
+
+# Create synthetic dataset
+
+- regression/classification on complete dataset
+
+Remove data: MCAR, MAR on only 1 cov e + cov (4 Combination)
+
+Techniques for handling missing data:
+
+-Observation removal
+-Covariate removal
+-Imputation:
+---Statistical (mean/mode/median/etc.)
+---Conditional statistics (conditional mean, etc.)
+---Model-based (regression/GAM/tree/etc.)
+
+After "reconstructing the data", use the exact same code used for regression/classification, input the "new" datasets and observe the differences
+
+#### Redo all the work on a real dataset
+
 ## TODO
 
 > Currently many functions are just template pre-made to test things out
 
+- Explore MAR (just mention the other and explain why we choose mar) in the final report
+
+  > Showcase what happens
+
+- Test for two different percentage 5% - 15% for example
+
 - [ ] Review functions inside [`synthetic_data.R`](src/synthetic_data.R)
 - [ ] Review functions inside [`missing_data.R`](src/missing_data.R)
-- [ ] Test with around to 5% - 20% missing data (standard)
 - [ ] Perhaps use something like mice. Might be very interesting for things like `md.pattern(data)` function
 
 Useful resources for mice:
