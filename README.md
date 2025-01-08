@@ -40,8 +40,10 @@ After "reconstructing the data", use the exact same code used for regression/cla
 - [ ] Review functions inside [`missing_data.R`](src/missing_data.R)
 - [ ] Perhaps use something like mice. Might be very interesting for things like `md.pattern(data)` function
 
+
 Useful resources for mice:
 
+- [mice package](https://cran.r-project.org/web/packages/mice/mice.pdf)
 - [First](https://www.youtube.com/watch?v=MpnxwNXGV-E)
 - [Second](https://www.youtube.com/watch?v=sNNoTd7xI-4)
 
