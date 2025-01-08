@@ -47,6 +47,7 @@ Useful resources for mice:
 
 Resources from literature (vi metto tutto ciò che penso possa essere utile, anche per un secondo momento):
 - [Outliers and missing values](https://sci-hub.ru/10.1111/j.1440-1681.2007.04860.x)
+- [Varie tecniche di imputazione in dettaglio](https://www.researchgate.net/publication/220579612_Missing_Data_Imputation_Techniques)
 
 ## Project Structure
 
