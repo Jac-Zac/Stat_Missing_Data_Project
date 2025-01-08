@@ -45,6 +45,9 @@ Useful resources for mice:
 - [First](https://www.youtube.com/watch?v=MpnxwNXGV-E)
 - [Second](https://www.youtube.com/watch?v=sNNoTd7xI-4)
 
+Resources from literature (vi metto tutto ciò che penso possa essere utile, anche per un secondo momento):
+- [Outliers and missing values](https://sci-hub.ru/10.1111/j.1440-1681.2007.04860.x)
+
 ## Project Structure
 
 ```bash
