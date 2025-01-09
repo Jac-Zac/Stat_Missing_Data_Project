@@ -50,6 +50,7 @@ Resources from literature (vi metto tutto ciò che penso possa essere utile, anc
 
 - [Outliers and missing values](https://sci-hub.ru/10.1111/j.1440-1681.2007.04860.x)
 - [Varie tecniche di imputazione in dettaglio](https://www.researchgate.net/publication/220579612_Missing_Data_Imputation_Techniques)
+- [Generating Synthetic Missing Data: A Review by Missing Mechanism](https://ieeexplore.ieee.org/document/8605316/)
 
 ## Project Structure
 
