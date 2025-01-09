@@ -37,9 +37,8 @@ After "reconstructing the data", use the exact same code used for regression/cla
 - Test for two different percentage 5% - 15% for example
 
 - [ ] Review functions inside [`synthetic_data.R`](src/synthetic_data.R)
-- [ ] Review functions inside [`missing_data.R`](src/missing_data.R)
+- [x] Review functions inside [`missing_data.R`](src/missing_data.R)
 - [ ] Perhaps use something like mice. Might be very interesting for things like `md.pattern(data)` function
-
 
 Useful resources for mice:
 
@@ -48,6 +47,7 @@ Useful resources for mice:
 - [Second](https://www.youtube.com/watch?v=sNNoTd7xI-4)
 
 Resources from literature (vi metto tutto ciò che penso possa essere utile, anche per un secondo momento):
+
 - [Outliers and missing values](https://sci-hub.ru/10.1111/j.1440-1681.2007.04860.x)
 - [Varie tecniche di imputazione in dettaglio](https://www.researchgate.net/publication/220579612_Missing_Data_Imputation_Techniques)
 
