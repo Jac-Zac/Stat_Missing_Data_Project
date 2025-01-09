@@ -70,60 +70,70 @@ generate_linear_data <- function(n_samples = 100,
     return(data)
 }
 
-#' Generate data with non-linear relationships
-#' @param n_samples Number of samples to generate
-#' @param pattern Type of non-linear pattern ("polynomial", "sinusoidal", "exponential")
-#' @param noise_std Standard deviation of noise
-#' @return A data frame containing the synthetic data with non-linear relationships
-generate_nonlinear_data <- function(n_samples = 100, pattern = "polynomial", noise_std = 0.1) {
-    
-    # Generate feature
+
+#' Synthetic Dataset Generator
+#'
+#' @param n_samples Number of samples to generate (rows).
+#' @param n_covariates Number of covariates to generate (columns).
+#' @param correlation Type of correlation between covariates: "linear", "polynomial", or "complex".
+#' @param target_type Type of target variable: "linear", "polynomial", "categorical", or "spline".
+#' @param n_categories Number of categories if `target_type` is "categorical".
+#' @param noise_level Standard deviation of noise to add to the target variable.
+#' @return A dataframe containing the generated dataset (`data`) and the target variable (`target`).
+#' @examples
+#' # Generate a dataset with 100 samples, 5 covariates, and a linear target
+#' dataset <- synthetic_dataset_gen(
+#'   n_samples = 100,
+#'   n_covariates = 5,
+#'   correlation = "linear",
+#'   target_type = "linear"
+#' )
+#' head(dataset$data)
+#' head(dataset$target)
+synthetic_dataset_gen <- function(n_samples, n_covariates, correlation = "linear", 
+                                  target_type = "linear", n_categories = 3, noise_level = 1.0) {
+  
+  # Validate inputs
+  if (n_samples <= 0 || n_covariates <= 0) stop("n_samples and n_covariates must be positive integers.")
+  if (!correlation %in% c("linear", "polynomial", "complex")) stop("Invalid correlation type.")
+  if (!target_type %in% c("linear", "polynomial", "categorical", "spline")) stop("Invalid target type.")
+
+  # Generate covariates
+  covariates <- matrix(rnorm(n_samples * n_covariates), nrow = n_samples, ncol = n_covariates)
+
+  # Add correlation between covariates
+  if (correlation == "linear") {
+    covariates <- covariates %*% matrix(rnorm(n_covariates^2, sd = 0.5), n_covariates, n_covariates)
+  } else if (correlation == "polynomial") {
+    covariates <- covariates^2 + covariates^3
+  } else if (correlation == "complex") {
+    covariates <- sin(covariates) + cos(covariates^2)
+  }
+
+  # Generate target variable
+  if (target_type == "linear") {
+    beta <- runif(n_covariates, -1, 1)
+    target <- covariates %*% beta + rnorm(n_samples, sd = noise_level)
+  } else if (target_type == "polynomial") {
+    beta <- runif(n_covariates, -1, 1)
+    target <- covariates %*% beta + (covariates %*% beta)^2 + rnorm(n_samples, sd = noise_level)
+  } else if (target_type == "categorical") {
+    linear_combination <- covariates %*% runif(n_covariates, -1, 1)
+    probabilities <- exp(linear_combination) / rowSums(exp(linear_combination))
+    target <- apply(probabilities, 1, function(row) sample(1:n_categories, 1, prob = row))
+  } else if (target_type == "spline") {
+    library(splines)
     x <- seq(-3, 3, length.out = n_samples)
-    
-    # Generate response based on pattern
-    y <- switch(pattern,
-        "polynomial" = 1 + 2*x + 0.5*x^2 - 0.1*x^3,
-        "sinusoidal" = sin(x) + 0.5*cos(2*x),
-        "exponential" = exp(0.5*x),
-        stop("Invalid pattern specified")
-    )
-    
-    # Add noise
-    y <- y + rnorm(n_samples, mean = 0, sd = noise_std)
-    
-    # Create data frame
-    data <- data.frame(x = x, y = y)
-    
-    return(data)
+    target <- bs(x, degree = 3) %*% rnorm(4) + rnorm(n_samples, sd = noise_level)
+  }
+
+  # Return as a dataframe
+  return(data.frame(covariates, target = target))
 }
 
-#' Generate data with clusters
-#' @param n_clusters Number of clusters to generate
-#' @param n_per_cluster Number of samples per cluster
-#' @param cluster_std Standard deviation within clusters
-#' @return A data frame containing clustered data
-generate_cluster_data <- function(n_clusters = 3, n_per_cluster = 50, cluster_std = 0.5) {
-    n_samples <- n_clusters * n_per_cluster
-    
-    # Generate cluster centers
-    centers <- matrix(rnorm(n_clusters * 2, sd = 2), ncol = 2)
-    
-    # Generate samples around centers
-    data <- matrix(0, nrow = n_samples, ncol = 2)
-    labels <- numeric(n_samples)
-    
-    for(i in 1:n_clusters) {
-        idx <- ((i-1)*n_per_cluster + 1):(i*n_per_cluster)
-        data[idx,] <- matrix(rnorm(n_per_cluster * 2, sd = cluster_std), ncol = 2) + 
-                      matrix(centers[i,], nrow = n_per_cluster, ncol = 2, byrow = TRUE)
-        labels[idx] <- i
-    }
-    
-    # Convert to data frame
-    data <- data.frame(X1 = data[,1], X2 = data[,2], cluster = as.factor(labels))
-    
-    return(data)
-}
+
+
+# synthetic_dataset_gen( n_samples = 100, n_covariates = 5, correlation = "linear", target_type = "linear", noise_level = 0.5, seed = 42)
 
 
 # Example usage

@@ -91,12 +91,30 @@ data <- generate_random_data(n_samples = 1000,
 summary(data)
 ```
 
+```{r}
+syntethic_data <- synthetic_dataset_gen(n_samples = 1000, n_covariates = 5, correlation = "linear", target_type = "linear", noise_level = 0.5)
+
+cor_matrix <- cor(syntethic_data)
+
+# Plot the correlation matrix with different upper and lower
+corrplot.mixed(cor_matrix, 
+    lower = "number", 
+    upper = "ellipse",
+    addgrid.col = "gray",
+    tl.col = "black",
+    tl.cex = 0.7,
+    # Using color brewer colormap
+    # lower.col = brewer.pal(n = 8, name = "RdBu"),  # Change 'RdBu' to your desired palette
+    # upper.col = brewer.pal(n = 8, name = "RdBu")   # Change 'RdBu' to your desired palette
+)
+```
+
 ## Data Visualization
 > This section should be expanded to explore the dataset more in depth
 
 ```{r}
 # Plot histogram for each continuous variable
-data_continuous <- data[, sapply(data, is.numeric)]
+data_continuous <- syntethic_data[, sapply(data, is.numeric)]
 continuous_melted <- reshape2::melt(data_continuous)
 
 ggplot(continuous_melted, aes(x = value)) +
@@ -137,8 +155,11 @@ ggplot(original_missing_melted, aes(x = index, y = variable, fill = value)) +
 
 ```{r, echo =T, class.source = 'fold-show'}
 # Artificially create missing data for all mechanisms (MCAR, MAR, MNAR)
-data_mcar <- introduce_mcar(data, prop_missing = 0.1, missing_cols = c("cont_2", "cont_1"))
-data_mar <- introduce_mar(data, prop_missing = 0.1, predictor_cols = c("cont_1", "cont_3"), target_cols = c("cont_2", "cont_4"))
+# data_mcar <- introduce_mcar(data, prop_missing = 0.1, missing_cols = c("cont_2", "cont_1"))
+# data_mar <- introduce_mar(data, prop_missing = 0.1, predictor_cols = c("cont_1", "cont_3"), target_cols = c("cont_2", "cont_4"))
+
+data_mcar <- introduce_mcar(syntethic_data, prop_missing = 0.1, missing_cols = "X3")
+data_mar <- introduce_mar(syntethic_data, prop_missing = 0.1, predictor_cols = c("X1", "X2"), target_cols = c("X3"))
 
 sum(is.na(data_mcar)) # Should be approximately 10%
 sum(is.na(data_mar)) # Should be approximately 10%
@@ -279,6 +300,7 @@ Explain a bit the difference between the metric for inputation. And perhaps make
 ## List‑wise or case deletion
 
 ### Regression model ...
+
 ### Spline ...
 
 ## Pairwise deletion
