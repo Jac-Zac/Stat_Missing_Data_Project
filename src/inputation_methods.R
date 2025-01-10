@@ -7,19 +7,30 @@ listwise_deletion <- function(data) {
 
 #' Pairwise Deletion
 #' @param data Data frame with missing values
-#' @return Covariance matrix computed using pairwise deletion
+#' @return Data frame with rows selectively removed for pairwise completeness
 pairwise_deletion <- function(data) {
-  complete_cases <- complete.cases(data)
-  return(cov(data[complete_cases, , drop = FALSE]))
+  numeric_cols <- sapply(data, is.numeric)
+  data <- data[, numeric_cols]
+
+  complete_indices <- which(complete.cases(data))
+  data_complete <- data[complete_indices, , drop = FALSE]
+
+  return(data_complete)
 }
 
-#' Simple Imputation (Mean)
+#' Simple Imputation
 #' @param data Data frame with missing values
-#' @return Data frame with missing values replaced by column means
-simple_imputation <- function(data) {
+#' @param method Method for imputation ("mean", "median", etc.)
+#' @return Data frame with missing values replaced
+simple_imputation <- function(data, method = "mean") {
   for (col in names(data)) {
     if (is.numeric(data[[col]])) {
-      data[[col]][is.na(data[[col]])] <- mean(data[[col]], na.rm = TRUE)
+      if (method == "mean") {
+        data[[col]][is.na(data[[col]])] <- mean(data[[col]], na.rm = TRUE)
+      } else if (method == "median") {
+        data[[col]][is.na(data[[col]])] <- median(data[[col]], na.rm = TRUE)
+      }
+      # Additional methods can be added here as needed
     }
   }
   return(data)
@@ -33,8 +44,9 @@ regression_imputation <- function(data) {
     if (any(is.na(data[[col]])) && is.numeric(data[[col]])) {
       complete_data <- data[complete.cases(data), ]
       incomplete_rows <- which(is.na(data[[col]]))
-      model <- lm(data[[col]] ~ ., data = complete_data)
-      predictions <- predict(model, newdata = data[incomplete_rows, , drop = FALSE])
+      predictors <- setdiff(names(data), col)
+      model <- lm(as.formula(paste(col, "~ .")), data = complete_data)
+      predictions <- predict(model, newdata = data[incomplete_rows, predictors, drop = FALSE])
       data[[col]][incomplete_rows] <- predictions
     }
   }
@@ -79,19 +91,34 @@ em_imputation <- function(data) {
 
 #' Multiple Imputation
 #' @param data Data frame with missing values
+#' @param m Number of imputations to generate
 #' @return List of imputed data frames
 multiple_imputation <- function(data, m = 5) {
   imputations <- vector("list", m)
+  
   for (i in seq_len(m)) {
-    imputations[[i]] <- simple_imputation(data)
+    imputed_data <- data
+    for (col in names(imputed_data)) {
+      if (any(is.na(imputed_data[[col]])) && is.numeric(imputed_data[[col]])) {
+        missing_indices <- which(is.na(imputed_data[[col]]))
+        
+        # Simple predictive method for imputation
+        observed_values <- imputed_data[[col]][!is.na(imputed_data[[col]])]
+        imputed_values <- observed_values + rnorm(length(missing_indices), 0, sd(observed_values, na.rm = TRUE))
+        
+        imputed_data[[col]][missing_indices] <- imputed_values
+      }
+    }
+    imputations[[i]] <- imputed_data
   }
+  
   return(imputations)
 }
 
 # Example usage
 # listwise_result <- listwise_deletion(data_with_na)
 # pairwise_result <- pairwise_deletion(data_with_na)
-# simple_result <- simple_imputation(data_with_na)
+# simple_result <- simple_imputation(data_with_na, method = "mean")
 # regression_result <- regression_imputation(data_with_na)
 # hotdeck_result <- hot_deck_imputation(data_with_na)
 # em_result <- em_imputation(data_with_na)

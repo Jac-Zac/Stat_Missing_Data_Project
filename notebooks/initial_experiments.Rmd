@@ -56,9 +56,10 @@ suppressMessages(library(RColorBrewer))
 # Load utilities
 source("../src/synthetic_data.R") 
 source("../src/missing_data.R") 
+source("../src/inputation_methods.R") 
 source("../src/utils.R") 
 
-# Set seed 
+# Set seed (also essential for the syntethic dataset generation)
 set.seed(42)
 ```
 
@@ -70,15 +71,11 @@ Showcase Introduce Mar function (example to show how to use print_function)
 print_function_code(introduce_mcar)
 ```
 
-```{r eval=TRUE, echo=FALSE, results='asis'}
-print_function_code(plot_missing_data)
-```
-
 # Data Generation and Exploration
 
 ## Synthetic Dataset Creation
 
-```{r, echo=T, class.source = 'fold-show'}
+```{r, echo=F, class.source = 'fold-show'}
 # This will create:
 # - 5 continuous variables
 # - 3 categorical variables with 3, 4, and 5 levels respectively
@@ -88,13 +85,13 @@ data <- generate_random_data(n_samples = 1000,
                            n_categories = c(3, 4, 5))
 
 # Visualize dataset properties
-summary(data)
+# summary(data)
 ```
 
-```{r}
-syntethic_data <- synthetic_dataset_gen(n_samples = 1000, n_covariates = 5, correlation = "linear", target_type = "linear", noise_level = 0.5)
+```{r, echo=TRUE, class.source = 'fold-show'}
+synthetic_data <- synthetic_dataset_gen(n_samples = 1000, n_covariates = 5, correlation = "linear", target_type = "linear", noise_level = 0.5)
 
-cor_matrix <- cor(syntethic_data)
+cor_matrix <- cor(synthetic_data)
 
 # Plot the correlation matrix with different upper and lower
 corrplot.mixed(cor_matrix, 
@@ -114,7 +111,7 @@ corrplot.mixed(cor_matrix,
 
 ```{r}
 # Plot histogram for each continuous variable
-data_continuous <- syntethic_data[, sapply(data, is.numeric)]
+data_continuous <- synthetic_data[, sapply(data, is.numeric)]
 continuous_melted <- reshape2::melt(data_continuous)
 
 ggplot(continuous_melted, aes(x = value)) +
@@ -126,7 +123,7 @@ ggplot(continuous_melted, aes(x = value)) +
 
 ```{rm, class.source = 'fold-show'}
 # Plot pairwise relationships between continuous variables
-ggpairs(data_continuous)
+# ggpairs(synthetic_data)
 ```
 
 # Missing Data Analysis
@@ -158,8 +155,8 @@ ggplot(original_missing_melted, aes(x = index, y = variable, fill = value)) +
 # data_mcar <- introduce_mcar(data, prop_missing = 0.1, missing_cols = c("cont_2", "cont_1"))
 # data_mar <- introduce_mar(data, prop_missing = 0.1, predictor_cols = c("cont_1", "cont_3"), target_cols = c("cont_2", "cont_4"))
 
-data_mcar <- introduce_mcar(syntethic_data, prop_missing = 0.1, missing_cols = "X3")
-data_mar <- introduce_mar(syntethic_data, prop_missing = 0.1, predictor_cols = c("X1", "X2"), target_cols = c("X3"))
+data_mcar <- introduce_mcar(synthetic_data, prop_missing = 0.1, missing_cols = "X3")
+data_mar <- introduce_mar(synthetic_data, prop_missing = 0.1, predictor_cols = c("X1", "X2"), target_cols = c("X3"))
 
 sum(is.na(data_mcar)) # Should be approximately 10%
 sum(is.na(data_mar)) # Should be approximately 10%
@@ -297,39 +294,131 @@ Explain a bit the difference between the metric for inputation. And perhaps make
 
 > I would suggest providing a summary for each of the inputation methods.
 
-## List‑wise or case deletion
+## Regression Models
 
-### Regression model ...
+### Regression Model on Original Dataset (Baseline)
 
-### Spline ...
+Fit a regression model using the complete dataset without any missing values for baseline comparison.
 
-## Pairwise deletion
+```{r}
+baseline_model <- lm(target ~ ., data = synthetic_data)
+summary(baseline_model)
+```
+
+## Imputation Methods
+
+The following imputation methods are tested on both the MCAR and MAR datasets. A regression model is fit on the imputed dataset, and the results are summarized.
+
+### 1. List‑wise (Case) Deletion
+
+```{r}
+# Imputation
+listwise_result <- listwise_deletion(data_mcar)
+listwise_mar_result <- listwise_deletion(data_mar)
+
+# Regression Models
+listwise_model_mcar <- lm(target ~ ., data = listwise_result)
+summary(listwise_model_mcar)
+
+listwise_model_mar <- lm(target ~ ., data = listwise_mar_result)
+summary(listwise_model_mar)
+```
+
+### 2. Pairwise Deletion
+
+```{r}
+# Imputation
+pairwise_result <- pairwise_deletion(data_mcar)
+pairwise_mar_result <- pairwise_deletion(data_mar)
+
+# Regression Models
+pairwise_model_mcar <- lm(target ~ ., data = pairwise_result)
+summary(pairwise_model_mcar)
+
+pairwise_model_mar <- lm(target ~ ., data = pairwise_mar_result)
+summary(pairwise_model_mar)
+```
+
+### 3. Simple Imputation
+
+#### Mean Imputation
+
+```{r}
+# Imputation
+mean_result <- simple_imputation(data_mcar, method = "mean")
+mean_mar_result <- simple_imputation(data_mar, method = "mean")
+
+# Regression Models
+mean_model_mcar <- lm(target ~ ., data = mean_result)
+summary(mean_model_mcar)
+
+mean_model_mar <- lm(target ~ ., data = mean_mar_result)
+summary(mean_model_mar)
+```
+
+#### Median Imputation
+
+```{r}
+# Imputation
+median_result <- simple_imputation(data_mcar, method = "median")
+median_mar_result <- simple_imputation(data_mar, method = "median")
+
+# Regression Models
+median_model_mcar <- lm(target ~ ., data = median_result)
+summary(median_model_mcar)
+
+median_model_mar <- lm(target  ~ ., data = median_mar_result)
+summary(median_model_mar)
+```
+
+### 4. Regression Imputation
+
+```{r}
+# Imputation
+regression_result <- regression_imputation(data_mcar)
+regression_mar_result <- regression_imputation(data_mar)
+
+# Regression Models
+regression_model_mcar <- lm(target  ~ ., data = regression_result)
+summary(regression_model_mcar)
+
+regression_model_mar <- lm(target  ~ ., data = regression_mar_result)
+summary(regression_model_mar)
+```
+
+### 5. Hot‑deck Imputation
+
+```{r}
+# Imputation
+hotdeck_result <- hot_deck_imputation(data_mcar)
+hotdeck_mar_result <- hot_deck_imputation(data_mar)
+
+# Regression Models
+hotdeck_model_mcar <- lm(target  ~ ., data = hotdeck_result)
+summary(hotdeck_model_mcar)
+
+hotdeck_model_mar <- lm(target  ~ ., data = hotdeck_mar_result)
+summary(hotdeck_model_mar)
+```
+
+### 6. Expectation–Maximization (EM)
+
+```{r}
+# Imputation
+em_result <- em_imputation(data_mcar)
+em_mar_result <- em_imputation(data_mar)
+
+# Regression Models
+em_model_mcar <- lm(target  ~ ., data = em_result)
+summary(em_model_mcar)
+
+em_model_mar <- lm(target  ~ ., data = em_mar_result)
+summary(em_model_mar)
+```
+
+### 7. Multiple Imputation
 
 ...
-
-## Simple imputation
-
-Test the different ones
-
-...
-
-## Regression imputation
-
-Usually needs a decent amount of data (thus it is interesting to try if that is not the case what happens)
-
-...
-
-## Hot‑deck imputation
-
-...
-
-## Expectation–maximization
-
-....
-
-## Multiple imputation
-
-....
 
 # Imputation methods inspired by ML
 
