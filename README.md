@@ -36,6 +36,12 @@ After "reconstructing the data", use the exact same code used for regression/cla
 
 - Test for two different percentage 5% - 15% for example
 
+- [x] Testing more complex imputation mechanisms
+  - **Still missing**:
+    - [ ] Multiple imputation
+    - [ ] Some other possible ideas
+- [ ] Test on more complex synthetic_datasets so that the GAM and Trees can shine
+- [ ] Put everything in a cleaner and presentable format
 - [ ] Review functions inside [`synthetic_data.R`](src/synthetic_data.R)
 - [x] Review functions inside [`missing_data.R`](src/missing_data.R)
 - [ ] Perhaps use something like mice. Might be very interesting for things like `md.pattern(data)` function

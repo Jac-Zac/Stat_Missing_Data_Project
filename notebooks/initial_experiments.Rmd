@@ -35,6 +35,8 @@ editor_options:
 # install.packages("corrplot")
 # install ...
 # install.packages("pROC")
+# install.packages("randomForest")
+# install.packages("mgcv")
 
 # Inputation methods
 # install.packages("mice")
@@ -532,11 +534,71 @@ em_diff
 
 ...
 
+### 8. GAM Imputation
+
+```{r}
+# Imputation using GAM method
+gam_result <- gam_based_imputation(data_mcar)
+gam_mar_result <- gam_based_imputation(data_mar)
+
+# Split into training and testing
+train_gam <- gam_result[train_index, ]
+test_gam <- gam_result[-train_index, ]
+
+train_gam_mar <- gam_mar_result[train_index, ]
+test_gam_mar <- gam_mar_result[-train_index, ]
+
+# Regression Models (still using linear regression)
+regression_model_mcar_gam <- lm(target ~ ., data = train_gam)
+regression_predictions_gam <- predict(regression_model_mcar_gam, test_gam)
+regression_rmse_gam <- rmse(test_gam$target, regression_predictions_gam)
+
+regression_model_mar_gam <- lm(target ~ ., data = train_gam_mar)
+regression_mar_predictions_gam <- predict(regression_model_mar_gam, test_gam_mar)
+regression_mar_rmse_gam <- rmse(test_gam_mar$target, regression_mar_predictions_gam)
+
+# Metrics
+gam_regression_diff <- compare_imputed_to_original(synthetic_data, gam_result)
+
+regression_rmse_gam
+regression_mar_rmse_gam
+gam_regression_diff
+```
+
 # Imputation methods inspired by ML
 
 > Evaluate which of those one makes sense to actually test
 
 ## Decision tree / Random Forests
+
+```{r}
+# Imputation using Tree-based method (Random Forest)
+tree_result <- tree_based_imputation(data_mcar)
+tree_mar_result <- tree_based_imputation(data_mar)
+
+# Split into training and testing
+train_tree <- tree_result[train_index, ]
+test_tree <- tree_result[-train_index, ]
+
+train_tree_mar <- tree_mar_result[train_index, ]
+test_tree_mar <- tree_mar_result[-train_index, ]
+
+regression_model_mcar <- lm(target ~ ., data = train_tree)
+regression_predictions <- predict(regression_model_mcar, test_tree)
+regression_rmse_tree <- rmse(test_tree$target, regression_predictions)
+
+regression_model_mar <- lm(target ~ ., data = train_tree_mar)
+regression_mar_predictions <- predict(regression_model_mar, test_tree_mar)
+regression_mar_rmse_tree <- rmse(test_tree_mar$target, regression_mar_predictions)
+
+# Metrics
+tree_regression_diff <- compare_imputed_to_original(synthetic_data, tree_result)
+
+regression_rmse_tree
+regression_mar_rmse_tree
+tree_regression_diff
+```
+
 
 ## Ensemble methods
 
@@ -549,23 +611,35 @@ Create a summary table and plots to compare RMSE, mean absolute differences acro
 ```{r, echo = T}
 # Create results dataframe with prediction RMSE
 results <- data.frame(
-  Method = c("Baseline", "Listwise", "Pairwise", "Mean", "Median", "Regression", "Hot-deck", "EM"),
+  Method = c("Baseline", "Listwise", "Pairwise", "Mean", "Median", "Regression", "Hot-deck", "EM", "GAM", "Tree"),
   RMSE_Prediction = c(baseline_rmse, listwise_rmse, pairwise_rmse, mean_rmse, 
-                     median_rmse, regression_rmse, hotdeck_rmse, em_rmse)
+                      median_rmse, regression_rmse, hotdeck_rmse, em_rmse, 
+                      regression_rmse_gam, regression_rmse_tree)
 )
 
-# Create comparison results dataframe with safe extraction
-comparison_methods <- c("Mean", "Median", "Regression", "Hot-deck", "EM")
-comparison_diffs <- list(mean_diff, median_diff, regression_diff, hotdeck_diff, em_diff)
+# Create comparison results dataframe with safe extraction for GAM and Tree-based methods
+comparison_methods <- c("Mean", "Median", "Regression", "Hot-deck", "EM", "GAM", "Tree")
+
+# Ensure you include the corresponding differences for Tree-based methods as well
+comparison_diffs <- list(mean_diff, median_diff, regression_diff, hotdeck_diff, em_diff, gam_regression_diff, tree_regression_diff)
 
 # Custom function to safely extract values from the list of metrics
 safe_extract <- function(metric_list, metric_name) {
-  if (!is.null(metric_list[[metric_name]])) {
-    return(metric_list[[metric_name]][1])  # Extract the first value (assuming it's a vector of length 1)
+  # Check if the metric_name exists in the list
+  if (!is.null(metric_list) && metric_name %in% names(metric_list)) {
+    # Check if the metric is a vector and return the first value
+    if (length(metric_list[[metric_name]]) > 0) {
+      return(metric_list[[metric_name]][1])  # Extract the first value
+    } else {
+      return(NA)  # If the metric is an empty vector, return NA
+    }
   } else {
-    return(NA)  # Return NA if the metric is not found
+    # Return NA if the metric name does not exist
+    message(paste("Warning: Metric", metric_name, "not found in metric_list. Returning NA."))
+    return(NA)
   }
 }
+
 
 comparison_results <- data.frame(
   Method = comparison_methods,
@@ -596,47 +670,37 @@ print(p1)
 ### Plot the difference metrics between datasets
 
 ```{r}
+# Function to create a bar plot with custom parameters
+create_bar_plot <- function(data, x, y, fill_color, title, x_label, y_label) {
+  ggplot(data, aes_string(x = x, y = y)) +
+    geom_bar(stat = "identity", fill = fill_color) +
+    geom_text(aes_string(label = paste0("round(", y, ", 3)")), 
+              vjust = -0.5, size = 3) +
+    labs(title = title,
+         x = x_label,
+         y = y_label) +
+    theme_minimal() +
+    theme(axis.text.x = element_text(angle = 45, hjust = 1),
+          plot.title = element_text(hjust = 0.5))
+}
+
 # Plot 2: MAE
-p2 <- ggplot(comparison_results, aes(x = reorder(Method, MAE), y = MAE)) +
-  geom_bar(stat = "identity", fill = "#A3BE8C") +
-  geom_text(aes(label = round(MAE, 3)), 
-            vjust = -0.5, size = 3) +
-  labs(title = "Mean Absolute Error",
-       x = "Method",
-       y = "MAE") +
-  theme_minimal() +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1),
-        plot.title = element_text(hjust = 0.5))
+p2 <- create_bar_plot(comparison_results, "reorder(Method, MAE)", "MAE", "#A3BE8C", 
+                      "Mean Absolute Error", "Method", "MAE")
 
 # Display the second plot
 print(p2)
 
 # Plot 3: RMSE
-p3 <- ggplot(comparison_results, aes(x = reorder(Method, RMSE), y = RMSE)) +
-  geom_bar(stat = "identity", fill = "#EBCB8B") +
-  geom_text(aes(label = round(RMSE, 3)), 
-            vjust = -0.5, size = 3) +
-  labs(title = "Root Mean Square Error",
-       x = "Method",
-       y = "RMSE") +
-  theme_minimal() +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1),
-        plot.title = element_text(hjust = 0.5))
+p3 <- create_bar_plot(comparison_results, "reorder(Method, RMSE)", "RMSE", "#EBCB8B", 
+                      "Root Mean Square Error", "Method", "RMSE")
 
 # Display the third plot
 print(p3)
 
 # Plot 4: Correlation
-p4 <- ggplot(comparison_results, aes(x = reorder(Method, Correlation), y = Correlation)) +
-  geom_bar(stat = "identity", fill = "#B48EAD") +
-  geom_text(aes(label = round(Correlation, 3)), 
-            vjust = -0.5, size = 3) +
-  labs(title = "Correlation with Original Data",
-       x = "Method",
-       y = "Correlation") +
-  theme_minimal() +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1),
-        plot.title = element_text(hjust = 0.5))
+p4 <- create_bar_plot(comparison_results, "reorder(Method, Correlation)", "Correlation", "#B48EAD", 
+                      "Correlation with Original Data", "Method", "Correlation")
 
 # Display the fourth plot
 print(p4)

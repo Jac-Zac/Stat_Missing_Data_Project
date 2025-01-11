@@ -115,6 +115,72 @@ multiple_imputation <- function(data, m = 5) {
   return(imputations)
 }
 
+#' Tree-Based Imputation
+#' @param data Data frame with missing values
+#' @return Data frame with missing values imputed using Random Forest
+tree_based_imputation <- function(data) {
+  library(randomForest)
+  
+  # Loop through each column with missing values
+  for (col in names(data)) {
+    if (any(is.na(data[[col]]))) {
+      # Create a model to predict the missing values in the column
+      missing_indices <- which(is.na(data[[col]]))
+      complete_data <- data[!is.na(data[[col]]), ]
+      
+      # Random Forest model: Use other columns to predict the missing column
+      rf_model <- randomForest(as.formula(paste(col, "~ .")), data = complete_data)
+      
+      # Impute the missing values using the Random Forest model
+      imputed_values <- predict(rf_model, newdata = data[missing_indices, ])
+      data[[col]][missing_indices] <- imputed_values
+    }
+  }
+  return(data)
+}
+
+gam_based_imputation <- function(data) {
+  library(mgcv)  # For gam function
+  
+  # Create a row_number column if it doesn't exist
+  if (!"row_number" %in% names(data)) {
+    data$row_number <- 1:nrow(data)
+  }
+  
+  # Loop through each column with missing values
+  for (col in names(data)) {
+    if (any(is.na(data[[col]]))) {
+      # Only apply GAM imputation to numeric columns
+      if (is.numeric(data[[col]])) {
+        # Get the rows with no missing values for fitting the model
+        complete_data <- data[!is.na(data[[col]]), ]
+        
+        # Fit a GAM model to predict the missing values
+        gam_model <- gam(as.formula(paste(col, "~ s(row_number)")), data = complete_data)
+        
+        # Predict the missing values using the fitted GAM model
+        missing_indices <- which(is.na(data[[col]]))
+        
+        # Ensure to predict for missing rows only
+        if (length(missing_indices) > 0) {
+          missing_rows <- data[missing_indices, ]
+          missing_rows$row_number <- data$row_number[missing_indices]  # Include row_number in the prediction
+          predicted_values <- predict(gam_model, newdata = missing_rows)
+          
+          # Impute the missing values
+          data[[col]][missing_indices] <- predicted_values
+        }
+      }
+    }
+  }
+  
+  # Remove row_number if you don't want it in the final imputed dataset
+  data$row_number <- NULL
+  
+  # Return the data with imputed values
+  return(data)
+}
+
 # Example usage
 # listwise_result <- listwise_deletion(data_with_na)
 # pairwise_result <- pairwise_deletion(data_with_na)
