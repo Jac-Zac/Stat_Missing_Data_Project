@@ -57,6 +57,7 @@ suppressMessages(library(RColorBrewer))
 source("../src/synthetic_data.R") 
 source("../src/missing_data.R") 
 source("../src/inputation_methods.R") 
+source("../src/metrics.R") 
 source("../src/utils.R") 
 
 # Set seed (also essential for the syntethic dataset generation)
@@ -294,36 +295,6 @@ Explain a bit the difference between the metric for inputation. And perhaps make
 
 > I would suggest providing a summary for each of the inputation methods.
 
-### Helper Functions
-
-```{r}
-compute_rmse <- function(actual, predicted) {
-  sqrt(mean((actual - predicted)^2))
-}
-
-compare_imputed_to_original <- function(original_data, imputed_data) {
-  if (is.data.frame(original_data) && is.data.frame(imputed_data)) {
-    if (!all(names(original_data) == names(imputed_data))) {
-      stop("Original and imputed data frames must have the same structure.")
-    }
-    differences <- sapply(names(original_data), function(col) {
-      orig_col <- original_data[[col]]
-      imp_col <- imputed_data[[col]]
-      if (is.numeric(orig_col) && is.numeric(imp_col)) {
-        mean(abs(orig_col - imp_col), na.rm = TRUE)
-      } else {
-        NA
-      }
-    })
-    return(mean(differences, na.rm = TRUE)) # Average mean absolute difference across columns
-  } else if (is.numeric(original_data) && is.numeric(imputed_data)) {
-    return(mean(abs(original_data - imputed_data), na.rm = TRUE))
-  } else {
-    stop("Inputs must be numeric or data frames with numeric columns.")
-  }
-}
-```
-
 ### Regression Model on Original Dataset (Baseline)
 
 Fit a regression model using the complete dataset without any missing values for baseline comparison.
@@ -370,11 +341,11 @@ test_listwise_mar <- listwise_mar_result[-train_index, ]
 # Regression Models
 listwise_model_mcar <- lm(target ~ ., data = train_listwise)
 listwise_predictions <- predict(listwise_model_mcar, test_listwise)
-listwise_rmse <- compute_rmse(test_listwise$target, listwise_predictions)
+listwise_rmse <- rmse(test_listwise$target, listwise_predictions)
 
 listwise_model_mar <- lm(target ~ ., data = train_listwise_mar)
 listwise_mar_predictions <- predict(listwise_model_mar, test_listwise_mar)
-listwise_mar_rmse <- compute_rmse(test_listwise_mar$target, listwise_mar_predictions)
+listwise_mar_rmse <- rmse(test_listwise_mar$target, listwise_mar_predictions)
 
 listwise_rmse
 ```
@@ -396,11 +367,11 @@ test_pairwise_mar <- pairwise_mar_result[-train_index, ]
 # Regression Models
 pairwise_model_mcar <- lm(target ~ ., data = train_pairwise)
 pairwise_predictions <- predict(pairwise_model_mcar, test_pairwise)
-pairwise_rmse <- compute_rmse(test_pairwise$target, pairwise_predictions)
+pairwise_rmse <- rmse(test_pairwise$target, pairwise_predictions)
 
 pairwise_model_mar <- lm(target ~ ., data = train_pairwise_mar)
 pairwise_mar_predictions <- predict(pairwise_model_mar, test_pairwise_mar)
-pairwise_mar_rmse <- compute_rmse(test_pairwise_mar$target, pairwise_mar_predictions)
+pairwise_mar_rmse <- rmse(test_pairwise_mar$target, pairwise_mar_predictions)
 
 pairwise_rmse
 ```
@@ -424,11 +395,11 @@ test_mean_mar <- mean_mar_result[-train_index, ]
 # Regression Models
 mean_model_mcar <- lm(target ~ ., data = train_mean)
 mean_predictions <- predict(mean_model_mcar, test_mean)
-mean_rmse <- compute_rmse(test_mean$target, mean_predictions)
+mean_rmse <- rmse(test_mean$target, mean_predictions)
 
 mean_model_mar <- lm(target ~ ., data = train_mean_mar)
 mean_mar_predictions <- predict(mean_model_mar, test_mean_mar)
-mean_mar_rmse <- compute_rmse(test_mean_mar$target, mean_mar_predictions)
+mean_mar_rmse <- rmse(test_mean_mar$target, mean_mar_predictions)
 
 # Metrics
 mean_diff <- compare_imputed_to_original(synthetic_data, mean_result)
@@ -454,11 +425,11 @@ test_median_mar <- median_mar_result[-train_index, ]
 # Regression Models
 median_model_mcar <- lm(target ~ ., data = train_median)
 median_predictions <- predict(median_model_mcar, test_median)
-median_rmse <- compute_rmse(test_median$target, median_predictions)
+median_rmse <- rmse(test_median$target, median_predictions)
 
 median_model_mar <- lm(target ~ ., data = train_median_mar)
 median_mar_predictions <- predict(median_model_mar, test_median_mar)
-median_mar_rmse <- compute_rmse(test_median_mar$target, median_mar_predictions)
+median_mar_rmse <- rmse(test_median_mar$target, median_mar_predictions)
 
 # Metrics
 median_diff <- compare_imputed_to_original(synthetic_data, median_result)
@@ -484,11 +455,11 @@ test_regression_mar <- regression_mar_result[-train_index, ]
 # Regression Models
 regression_model_mcar <- lm(target ~ ., data = train_regression)
 regression_predictions <- predict(regression_model_mcar, test_regression)
-regression_rmse <- compute_rmse(test_regression$target, regression_predictions)
+regression_rmse <- rmse(test_regression$target, regression_predictions)
 
 regression_model_mar <- lm(target ~ ., data = train_regression_mar)
 regression_mar_predictions <- predict(regression_model_mar, test_regression_mar)
-regression_mar_rmse <- compute_rmse(test_regression_mar$target, regression_mar_predictions)
+regression_mar_rmse <- rmse(test_regression_mar$target, regression_mar_predictions)
 
 # Metrics
 regression_diff <- compare_imputed_to_original(synthetic_data, regression_result)
@@ -514,11 +485,11 @@ test_hotdeck_mar <- hotdeck_mar_result[-train_index, ]
 # Regression Models
 hotdeck_model_mcar <- lm(target ~ ., data = train_hotdeck)
 hotdeck_predictions <- predict(hotdeck_model_mcar, test_hotdeck)
-hotdeck_rmse <- compute_rmse(test_hotdeck$target, hotdeck_predictions)
+hotdeck_rmse <- rmse(test_hotdeck$target, hotdeck_predictions)
 
 hotdeck_model_mar <- lm(target ~ ., data = train_hotdeck_mar)
 hotdeck_mar_predictions <- predict(hotdeck_model_mar, test_hotdeck_mar)
-hotdeck_mar_rmse <- compute_rmse(test_hotdeck_mar$target, hotdeck_mar_predictions)
+hotdeck_mar_rmse <- rmse(test_hotdeck_mar$target, hotdeck_mar_predictions)
 
 # Metrics
 hotdeck_diff <- compare_imputed_to_original(synthetic_data, hotdeck_result)
@@ -544,11 +515,11 @@ test_em_mar <- em_mar_result[-train_index, ]
 # Regression Models
 em_model_mcar <- lm(target ~ ., data = train_em)
 em_predictions <- predict(em_model_mcar, test_em)
-em_rmse <- compute_rmse(test_em$target, em_predictions)
+em_rmse <- rmse(test_em$target, em_predictions)
 
 em_model_mar <- lm(target ~ ., data = train_em_mar)
 em_mar_predictions <- predict(em_model_mar, test_em_mar)
-em_mar_rmse <- compute_rmse(test_em_mar$target, em_mar_predictions)
+em_mar_rmse <- rmse(test_em_mar$target, em_mar_predictions)
 
 # Metrics
 em_diff <- compare_imputed_to_original(synthetic_data, em_result)
@@ -575,46 +546,100 @@ em_diff
 
 Create a summary table and plots to compare RMSE, mean absolute differences across all methods 
 
-```{r, echo = T, class.source = 'fold-show'}
-# Summary Table
+```{r, echo = T}
+# Create results dataframe with prediction RMSE
 results <- data.frame(
   Method = c("Baseline", "Listwise", "Pairwise", "Mean", "Median", "Regression", "Hot-deck", "EM"),
-  RMSE = c(baseline_rmse, listwise_rmse, pairwise_rmse, mean_rmse, median_rmse, regression_rmse, hotdeck_rmse, em_rmse),
-  Mean_Absolute_Difference = c(NA, NA, NA, mean_diff, median_diff, regression_diff, hotdeck_diff, em_diff)
+  RMSE_Prediction = c(baseline_rmse, listwise_rmse, pairwise_rmse, mean_rmse, 
+                     median_rmse, regression_rmse, hotdeck_rmse, em_rmse)
 )
 
-# Print raw results
-print(results)
+# Create comparison results dataframe with safe extraction
+comparison_methods <- c("Mean", "Median", "Regression", "Hot-deck", "EM")
+comparison_diffs <- list(mean_diff, median_diff, regression_diff, hotdeck_diff, em_diff)
 
-# Reshape data for plotting
-results_long <- melt(results, id.vars = "Method", variable.name = "Metric", value.name = "Value")
+# Custom function to safely extract values from the list of metrics
+safe_extract <- function(metric_list, metric_name) {
+  if (!is.null(metric_list[[metric_name]])) {
+    return(metric_list[[metric_name]][1])  # Extract the first value (assuming it's a vector of length 1)
+  } else {
+    return(NA)  # Return NA if the metric is not found
+  }
+}
 
-# Remove NA values
-results_long <- na.omit(results_long)
-
-# Define Nord colors
-nord_colors <- c(
-  "RMSE" = "#A3BE8C",  # Nord Green
-  "Mean_Absolute_Difference" = "#bf616a"  # Nord Red
+comparison_results <- data.frame(
+  Method = comparison_methods,
+  MAE = sapply(comparison_diffs, safe_extract, "mae"),
+  RMSE = sapply(comparison_diffs, safe_extract, "rmse"),
+  Correlation = sapply(comparison_diffs, safe_extract, "correlation")
 )
 
-# Create combined plot
-ggplot(results_long, aes(x = Method, y = Value, fill = Metric)) +
-  geom_bar(stat = "identity", position = "dodge") +
-  scale_fill_manual(values = nord_colors) +
-  labs(
-    title = "Comparison of Imputation Methods",
-    y = "Value",
-    x = "Method"
-  ) +
+# Remove any rows where all metrics are NA
+comparison_results <- comparison_results[rowSums(is.na(comparison_results[,-1])) < ncol(comparison_results)-1, ]
+
+# Plot 1: RMSE of Prediction Models
+p1 <- ggplot(results, aes(x = reorder(Method, RMSE_Prediction), y = RMSE_Prediction)) +
+  geom_bar(stat = "identity", fill = "#88C0D0") +
+  geom_text(aes(label = round(RMSE_Prediction, 3)), 
+            vjust = -0.5, size = 3) +
+  labs(title = "Prediction Model Performance",
+       x = "Method",
+       y = "RMSE") +
   theme_minimal() +
-  theme(
-    axis.text.x = element_text(angle = 45, hjust = 1),
-    legend.position = "top",
-    panel.grid.major = element_line(color = "gray90"),
-    panel.grid.minor = element_blank()
-  ) +
-  facet_wrap(~Metric, scales = "free_y", nrow = 2)
+  theme(axis.text.x = element_text(angle = 45, hjust = 1),
+        plot.title = element_text(hjust = 0.5))
+
+# Display the first plot
+print(p1)
+```
+
+### Plot the difference metrics between datasets
+
+```{r}
+# Plot 2: MAE
+p2 <- ggplot(comparison_results, aes(x = reorder(Method, MAE), y = MAE)) +
+  geom_bar(stat = "identity", fill = "#A3BE8C") +
+  geom_text(aes(label = round(MAE, 3)), 
+            vjust = -0.5, size = 3) +
+  labs(title = "Mean Absolute Error",
+       x = "Method",
+       y = "MAE") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1),
+        plot.title = element_text(hjust = 0.5))
+
+# Display the second plot
+print(p2)
+
+# Plot 3: RMSE
+p3 <- ggplot(comparison_results, aes(x = reorder(Method, RMSE), y = RMSE)) +
+  geom_bar(stat = "identity", fill = "#EBCB8B") +
+  geom_text(aes(label = round(RMSE, 3)), 
+            vjust = -0.5, size = 3) +
+  labs(title = "Root Mean Square Error",
+       x = "Method",
+       y = "RMSE") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1),
+        plot.title = element_text(hjust = 0.5))
+
+# Display the third plot
+print(p3)
+
+# Plot 4: Correlation
+p4 <- ggplot(comparison_results, aes(x = reorder(Method, Correlation), y = Correlation)) +
+  geom_bar(stat = "identity", fill = "#B48EAD") +
+  geom_text(aes(label = round(Correlation, 3)), 
+            vjust = -0.5, size = 3) +
+  labs(title = "Correlation with Original Data",
+       x = "Method",
+       y = "Correlation") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1),
+        plot.title = element_text(hjust = 0.5))
+
+# Display the fourth plot
+print(p4)
 ```
 
 ## Imputation Performance Comparison
