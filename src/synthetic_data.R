@@ -132,7 +132,6 @@ synthetic_dataset_gen <- function(n_samples, n_covariates, correlation = "linear
 }
 
 
-
 # synthetic_dataset_gen( n_samples = 100, n_covariates = 5, correlation = "linear", target_type = "linear", noise_level = 0.5, seed = 42)
 
 

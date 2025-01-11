@@ -6,3 +6,5 @@
 *.docx
 *.zip
 *.pdf
+**/initial_experiments_cache/
+**/initial_experiments_files/

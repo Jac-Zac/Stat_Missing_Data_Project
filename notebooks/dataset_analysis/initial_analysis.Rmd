@@ -1,0 +1,276 @@
+---
+title: "Initial Data Analysis"
+author: "Jacopo Zacchigna"
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+output: 
+  html_document:
+    toc: true 
+    toc_depth: 3
+    toc_float: true
+    # toc_float: false
+    code_fold: hide # Hidden by default unless specified otherwise
+    df_print: paged
+    highlight: tango
+    theme: cosmo
+    number_sections: true
+    toc_collapsible: true  # Enable collapsible TOC
+---
+
+## Environment Setup
+
+```{r, echo = T}
+# Load utilities
+source("../setup.R")
+```
+
+
+```{r, echo = F}
+# Display all available palettes
+# Show each palette individually
+# nord_show_palette("polarnight")
+# nord_show_palette("snowstorm")
+# nord_show_palette("frost")
+# nord_show_palette("aurora")
+```
+
+# Data Generation and Exploration
+
+## Synthetic Dataset Creation
+
+```{r, echo=T, class.source = 'fold-show'}
+# This will create:
+# - 5 continuous variables
+# - 3 categorical variables with 3, 4, and 5 levels respectively
+data <- generate_random_data(n_samples = 1000, 
+                           n_continuous = 5, 
+                           n_categorical = 3,
+                           n_categories = c(3, 4, 5))
+
+# Visualize dataset properties
+# summary(data)
+```
+
+```{r, echo=T, class.source = 'fold-show'}
+synthetic_data <- synthetic_dataset_gen(n_samples = 1000, n_covariates = 5, correlation = "linear", target_type = "linear", noise_level = 0.5)
+
+summary(synthetic_data)
+```
+
+
+## Data Visualization
+> This section should be expanded to explore the dataset more in depth
+
+```{r, echo = F}
+cor_matrix <- cor(synthetic_data)
+
+# Define colors using a Nord palette
+blue_nord <- nord("frost", 4)[[length(nord("frost", 4))]]  # Choose a Nord palette and number of colors
+red_nord <- nord("aurora", 1)
+
+# Plot the correlation matrix
+corrplot.mixed(cor_matrix, 
+               lower = "number", 
+               upper = "ellipse",
+               addgrid.col = "gray",
+               tl.col = "black",
+               tl.cex = 0.7,
+               lower.col = colorRampPalette(c(blue_nord, "white", red_nord))(100),
+               upper.col = colorRampPalette(c(blue_nord, "white", red_nord))(100))
+```
+
+```{r, echo =F}
+# Define Nord color palette
+nord_colors <- nord("frost", 4)  # Choose a Nord palette and the number of colors you want
+
+# Plot histogram for each continuous variable
+data_continuous <- synthetic_data[, sapply(synthetic_data, is.numeric)]
+continuous_melted <- reshape2::melt(data_continuous)
+
+ggplot(continuous_melted, aes(x = value)) +
+  geom_histogram(bins = 30, 
+                 fill = nord_colors[1],     # Use a color from the Nord palette
+                 color = nord_colors[4],    # Use another color from the Nord palette
+                 alpha = 0.7) +
+  facet_wrap(~variable, scales = "free_x") +
+  theme_minimal() +
+  labs(title = "Distribution of Continuous Variables", x = "Value", y = "Frequency")
+```
+
+```{rm, echo = F}
+# Plot pairwise relationships between continuous variables
+# ggpairs(synthetic_data)
+```
+
+### Regression Model on Original Dataset (Baseline)
+
+Fit a regression model using the complete dataset without any missing values for baseline comparison.
+
+```{r}
+
+# Calculate number of samples for training set
+num_samples <- nrow(synthetic_data) * 0.8
+
+# Randomly sample indices for training set
+train_index <- sample(seq_len(nrow(synthetic_data)), size = num_samples)
+
+# Split the dataset in training and testing
+train_data <- synthetic_data[train_index, ]
+test_data <- synthetic_data[-train_index, ]
+
+# Fit baseline model
+baseline_model <- lm(target ~ ., data = train_data)
+baseline_predictions <- predict(baseline_model, test_data)
+baseline_rmse <- sqrt(mean((baseline_predictions - test_data$target)^2))
+
+summary(baseline_model)
+baseline_rmse
+```
+
+
+# Missing Data Analysis
+
+The **mechanisms for generating missing data** can be classified into different types based on how the data is missing in relation to the observed and unobserved values. 
+
+Here is a summary focusing on **Missing Completely at Random (MCAR)** and **Conditionally at Random (CAR, often referred to as MAR – Missing At Random)** mechanisms:
+
+## Missing Completely at Random (MCAR)
+
+**Definition**: In the MCAR mechanism, the missingness is entirely independent of both observed and unobserved data. The probability that data is missing does not depend on any feature values.
+$$P(M | X, \xi) = P(M | \xi)$$
+
+**Implementation**: Missing values are inserted randomly across the dataset, either using Bernoulli trials or random selection methods. Common configurations include univariate (one feature) or multivariate (multiple features) generation, with random positions selected for deletion.
+
+MCAR mechanisms are straightforward since missingness is independent of any feature values. Various methods can be used to generate MCAR data:
+
+**Univariate MCAR Implementation**: Only one feature in the dataset has missing values. *Methods*:
+
+  - **Random Position Selection**: Select a feature $x_{miss}$ and delete values at random positions using a random number generator or permutation.  
+  - **Bernoulli Trials**: Use Bernoulli trials to determine missingness. A success probability $p$ corresponds to the desired missing rate (MR). Each data point has a probability $p$ of being set as missing.  
+    Example: For a missing rate of 10% in a feature with 100 observations, 10 random positions are marked as missing.
+    
+**Challenges**:  
+
+  - For small datasets, Bernoulli trials may lead to variation in the actual missing rate due to random variation from small sample sizes.
+
+**Multivariate MCAR Implementation**: Missing values are distributed across multiple features. *Methods*:
+
+  - **Uniform Distribution**: Generate missing values equally across all features. Each feature has the same missing rate.  
+  - **Random Distribution**: Choose a total number of missing values based on the desired MR and randomly select cells across the dataset.  
+    Example: For a dataset with 1,000 values and a 20% missing rate, 200 cells are randomly selected for deletion across all features.  
+
+**Strengths**: Simple and easy to implement; assumptions are often met in real-world data due to purely random events.  
+**Limitations**: The randomness does not reflect dependencies often present in real-world missingness patterns.
+
+## Missing At Random (MAR or CAR)
+
+**Definition**: In the CAR (MAR) mechanism, the probability of missing data depends on the values of observed data but not on the unobserved (missing) values themselves. It assumes a dependency between missingness and observed features.
+
+$$P(M | X, \xi) = P(M | X_{obs}, \xi)$$
+
+**Example**: Younger participants in a smoking survey might be more likely to skip reporting their cigarette consumption, but the missingness is independent of the actual number of cigarettes consumed.
+
+**Implementation**: Several approaches exist, often involving a determining feature. For instance, missing values in one feature (like cigarette consumption) may depend on values of another observed feature (like age). Configurations can involve ranks, percentiles, or division into groups based on a feature’s value.
+
+Each mechanism carries implications for analysis and imputation, as assumptions about the data's structure influence how accurately the missing values can be predicted or imputed.
+
+In MAR mechanisms, missingness depends on observed values of other features but not on the missing values themselves. This adds complexity to the generation process:
+
+**Univariate MAR Implementation**: Missing values in one feature $x_{miss}$ are determined by the values of another feature $x_{obs}$ (also called the determining feature). *Methods*:
+
+  - **Rank-Based Selection**: Compute the ranks of $x_{obs}$ and assign higher or lower probabilities for missingness based on these ranks.  
+    Example: Select a feature $x_{age}$. Younger participants (lower ranks) may have a higher probability of missingness in a related feature $x_{smoking\_habits}$.  
+    - Probability of missingness for each pattern:  
+      $P(x_{i,miss} = \text{missing}) = \frac{r_{i,obs}}{\sum r_{i,obs}}$  
+      where $r_{i,obs}$ is the rank of the $i^{th}$ observation of $x_{obs}$.  
+  - **Percentile or Cut-off Method**: Sort the values of $x_{obs}$ and choose missing positions in $x_{miss}$ corresponding to lower values in $x_{obs}$. The cutoff may be determined by a percentile.  
+    Example: Missing values in $x_{income}$ might be set for individuals below the 25th percentile of $x_{education\_level}$.  
+
+**Multivariate MAR Implementation**: MAR for multiple features requires defining relationships among multiple pairs of features. *Methods*:
+  
+  - **Pairs of Features**:  
+    Select pairs $\{x_{obs}, x_{miss}\}$ for each combination of features. Missing values in $x_{miss}$ are inserted based on observed values in $x_{obs}$.  
+    Example: Create missing values in $x_{cholesterol}$ based on high or low values of $x_{age}$. Adjust missing rates for individual features to maintain the overall dataset’s MR.  
+
+  - **Correlated Feature Sets**:  
+    When the dataset contains correlated features, missingness can be simulated in dependent features. MAR implementations often simulate this by ordering features by correlation or mutual information with the class label and generating missing values progressively.
+
+**Challenges**:  
+
+- MAR implementations can be sensitive to the choice of the determining feature. Consistent experimental design is crucial when evaluating imputation methods using synthetic MAR data.  
+- Generating accurate MAR patterns requires careful tuning of dependency relationships, especially when working with nominal or categorical features, as ranking or ordering becomes problematic.
+
+In R, the missMethods library allows efficient generation of missing values under different mechanisms (MCAR, MAR, MNAR), aiding in testing imputation methods and evaluating missing data impacts.
+
+
+
+## Introducing Missing Data
+> Using our function to artificially create missing data
+
+### Visualization of Missing Patterns
+
+##### Missing data in the original dataset
+> Obviously, no missing data is present in our dataset; it is synthetically generated.
+
+```{r}
+# Plot missing data patterns in the original dataset
+original_missing <- as.data.frame(sapply(data, is.na))
+original_missing$index <- 1:nrow(original_missing)
+original_missing_melted <- melt(original_missing, id.vars = "index")
+
+ggplot(original_missing_melted, aes(x = index, y = variable, fill = value)) +
+  geom_tile() +
+  scale_fill_manual(values = c("white", red_nord)) +
+  labs(title = "Missing Data Pattern - Original", x = "Index", y = "Variable")
+```
+
+### Missing data functions
+
+Showcase Introduce Mar function (example to show how to use print_function)
+
+```{r eval=TRUE, echo=FALSE, results='asis'}
+print_function_code(introduce_mcar)
+```
+
+
+#### Testing different Missing Data Mechanisms
+
+```{r, echo =T, class.source = 'fold-show'}
+# Artificially create missing data for all mechanisms (MCAR, MAR, MNAR)
+# data_mcar <- introduce_mcar(data, prop_missing = 0.1, missing_cols = c("cont_2", "cont_1"))
+# data_mar <- introduce_mar(data, prop_missing = 0.1, predictor_cols = c("cont_1", "cont_3"), target_cols = c("cont_2", "cont_4"))
+
+data_mcar <- introduce_mcar(synthetic_data, prop_missing = 0.1, missing_cols = "X3")
+data_mar <- introduce_mar(synthetic_data, prop_missing = 0.1, predictor_cols = c("X1", "X2"), target_cols = c("X3"))
+
+sum(is.na(data_mcar)) # Should be approximately 10%
+sum(is.na(data_mar)) # Should be approximately 10%
+
+# Analyze missing patterns and summarize
+# print(summarize_missing(data_mcar))
+# print(summary(data_mcar))
+# print(summarize_missing(data_mar))
+# print(summary(data_mar))
+```
+
+##### Plot missing data for the different mechanisms
+
+```{r, class.source = 'fold-show'}
+## Plot for MCAR
+plot_missing_data(data_mcar, "MCAR", c("white", red_nord))
+
+# Plot for MAR
+plot_missing_data(data_mar, "MAR", c("white", red_nord))
+```
+
+```{r, class.source = 'fold-show'}
+nord_contrast = c(blue_nord, red_nord)
+
+# For the original data
+aggr(data, plot = TRUE, numbers = TRUE, prop = FALSE, col = nord_contrast)
+
+# For data mcar
+aggr(data_mcar, plot = TRUE, numbers = TRUE, prop = FALSE, col = nord_contrast)
+
+# For data_mar
+aggr(data_mar, plot = TRUE, numbers = TRUE, prop = FALSE, col = nord_contrast)
+```
