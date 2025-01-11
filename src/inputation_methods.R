@@ -188,4 +188,6 @@ gam_based_imputation <- function(data) {
 # regression_result <- regression_imputation(data_with_na)
 # hotdeck_result <- hot_deck_imputation(data_with_na)
 # em_result <- em_imputation(data_with_na)
+# tree_result <- tree_based_imputation(data_with_na)
+# gam_result <- gam_based_imputation(data_with_na)
 # multiple_result <- multiple_imputation(data_with_na)

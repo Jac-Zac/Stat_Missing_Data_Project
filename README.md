@@ -15,12 +15,12 @@ Remove data: MCAR, MAR on only 1 cov e + cov (4 Combination)
 
 Techniques for handling missing data:
 
--Observation removal
--Covariate removal
--Imputation:
----Statistical (mean/mode/median/etc.)
----Conditional statistics (conditional mean, etc.)
----Model-based (regression/GAM/tree/etc.)
+- Observation removal
+- Covariate removal
+- Imputation:
+  - Statistical (mean/mode/median/etc.)
+  - Conditional statistics (conditional mean, etc.)
+  - Model-based (regression/GAM/tree/etc.)
 
 After "reconstructing the data", use the exact same code used for regression/classification, input the "new" datasets and observe the differences
 
@@ -63,11 +63,16 @@ Resources from literature (vi metto tutto ciò che penso possa essere utile, anc
 ```bash
 .
 ├── notebooks
+│   ├── dataset_analysis
+│   │   └── initial_analysis.Rmd
 │   ├── final_results.Rmd
-│   └── initial_experiments.Rmd
+│   ├── initial_experiments.Rmd
+│   └── setup.R
 ├── src
+│   ├── inputation_methods.R
+│   ├── metrics.R
 │   ├── missing_data.R
-│   └── synthetic_data.R
+│   ├── synthetic_data.R
 │   └── utils.R
 └── README.md
 ```
@@ -79,27 +84,35 @@ The project investigates Missing At Random (MAR) patterns in data through simula
 ##### The analysis includes:
 
 - Data simulation procedures
-- Implementation of MAR mechanisms
+- Analysis of the dataset (simulated and real dataset)
+- Implementation of MAR and MCAR mechanisms
 - Statistical analysis of missing patterns
-- Evaluation of handling methods
+- Evaluation of handling methods (exploring different imputation techniques)
 - Performance metrics and results visualization
 
 ## Documentation
 
 Detailed documentation is available in the following notebooks:
 
-- [`initial_experiments.Rmd`](notebooks/initial_experiments.Rmd): Initial analysis and methodology validation
+- [`initial_experiments.Rmd`](notebooks/initial_experiments.Rmd): Initial analysis and methodology validation of different methods to deal with missing data
+- [`initial_analysis.Rmd`](notebooks/dataset_analysis/initial_analysis): Initial analysis of the dataset + artificial creation of missing data
 - [`final_results.Rmd`](notebooks/final_results.Rmd): Comprehensive results and conclusions
 
 #### Utilities
 
 - [`synthetic_data.R`](src/synthetic_data.R): Functions to generate a synthetic dataset
+- [`inputation_methods.R`](src/inputation_methods.R): Functions to implement different imputation techniques
 - [`missing_data.R`](src/missing_data.R): Functions to artificially generate missing data
+- [`metrics.R`](src/metrics.R): Functions to evaluate different strategies to handle missing data
 - [`utils.R`](src/utils.R): Functions that are general utilities
 
 ## Preliminary Results
 
 _Note: Preliminary results should be submitted 10 days before the exam for feedback on next steps._
+
+## Project Complete structure
+
+![showcase](.assets/diagram.png)
 
 ## Contributors
 

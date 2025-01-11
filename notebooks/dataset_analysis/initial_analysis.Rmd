@@ -38,21 +38,15 @@ source("../setup.R")
 ## Synthetic Dataset Creation
 
 ```{r, echo=T, class.source = 'fold-show'}
-# This will create:
-# - 5 continuous variables
-# - 3 categorical variables with 3, 4, and 5 levels respectively
-data <- generate_random_data(n_samples = 1000, 
-                           n_continuous = 5, 
-                           n_categorical = 3,
-                           n_categories = c(3, 4, 5))
+# Generate synthetic dataset with 5 covariates, a linear relationship between the variable and predictor
+# And also a linear relationship with the covariates.
+synthetic_data <- synthetic_dataset_gen(n_samples = 1000, 
+                                        n_covariates = 5, 
+                                        correlation = "linear", 
+                                        target_type = "linear", 
+                                        noise_level = 0.5)
 
-# Visualize dataset properties
-# summary(data)
-```
-
-```{r, echo=T, class.source = 'fold-show'}
-synthetic_data <- synthetic_dataset_gen(n_samples = 1000, n_covariates = 5, correlation = "linear", target_type = "linear", noise_level = 0.5)
-
+# Summary of the dataset
 summary(synthetic_data)
 ```
 
@@ -89,7 +83,8 @@ continuous_melted <- reshape2::melt(data_continuous)
 ggplot(continuous_melted, aes(x = value)) +
   geom_histogram(bins = 30, 
                  fill = nord_colors[1],     # Use a color from the Nord palette
-                 color = nord_colors[4],    # Use another color from the Nord palette
+                 color = "black",
+                 size = 0.2,                 # Adjust this value for thinner borders
                  alpha = 0.7) +
   facet_wrap(~variable, scales = "free_x") +
   theme_minimal() +
@@ -213,7 +208,7 @@ In R, the missMethods library allows efficient generation of missing values unde
 
 ```{r}
 # Plot missing data patterns in the original dataset
-original_missing <- as.data.frame(sapply(data, is.na))
+original_missing <- as.data.frame(sapply(synthetic_data, is.na))
 original_missing$index <- 1:nrow(original_missing)
 original_missing_melted <- melt(original_missing, id.vars = "index")
 
