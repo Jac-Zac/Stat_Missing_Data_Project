@@ -294,15 +294,59 @@ Explain a bit the difference between the metric for inputation. And perhaps make
 
 > I would suggest providing a summary for each of the inputation methods.
 
-## Regression Models
+### Helper Functions
+
+```{r}
+compute_rmse <- function(actual, predicted) {
+  sqrt(mean((actual - predicted)^2))
+}
+
+compare_imputed_to_original <- function(original_data, imputed_data) {
+  if (is.data.frame(original_data) && is.data.frame(imputed_data)) {
+    if (!all(names(original_data) == names(imputed_data))) {
+      stop("Original and imputed data frames must have the same structure.")
+    }
+    differences <- sapply(names(original_data), function(col) {
+      orig_col <- original_data[[col]]
+      imp_col <- imputed_data[[col]]
+      if (is.numeric(orig_col) && is.numeric(imp_col)) {
+        mean(abs(orig_col - imp_col), na.rm = TRUE)
+      } else {
+        NA
+      }
+    })
+    return(mean(differences, na.rm = TRUE)) # Average mean absolute difference across columns
+  } else if (is.numeric(original_data) && is.numeric(imputed_data)) {
+    return(mean(abs(original_data - imputed_data), na.rm = TRUE))
+  } else {
+    stop("Inputs must be numeric or data frames with numeric columns.")
+  }
+}
+```
 
 ### Regression Model on Original Dataset (Baseline)
 
 Fit a regression model using the complete dataset without any missing values for baseline comparison.
 
 ```{r}
-baseline_model <- lm(target ~ ., data = synthetic_data)
+
+# Calculate number of samples for training set
+num_samples <- nrow(synthetic_data) * 0.8
+
+# Randomly sample indices for training set
+train_index <- sample(seq_len(nrow(synthetic_data)), size = num_samples)
+
+# Split the dataset in training and testing
+train_data <- synthetic_data[train_index, ]
+test_data <- synthetic_data[-train_index, ]
+
+# Fit baseline model
+baseline_model <- lm(target ~ ., data = train_data)
+baseline_predictions <- predict(baseline_model, test_data)
+baseline_rmse <- sqrt(mean((baseline_predictions - test_data$target)^2))
+
 summary(baseline_model)
+baseline_rmse
 ```
 
 ## Imputation Methods
@@ -316,104 +360,201 @@ The following imputation methods are tested on both the MCAR and MAR datasets. A
 listwise_result <- listwise_deletion(data_mcar)
 listwise_mar_result <- listwise_deletion(data_mar)
 
-# Regression Models
-listwise_model_mcar <- lm(target ~ ., data = listwise_result)
-summary(listwise_model_mcar)
+# Split into training and testing
+train_listwise <- listwise_result[train_index, ]
+test_listwise <- listwise_result[-train_index, ]
 
-listwise_model_mar <- lm(target ~ ., data = listwise_mar_result)
-summary(listwise_model_mar)
+train_listwise_mar <- listwise_mar_result[train_index, ]
+test_listwise_mar <- listwise_mar_result[-train_index, ]
+
+# Regression Models
+listwise_model_mcar <- lm(target ~ ., data = train_listwise)
+listwise_predictions <- predict(listwise_model_mcar, test_listwise)
+listwise_rmse <- compute_rmse(test_listwise$target, listwise_predictions)
+
+listwise_model_mar <- lm(target ~ ., data = train_listwise_mar)
+listwise_mar_predictions <- predict(listwise_model_mar, test_listwise_mar)
+listwise_mar_rmse <- compute_rmse(test_listwise_mar$target, listwise_mar_predictions)
+
+listwise_rmse
 ```
 
-### 2. Pairwise Deletion
+#### 2. Pairwise Deletion
 
 ```{r}
 # Imputation
 pairwise_result <- pairwise_deletion(data_mcar)
 pairwise_mar_result <- pairwise_deletion(data_mar)
 
-# Regression Models
-pairwise_model_mcar <- lm(target ~ ., data = pairwise_result)
-summary(pairwise_model_mcar)
+# Split into training and testing
+train_pairwise <- pairwise_result[train_index, ]
+test_pairwise <- pairwise_result[-train_index, ]
 
-pairwise_model_mar <- lm(target ~ ., data = pairwise_mar_result)
-summary(pairwise_model_mar)
+train_pairwise_mar <- pairwise_mar_result[train_index, ]
+test_pairwise_mar <- pairwise_mar_result[-train_index, ]
+
+# Regression Models
+pairwise_model_mcar <- lm(target ~ ., data = train_pairwise)
+pairwise_predictions <- predict(pairwise_model_mcar, test_pairwise)
+pairwise_rmse <- compute_rmse(test_pairwise$target, pairwise_predictions)
+
+pairwise_model_mar <- lm(target ~ ., data = train_pairwise_mar)
+pairwise_mar_predictions <- predict(pairwise_model_mar, test_pairwise_mar)
+pairwise_mar_rmse <- compute_rmse(test_pairwise_mar$target, pairwise_mar_predictions)
+
+pairwise_rmse
 ```
 
-### 3. Simple Imputation
+#### 3. Simple Imputation
 
-#### Mean Imputation
+##### Mean Imputation
 
 ```{r}
 # Imputation
 mean_result <- simple_imputation(data_mcar, method = "mean")
 mean_mar_result <- simple_imputation(data_mar, method = "mean")
 
-# Regression Models
-mean_model_mcar <- lm(target ~ ., data = mean_result)
-summary(mean_model_mcar)
+# Split into training and testing
+train_mean <- mean_result[train_index, ]
+test_mean <- mean_result[-train_index, ]
 
-mean_model_mar <- lm(target ~ ., data = mean_mar_result)
-summary(mean_model_mar)
+train_mean_mar <- mean_mar_result[train_index, ]
+test_mean_mar <- mean_mar_result[-train_index, ]
+
+# Regression Models
+mean_model_mcar <- lm(target ~ ., data = train_mean)
+mean_predictions <- predict(mean_model_mcar, test_mean)
+mean_rmse <- compute_rmse(test_mean$target, mean_predictions)
+
+mean_model_mar <- lm(target ~ ., data = train_mean_mar)
+mean_mar_predictions <- predict(mean_model_mar, test_mean_mar)
+mean_mar_rmse <- compute_rmse(test_mean_mar$target, mean_mar_predictions)
+
+# Metrics
+mean_diff <- compare_imputed_to_original(synthetic_data, mean_result)
+
+mean_rmse
+mean_diff
 ```
 
-#### Median Imputation
+##### Median Imputation
 
 ```{r}
 # Imputation
 median_result <- simple_imputation(data_mcar, method = "median")
 median_mar_result <- simple_imputation(data_mar, method = "median")
 
-# Regression Models
-median_model_mcar <- lm(target ~ ., data = median_result)
-summary(median_model_mcar)
+# Split into training and testing
+train_median <- median_result[train_index, ]
+test_median <- median_result[-train_index, ]
 
-median_model_mar <- lm(target  ~ ., data = median_mar_result)
-summary(median_model_mar)
+train_median_mar <- median_mar_result[train_index, ]
+test_median_mar <- median_mar_result[-train_index, ]
+
+# Regression Models
+median_model_mcar <- lm(target ~ ., data = train_median)
+median_predictions <- predict(median_model_mcar, test_median)
+median_rmse <- compute_rmse(test_median$target, median_predictions)
+
+median_model_mar <- lm(target ~ ., data = train_median_mar)
+median_mar_predictions <- predict(median_model_mar, test_median_mar)
+median_mar_rmse <- compute_rmse(test_median_mar$target, median_mar_predictions)
+
+# Metrics
+median_diff <- compare_imputed_to_original(synthetic_data, median_result)
+
+median_rmse
+median_diff
 ```
 
-### 4. Regression Imputation
+#### 4. Regression Imputation
 
 ```{r}
 # Imputation
 regression_result <- regression_imputation(data_mcar)
 regression_mar_result <- regression_imputation(data_mar)
 
-# Regression Models
-regression_model_mcar <- lm(target  ~ ., data = regression_result)
-summary(regression_model_mcar)
+# Split into training and testing
+train_regression <- regression_result[train_index, ]
+test_regression <- regression_result[-train_index, ]
 
-regression_model_mar <- lm(target  ~ ., data = regression_mar_result)
-summary(regression_model_mar)
+train_regression_mar <- regression_mar_result[train_index, ]
+test_regression_mar <- regression_mar_result[-train_index, ]
+
+# Regression Models
+regression_model_mcar <- lm(target ~ ., data = train_regression)
+regression_predictions <- predict(regression_model_mcar, test_regression)
+regression_rmse <- compute_rmse(test_regression$target, regression_predictions)
+
+regression_model_mar <- lm(target ~ ., data = train_regression_mar)
+regression_mar_predictions <- predict(regression_model_mar, test_regression_mar)
+regression_mar_rmse <- compute_rmse(test_regression_mar$target, regression_mar_predictions)
+
+# Metrics
+regression_diff <- compare_imputed_to_original(synthetic_data, regression_result)
+
+regression_rmse
+regression_diff
 ```
 
-### 5. Hot‑deck Imputation
+#### 5. Hot-deck Imputation
 
 ```{r}
 # Imputation
 hotdeck_result <- hot_deck_imputation(data_mcar)
 hotdeck_mar_result <- hot_deck_imputation(data_mar)
 
-# Regression Models
-hotdeck_model_mcar <- lm(target  ~ ., data = hotdeck_result)
-summary(hotdeck_model_mcar)
+# Split into training and testing
+train_hotdeck <- hotdeck_result[train_index, ]
+test_hotdeck <- hotdeck_result[-train_index, ]
 
-hotdeck_model_mar <- lm(target  ~ ., data = hotdeck_mar_result)
-summary(hotdeck_model_mar)
+train_hotdeck_mar <- hotdeck_mar_result[train_index, ]
+test_hotdeck_mar <- hotdeck_mar_result[-train_index, ]
+
+# Regression Models
+hotdeck_model_mcar <- lm(target ~ ., data = train_hotdeck)
+hotdeck_predictions <- predict(hotdeck_model_mcar, test_hotdeck)
+hotdeck_rmse <- compute_rmse(test_hotdeck$target, hotdeck_predictions)
+
+hotdeck_model_mar <- lm(target ~ ., data = train_hotdeck_mar)
+hotdeck_mar_predictions <- predict(hotdeck_model_mar, test_hotdeck_mar)
+hotdeck_mar_rmse <- compute_rmse(test_hotdeck_mar$target, hotdeck_mar_predictions)
+
+# Metrics
+hotdeck_diff <- compare_imputed_to_original(synthetic_data, hotdeck_result)
+
+hotdeck_rmse
+hotdeck_diff
 ```
 
-### 6. Expectation–Maximization (EM)
+#### 6. Expectation-Maximization (EM)
 
 ```{r}
 # Imputation
 em_result <- em_imputation(data_mcar)
 em_mar_result <- em_imputation(data_mar)
 
-# Regression Models
-em_model_mcar <- lm(target  ~ ., data = em_result)
-summary(em_model_mcar)
+# Split into training and testing
+train_em <- em_result[train_index, ]
+test_em <- em_result[-train_index, ]
 
-em_model_mar <- lm(target  ~ ., data = em_mar_result)
-summary(em_model_mar)
+train_em_mar <- em_mar_result[train_index, ]
+test_em_mar <- em_mar_result[-train_index, ]
+
+# Regression Models
+em_model_mcar <- lm(target ~ ., data = train_em)
+em_predictions <- predict(em_model_mcar, test_em)
+em_rmse <- compute_rmse(test_em$target, em_predictions)
+
+em_model_mar <- lm(target ~ ., data = train_em_mar)
+em_mar_predictions <- predict(em_model_mar, test_em_mar)
+em_mar_rmse <- compute_rmse(test_em_mar$target, em_mar_predictions)
+
+# Metrics
+em_diff <- compare_imputed_to_original(synthetic_data, em_result)
+
+em_rmse
+em_diff
 ```
 
 ### 7. Multiple Imputation
@@ -429,6 +570,52 @@ summary(em_model_mar)
 ## Ensemble methods
 
 # Results and Discussion
+
+### Comparison of Results
+
+Create a summary table and plots to compare RMSE, mean absolute differences across all methods 
+
+```{r, echo = T, class.source = 'fold-show'}
+# Summary Table
+results <- data.frame(
+  Method = c("Baseline", "Listwise", "Pairwise", "Mean", "Median", "Regression", "Hot-deck", "EM"),
+  RMSE = c(baseline_rmse, listwise_rmse, pairwise_rmse, mean_rmse, median_rmse, regression_rmse, hotdeck_rmse, em_rmse),
+  Mean_Absolute_Difference = c(NA, NA, NA, mean_diff, median_diff, regression_diff, hotdeck_diff, em_diff)
+)
+
+# Print raw results
+print(results)
+
+# Reshape data for plotting
+results_long <- melt(results, id.vars = "Method", variable.name = "Metric", value.name = "Value")
+
+# Remove NA values
+results_long <- na.omit(results_long)
+
+# Define Nord colors
+nord_colors <- c(
+  "RMSE" = "#A3BE8C",  # Nord Green
+  "Mean_Absolute_Difference" = "#bf616a"  # Nord Red
+)
+
+# Create combined plot
+ggplot(results_long, aes(x = Method, y = Value, fill = Metric)) +
+  geom_bar(stat = "identity", position = "dodge") +
+  scale_fill_manual(values = nord_colors) +
+  labs(
+    title = "Comparison of Imputation Methods",
+    y = "Value",
+    x = "Method"
+  ) +
+  theme_minimal() +
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1),
+    legend.position = "top",
+    panel.grid.major = element_line(color = "gray90"),
+    panel.grid.minor = element_blank()
+  ) +
+  facet_wrap(~Metric, scales = "free_y", nrow = 2)
+```
 
 ## Imputation Performance Comparison
 
