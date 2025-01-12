@@ -1,5 +1,5 @@
 ---
-title: "Initial Data Analysis"
+title: "Synthetic Data Analysis"
 author: "Jacopo Zacchigna"
 date: "`r format(Sys.time(), '%d %B, %Y')`"
 output: 
@@ -37,6 +37,8 @@ source("../setup.R")
 
 ## Synthetic Dataset Creation
 
+We start the analyses by creating a synthetic with linear correlation between the variables. And a variable to predict that is also linearly correlated to the covariates.
+
 ```{r, echo=T, class.source = 'fold-show'}
 # Generate synthetic dataset with 5 covariates, a linear relationship between the variable and predictor
 # And also a linear relationship with the covariates.
@@ -50,9 +52,12 @@ synthetic_data <- synthetic_dataset_gen(n_samples = 1000,
 summary(synthetic_data)
 ```
 
+The summary is not very informative considering this is just a synthetic dataset.
 
 ## Data Visualization
 > This section should be expanded to explore the dataset more in depth
+
+The first step in our analyses is to visualize the correlation between the continuous covariates in our dataset.
 
 ```{r, echo = F}
 cor_matrix <- cor(synthetic_data)
@@ -72,19 +77,22 @@ corrplot.mixed(cor_matrix,
                upper.col = colorRampPalette(c(blue_nord, "white", red_nord))(100))
 ```
 
+We can also plot histograms for each covariate to showcase their distributions.
+
 ```{r, echo =F}
 # Define Nord color palette
 nord_colors <- nord("frost", 4)  # Choose a Nord palette and the number of colors you want
 
 # Plot histogram for each continuous variable
 data_continuous <- synthetic_data[, sapply(synthetic_data, is.numeric)]
+
 continuous_melted <- reshape2::melt(data_continuous)
 
 ggplot(continuous_melted, aes(x = value)) +
   geom_histogram(bins = 30, 
                  fill = nord_colors[1],     # Use a color from the Nord palette
                  color = "black",
-                 size = 0.2,                 # Adjust this value for thinner borders
+                 linewidth = 0.2,                 # Adjust this value for thinner borders
                  alpha = 0.7) +
   facet_wrap(~variable, scales = "free_x") +
   theme_minimal() +
@@ -100,6 +108,8 @@ ggplot(continuous_melted, aes(x = value)) +
 
 Fit a regression model using the complete dataset without any missing values for baseline comparison.
 
+*We should instead use a subset of the covariate (that is relevant) for this linear model.*
+
 ```{r}
 
 # Calculate number of samples for training set
@@ -112,15 +122,14 @@ train_index <- sample(seq_len(nrow(synthetic_data)), size = num_samples)
 train_data <- synthetic_data[train_index, ]
 test_data <- synthetic_data[-train_index, ]
 
-# Fit baseline model
+# Fit baseline model with all of the covariates
 baseline_model <- lm(target ~ ., data = train_data)
 baseline_predictions <- predict(baseline_model, test_data)
 baseline_rmse <- sqrt(mean((baseline_predictions - test_data$target)^2))
 
 summary(baseline_model)
-baseline_rmse
+paste("RMSE on the test set: ", baseline_rmse)
 ```
-
 
 # Missing Data Analysis
 
@@ -196,14 +205,9 @@ In MAR mechanisms, missingness depends on observed values of other features but 
 
 In R, the missMethods library allows efficient generation of missing values under different mechanisms (MCAR, MAR, MNAR), aiding in testing imputation methods and evaluating missing data impacts.
 
-
-
 ## Introducing Missing Data
-> Using our function to artificially create missing data
 
-### Visualization of Missing Patterns
-
-##### Missing data in the original dataset
+### Missing data in the original dataset
 > Obviously, no missing data is present in our dataset; it is synthetically generated.
 
 ```{r}
@@ -218,7 +222,7 @@ ggplot(original_missing_melted, aes(x = index, y = variable, fill = value)) +
   labs(title = "Missing Data Pattern - Original", x = "Index", y = "Variable")
 ```
 
-### Missing data functions
+### Showcase mnissing data functions
 
 Showcase Introduce Mar function (example to show how to use print_function)
 
@@ -226,20 +230,18 @@ Showcase Introduce Mar function (example to show how to use print_function)
 print_function_code(introduce_mcar)
 ```
 
-
-#### Testing different Missing Data Mechanisms
+### Introducing missing data with different mechanisms
 
 ```{r, echo =T, class.source = 'fold-show'}
-# Artificially create missing data for all mechanisms (MCAR, MAR, MNAR)
-# data_mcar <- introduce_mcar(data, prop_missing = 0.1, missing_cols = c("cont_2", "cont_1"))
-# data_mar <- introduce_mar(data, prop_missing = 0.1, predictor_cols = c("cont_1", "cont_3"), target_cols = c("cont_2", "cont_4"))
-
 data_mcar <- introduce_mcar(synthetic_data, prop_missing = 0.1, missing_cols = "X3")
 data_mar <- introduce_mar(synthetic_data, prop_missing = 0.1, predictor_cols = c("X1", "X2"), target_cols = c("X3"))
 
+# Ensuring methods work as expected
 sum(is.na(data_mcar)) # Should be approximately 10%
 sum(is.na(data_mar)) # Should be approximately 10%
+```
 
+```{r, echo =F}
 # Analyze missing patterns and summarize
 # print(summarize_missing(data_mcar))
 # print(summary(data_mcar))
@@ -247,7 +249,9 @@ sum(is.na(data_mar)) # Should be approximately 10%
 # print(summary(data_mar))
 ```
 
-##### Plot missing data for the different mechanisms
+### Plot missing data for the different mechanisms
+
+#### Custom missing data visualization
 
 ```{r, class.source = 'fold-show'}
 ## Plot for MCAR
@@ -257,11 +261,10 @@ plot_missing_data(data_mcar, "MCAR", c("white", red_nord))
 plot_missing_data(data_mar, "MAR", c("white", red_nord))
 ```
 
+#### VIM package missing data visualization
+
 ```{r, class.source = 'fold-show'}
 nord_contrast = c(blue_nord, red_nord)
-
-# For the original data
-aggr(data, plot = TRUE, numbers = TRUE, prop = FALSE, col = nord_contrast)
 
 # For data mcar
 aggr(data_mcar, plot = TRUE, numbers = TRUE, prop = FALSE, col = nord_contrast)

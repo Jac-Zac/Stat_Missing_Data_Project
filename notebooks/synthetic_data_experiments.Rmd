@@ -1,6 +1,6 @@
 ---
 title: "Missing Data Analysis: Methods and Experiments"
-author: "Jacopo Zacchigna"
+author: "Jacopo Zacchigna, Devid Rosa, Cristiano Baldassi, Ludovica Bianchi"
 date: "`r format(Sys.time(), '%d %B, %Y')`"
 output:
   html_document:
@@ -14,12 +14,6 @@ output:
     theme: cosmo
     number_sections: true
     toc_collapsible: true  # Enable collapsible TOC
-  word_document:
-    toc: true
-    toc_depth: '3'
-  pdf_document:
-    toc: true
-    toc_depth: 3
 editor_options:
   markdown:
     wrap: 72
@@ -30,10 +24,10 @@ editor_options:
 source("setup.R") 
 
 # Load the initial analysis file
-child = here::here("dataset_analysis", "initial_analysis.Rmd")
+child = here::here("dataset_analysis", "synthetic_data_analysis.Rmd")
 ```
 
-```{r, child = "dataset_analysis/initial_analysis.Rmd", cache = TRUE}
+```{r, child = "dataset_analysis/synthetic_data_analysis.Rmd", cache = TRUE}
 ```
 
 # Imputation Methods
@@ -60,7 +54,7 @@ Explain a bit the difference between the metric for imputation. And perhaps make
 
 **Pareto front ?**
 
-> I would suggest providing a summary for each of the inputation methods.
+> I would suggest providing a summary for each of the imputation methods.
 
 ## Imputation Methods
 

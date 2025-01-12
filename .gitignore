@@ -6,5 +6,5 @@
 *.docx
 *.zip
 *.pdf
-**/initial_experiments_cache/
-**/initial_experiments_files/
+**/synthetic_data_experiments_cache
+**/synthetic_data_experiments_files
