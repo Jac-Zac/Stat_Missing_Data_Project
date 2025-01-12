@@ -249,59 +249,29 @@ comparison_results <- data.frame(
 
 # Remove any rows where all metrics are NA
 comparison_results <- comparison_results[rowSums(is.na(comparison_results[,-1])) < ncol(comparison_results)-1, ]
-
-# Plot 1: RMSE of Prediction Models
-p1 <- ggplot(results, aes(x = reorder(Method, RMSE_Prediction), y = RMSE_Prediction)) +
-  geom_bar(stat = "identity", fill = "#88C0D0") +
-  geom_text(aes(label = round(RMSE_Prediction, 3)), 
-            vjust = -0.5, size = 3) +
-  labs(title = "Prediction Model Performance",
-       x = "Method",
-       y = "RMSE") +
-  theme_minimal() +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1),
-        plot.title = element_text(hjust = 0.5))
-
-# Display the first plot
-print(p1)
 ```
 
 ### Plot the difference metrics between datasets
 
 ```{r}
-# Function to create a bar plot with custom parameters
-create_bar_plot <- function(data, x, y, fill_color, title, x_label, y_label) {
-  ggplot(data, aes_string(x = x, y = y)) +
-    geom_bar(stat = "identity", fill = fill_color) +
-    geom_text(aes_string(label = paste0("round(", y, ", 3)")), 
-              vjust = -0.5, size = 3) +
-    labs(title = title,
-         x = x_label,
-         y = y_label) +
-    theme_minimal() +
-    theme(axis.text.x = element_text(angle = 45, hjust = 1),
-          plot.title = element_text(hjust = 0.5))
-}
+# Plot 1: RMSE of Prediction Models
+p1 <- create_bar_plot(results, "reorder(Method, RMSE_Prediction)", "RMSE_Prediction", "#88C0D0", 
+                      "Prediction Model Performance")
+print(p1)
 
 # Plot 2: MAE
 p2 <- create_bar_plot(comparison_results, "reorder(Method, MAE)", "MAE", "#A3BE8C", 
-                      "Mean Absolute Error", "Method", "MAE")
-
-# Display the second plot
+                      "Mean Absolute Error")
 print(p2)
 
-# Plot 3: RMSE
+# Plot 3: RMSE Comparison
 p3 <- create_bar_plot(comparison_results, "reorder(Method, RMSE)", "RMSE", "#EBCB8B", 
-                      "Root Mean Square Error", "Method", "RMSE")
-
-# Display the third plot
+                      "Root Mean Square Error")
 print(p3)
 
 # Plot 4: Correlation
 p4 <- create_bar_plot(comparison_results, "reorder(Method, Correlation)", "Correlation", "#B48EAD", 
-                      "Correlation with Original Data", "Method", "Correlation")
-
-# Display the fourth plot
+                      "Correlation with Original Data")
 print(p4)
 ```
 

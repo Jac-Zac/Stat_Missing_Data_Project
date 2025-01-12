@@ -112,3 +112,37 @@ evaluate_imputation_method <- function(imputation_function, data_mcar, data_mar,
     diff_mar = diff_mar
   ))
 }
+
+#' Create a Bar Plot with Custom Parameters
+#'
+#' This function generates a bar plot from a data frame with customizable aesthetics. 
+#' It supports dynamically labeling bars with rounded values and adding titles and themes.
+#'
+#' @param data A data frame containing the data to be plotted.
+#' @param x_var Character. The name of the variable to be used for the x-axis.
+#' @param y_var Character. The name of the variable to be used for the y-axis.
+#' @param fill_color Character. The fill color for the bars (e.g., "steelblue").
+#' @param title Character. The title for the plot.
+#' @param x_label Character. The label for the x-axis. Defaults to "Method".
+#' @param y_label Character. The label for the y-axis. Defaults to the name of `y_var`.
+#' @param text_vjust Numeric. The vertical adjustment of the text labels above bars. Defaults to -0.5.
+#' @return A ggplot object representing the bar plot.
+#' @examples
+#' data <- data.frame(
+#'   Method = c("A", "B", "C"), 
+#'   Value = c(10.123, 20.456, 15.789)
+#' )
+#' create_bar_plot(data, x_var = "Method", y_var = "Value", 
+#'                 fill_color = "steelblue", title = "Example Bar Plot")
+create_bar_plot <- function(data, x_var, y_var, fill_color, title, 
+                            x_label = "Method", y_label = y_var, text_vjust = -0.5) {
+  ggplot(data, aes_string(x = x_var, y = y_var)) +
+    geom_bar(stat = "identity", fill = fill_color) +
+    geom_text(aes_string(label = paste0("round(", y_var, ", 3)")), vjust = text_vjust) +
+    labs(title = title,
+         x = x_label,
+         y = y_label) +
+    theme_minimal() +
+    theme(axis.text.x = element_text(angle = 45, hjust = 1),
+          plot.title = element_text(hjust = 0.5))
+}

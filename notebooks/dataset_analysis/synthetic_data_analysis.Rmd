@@ -16,7 +16,8 @@ output:
     toc_collapsible: true  # Enable collapsible TOC
 ---
 
-## Environment Setup
+# Environment Setup
+> Everything is defined inside `setup.R`
 
 ```{r, echo = T}
 # Load utilities
