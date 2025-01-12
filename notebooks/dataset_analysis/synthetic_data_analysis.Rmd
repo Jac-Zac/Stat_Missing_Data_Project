@@ -37,7 +37,13 @@ source("../setup.R")
 
 ## Synthetic Dataset Creation
 
-We start the analyses by creating a synthetic with linear correlation between the variables. And a variable to predict that is also linearly correlated to the covariates.
+We begin by analyzing simpler datasets to explore various imputation methods. Initially, we generate datasets without missing values. 
+In the subsequent step, we introduce missing values according to two mechanisms: Missing Completely at Random (MCAR) and Missing at Random (MAR).
+
+Our analysis starts with the creation of a synthetic dataset designed to exhibit specific correlations among covariates. We define a target variable that has a different types of relationships with these covariates.
+
+First Dataset: This simpler dataset assumes a linear relationship among covariates, with the target variable linearly dependent on them.
+By structuring our study in this manner, we can systematically assess how different imputation methods perform under varying conditions of data missingness and correlation structures.
 
 ```{r, echo=T, class.source = 'fold-show'}
 # Generate synthetic dataset with 5 covariates, a linear relationship between the variable and predictor
@@ -51,11 +57,11 @@ synthetic_data <- synthetic_dataset_gen(n_samples = 1000,
 # Summary of the dataset
 summary(synthetic_data)
 ```
-
 The summary is not very informative considering this is just a synthetic dataset.
 
 ## Data Visualization
-> This section should be expanded to explore the dataset more in depth
+
+This section should be expanded to explore the dataset more in depth
 
 The first step in our analyses is to visualize the correlation between the continuous covariates in our dataset.
 
