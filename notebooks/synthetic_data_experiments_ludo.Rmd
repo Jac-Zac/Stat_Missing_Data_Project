@@ -142,6 +142,17 @@ considers each variable separately. For each variable, all recorded values in ea
 observation are considered and missing data are ignored. This means that different calculations will use different cases and will have different sample sizes.It results in larger sample sizes than the previous method but may cause inconsistent sample sizes across analyses. However it offers better estimates than listwise delection but is unbiased only if the data are MCAR.
 
 ```{r}
+#Manually
+# Remove rows with any missing value
+synthetic_data_complete_cases <- na.omit(synthetic_data)
+# See the missing value now
+sum(is.na(synthetic_data_complete_cases))
+# Get the dimensions of the dataset (rows and columns)
+dim(synthetic_data_complete_cases)
+```
+
+
+```{r}
 # Evaluate imputation method using pairwise deletion
 pairwise_results <- evaluate_imputation_method(pairwise_deletion, data_mcar, data_mar, train_index, synthetic_data)
 ```
