@@ -11,7 +11,7 @@ output:
     code_fold: hide # Hidden by default unless specified otherwise
     df_print: paged
     highlight: tango
-    theme: cosmo
+    theme: flatly
     number_sections: true
     toc_collapsible: true  # Enable collapsible TOC
 ---
