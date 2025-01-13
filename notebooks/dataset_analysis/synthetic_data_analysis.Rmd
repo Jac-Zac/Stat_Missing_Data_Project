@@ -21,7 +21,10 @@ output:
 
 ```{r, echo = T}
 # Load utilities
-source("../setup.R")
+library(here)
+
+# Load utilities
+source(here("src", "setup.R"))
 ```
 
 
