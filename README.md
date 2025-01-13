@@ -1,19 +1,22 @@
-# Statistical Analysis of Missing Data
+## Important note
+
+Since most of the problems are data dependent, this work is a preliminary analysis that aims to show the flowchart of the project. Thus, some analysis are approximate and the models aren't tuned. The final experiment will be on a complete different dataset.
+
+# Dealing with missing data
 
 ## Project Overview
 
-This project focuses on analyzing Missing At Random (MAR) data patterns using simulated datasets. The analysis is conducted through various statistical methods to understand and handle missing data scenarios effectively.
-... (not only missing at random ...)
+This project focuses on analyzing Missing At Random (MAR) data patterns using simulated dataset. The analysis is conducted through various statistical methods to understand and handle missing data scenarios effectively. The entire experiment is guided by many metrics that give us a way to compare the results.
 
 ## TODO
 
 > Currently many functions are just template pre-made to test things out
 
-- Explore MAR (just mention the other and explain why we choose mar) in the final report
+- Explore MAR (just mention the other and explain why we choose mar in the final report)
 
   > Showcase what happens
 
-- Test for two different percentage 5% - 15% for example
+- Test for two different percentage 5% - 15% (or 10% - 20%, tbd)
 
 - [x] Testing more complex imputation mechanisms
   - **Still missing**:
@@ -21,6 +24,7 @@ This project focuses on analyzing Missing At Random (MAR) data patterns using si
     - [ ] Some other possible ideas
 - [ ] Test on more complex synthetic_datasets so that the GAM and Trees can shine
 - [ ] Put everything in a cleaner and presentable format
+- [ ] Implement the function to compute wasserstein distance (and Jensen-Shannon divegence?)
 - [ ] Review functions inside [`synthetic_data.R`](src/synthetic_data.R)
 - [x] Review functions inside [`missing_data.R`](src/missing_data.R)
 
@@ -61,7 +65,21 @@ This project focuses on analyzing Missing At Random (MAR) data patterns using si
 
 ## Description
 
-The project investigates Missing At Random (MAR) patterns in data through simulation studies. We develop and test our methodological approach using simulated datasets before applying it to real-world scenarios.
+This project investigates Missing At Random (MAR) patterns in data using simulation studies. The primary objective is to develop and evaluate methodologies for handling missing data, with a focus on minimizing the divergence from the original data distribution and ensuring robust model performance.
+
+The experiment begins with data cleaning and preprocessing, followed by an **80/20 train-test split** to facilitate performance comparison of various models. The analysis proceeds in two stages: the training set undergoes exploratory analysis and model fitting, serving as a baseline for evaluation; a cloned version of the training set is modified by introducing missing data through MAR mechanisms, simulating real-world scenarios of missingness.
+
+Our primary goal is to impute or reconstruct the missing data to approximate the original distribution as closely as possible. The following techniques are employed for imputation:
+
+- **Conditional statistics** (e.g., median, conditional mean),
+- **Data deletion** strategies (e.g., pairwise and listwise deletion),
+- **Predictive modeling** using various regression approaches (GLM, GAM, and Random Forest).
+
+To measure the divergence between the original and imputed datasets, two key metrics are utilized: Wasserstein Distance to quantify distributional differences and Jensen-Shannon Divergence to measure the similarity between probability distributions.
+
+After imputation, the datasets generated under different conditions (e.g., 5% and 15% missing data) are analyzed, and models are fitted to assess the quality of reconstruction. Finally, using standard prediction metrics, the performance of models trained on the imputed datasets is compared to those trained on the original dataset. This comparison allows for a comprehensive evaluation of the effectiveness of different imputation techniques.
+
+
 
 ##### The analysis includes:
 
@@ -98,7 +116,7 @@ _Note: Preliminary results should be submitted 10 days before the exam for feedb
 
 ## Contributors
 
-- Jacopo Zacchigna
+- Jacopo Zacchigna, Devid Rosa, Ludovica Bianchi, Cristiano Baldassi
 
 ---
 
