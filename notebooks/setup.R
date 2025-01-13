@@ -7,11 +7,16 @@
 # install.packages("pROC")
 # install.packages("randomForest")
 # install.packages("mgcv")
-# install.packages("nord")
+# install.packages("rpart")
+# install.packages("mgcv")
+# install.packages("reshape2")
+# install.packages("mice")
+# install.packages("missMethods")
 # install ...
 
 # Inputation methods
 # install.packages("mice")
+# suppressMessages(library(mice))
 # Other alternative
 # install.packages("VIM") # (Visualization and Imputation of Missing Values) 
 
@@ -19,14 +24,19 @@
 ## Load requirements 
 suppressMessages(library(ggplot2))
 suppressMessages(library(here))
-suppressMessages(library(GGally))
 suppressMessages(library(pROC))
 suppressMessages(library(corrplot))
 suppressMessages(library(reshape2))
-suppressMessages(library(mice))
 suppressMessages(library(VIM))
 suppressMessages(library(RColorBrewer))
 suppressMessages(library(nord))
+suppressMessages(library(GGally))
+suppressMessages(library(rpart))
+suppressMessages(library(mgcv))
+suppressMessages(library(mice))
+suppressMessages(library(missMethods))
+
+# suppressMessages(library(caret))
 
 # Load utilities using here()
 source(here("src", "synthetic_data.R"))

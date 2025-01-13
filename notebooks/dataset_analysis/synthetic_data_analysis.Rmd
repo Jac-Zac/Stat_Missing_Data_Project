@@ -93,9 +93,7 @@ We considered a scatterplot for each pair of variables in the datasets.
 
 ```{r, echo = F}
 # Scatter plot matrix linear covariates
-pairs(synthetic_data[, c("X1", "X2", "X3", "X4", "X5")],
-      main = "Scatter Plot Matrix")
-
+ggpairs(synthetic_data)
 ```
 
 We can also plot histograms for each covariate to showcase their distributions.
@@ -118,11 +116,6 @@ ggplot(continuous_melted, aes(x = value)) +
   facet_wrap(~variable, scales = "free_x") +
   theme_minimal() +
   labs(title = "Distribution of Continuous Variables", x = "Value", y = "Frequency")
-```
-
-```{rm, echo = F}
-# Plot pairwise relationships between continuous variables
-# ggpairs(synthetic_data)
 ```
 
 ### Regression Model on Original Dataset (Baseline)
@@ -153,17 +146,12 @@ paste("RMSE on the test set: ", baseline_rmse)
 We can fit also different models, that we expect to perform not better than the linear model when the relations are linear, but better in other cases. 
 
 ```{r}
-
-library(caret)  
-library(rpart)  
-library(mgcv)   
-
 # Generalized Additive Model
+# Initially with all of the variables for semplicity
 gam_model <- gam(target ~ s(X1) + s(X2) + s(X3) + s(X4)+ s(X5), data = synthetic_data)
 
-# Decision Tree
+# Decision Tree, with all of the variables for semplicity
 rpart_model <- rpart(target ~ ., data = synthetic_data)
-
 ```
 # Missing Data Analysis
 
@@ -183,11 +171,16 @@ Let's start from our synthetic datasets. Obviously no missing data are present t
 
 ```{r}
 # Plot missing data patterns in the original dataset
-original_missing <- as.data.frame(sapply(synthetic_data_complex_poly, is.na))
-original_missing$index <- 1:nrow(original_missing)
-original_missing_melted <- melt(original_missing, id.vars = "index")
 
-original_missing <- as.data.frame(sapply(synthetic_data_poly_spline, is.na))
+# original_missing <- as.data.frame(sapply(synthetic_data_complex_poly, is.na))
+# original_missing$index <- 1:nrow(original_missing)
+# original_missing_melted <- melt(original_missing, id.vars = "index")
+
+# original_missing <- as.data.frame(sapply(synthetic_data_poly_spline, is.na))
+# original_missing$index <- 1:nrow(original_missing)
+# original_missing_melted <- melt(original_missing, id.vars = "index")
+
+original_missing <- as.data.frame(sapply(synthetic_data, is.na))
 original_missing$index <- 1:nrow(original_missing)
 original_missing_melted <- melt(original_missing, id.vars = "index")
 
@@ -263,7 +256,6 @@ The MAR implementations can be sensitive to the choice of the determining featur
 
 ## Introducing Missing Data
 
-
 ### Showcase missing data functions
 
 Showcase Introduce Mar function (example to show how to use print_function)
@@ -274,20 +266,24 @@ print_function_code(introduce_mcar)
 
 ### Introducing missing data with different mechanisms
 
-##MCAR mechanism
+## MCAR mechanism
 
 We start by delating the 10% of values from the first covariate of our dataset in order to perform univariate deletion. 
+
 ```{r}
 data.MCAR.uni <- delete_MCAR(synthetic_data, p = 0.1, cols_mis = c('X1'), n_mis_stochastic = F)
 aggr(data.MCAR.uni, numbers=TRUE, sortVars=TRUE, labels=names(data))
+
 ```
 This is the easiest case to deal with, but not very common in real world.
 
 The following code demonstrates how to simulate missing data under the MCAR assumption in specific columns of a dataset and visualize the resulting missing data patterns.  The resulting data.MCAR.multi dataset is a modified version of the original, with 10% of the entries in columns 'X1', 'X2', and 'X3' replaced with NA values. 
+
 ```{r}
 data.MCAR.multi <- delete_MCAR(synthetic_data, p = 0.1, cols_mis = c('X1','X2','X3'), n_mis_stochastic = F)
-aggr(data.MCAR.multi, numbers=TRUE, labels=names(synthetic_data_complex_poly), prop = c(TRUE, FALSE))
+aggr(data.MCAR.multi, numbers=TRUE, labels=names(synthetic_data), prop = c(TRUE, FALSE))
 ```
+
 The `delete_MAR_censoring()` function in R creates Missing At Random (MAR) values by censoring data in one column (`cols_mis`) based on values in another column (`cols_ctrl`). It divides the data into groups using either sorting or quantiles. Missing values are created:
 
 - where = "lower": in rows with the smallest values in cols_ctrl.
@@ -296,7 +292,7 @@ The `delete_MAR_censoring()` function in R creates Missing At Random (MAR) value
 
 The p parameter determines the proportion of missing values, and sorting controls whether to use sorting or quantiles for determining cutoffs.
 
-##MAR mechanism
+## MAR mechanism
 
 The following function introduces Missing At Random (MAR) values into the dataset.
 We want that 10% of the data in the columns listed in cols_mis (X1) should be missing and the missingness in X1 is determined by the values in X2. For example, missingness might be more likely when X2 is below or above a threshold.
@@ -306,8 +302,8 @@ This creates a modified dataset (data.MAR.uni) where values in X1 are missing ba
 ```{r}
 data.MAR.uni <- delete_MAR_censoring(synthetic_data,p = 0.1, cols_mis = c('X1'), cols_ctrl = c('X2'))
 aggr(data.MAR.uni, numbers=TRUE, labels=names(synthetic_data), prop = c(TRUE, FALSE))
-plot(synthetic_data$X1,synthetic$X2, col = 'red')
-points(data.MAR.uni$X1,data.MAR.uni$X2)
+plot(synthetic_data$X1, synthetic_data$X2, col = 'red')
+points(data.MAR.uni$X1, data.MAR.uni$X2)
 ```
 
 In general, the `delete_MAR_1_to_x()` function in R creates **Missing At Random (MAR)** values by controlling missingness in one column (`cols_mis`) based on the values of another column (`cols_ctrl`). It splits the data into two groups using a cutoff value (e.g., median) in `cols_ctrl`. Group 1 contains rows below the cutoff, and group 2 contains rows above. The `x` parameter sets the odds ratio of missing data: for `x = 3`, group 2 is **3 times** more likely to have missing values than group 1.
@@ -330,11 +326,12 @@ points(data.MAR.multi$X1,data.MAR.multi$X3)
 
 plot(synthetic_data$X2,synthetic_data$X4, col = 'red')
 points(data.MAR.multi$X2,data.MAR.multi$X4)
+```
 
 The MAR mechanism ensures that missingness in one or more columns is correlated with values in other columns, making the data realistic.
 The visualizations using aggr and scatter plots help understand how missing values are distributed and how they relate to control variables (cols_ctrl).
 
-
+```{r}
 # Ensuring methods work as expected
 sum(is.na(data.MAR.uni)) / nrow(data.MAR.uni)  # Should be approximately 10%
 sum(is.na(data.MAR.multi)) / nrow(data.MAR.multi) # Should be approximately 10%
@@ -381,4 +378,9 @@ aggr(data.MCAR.multi, plot = TRUE, numbers = TRUE, prop = FALSE, col = nord_cont
 
 # For data_mar
 aggr(data.MAR.multi, plot = TRUE, numbers = TRUE, prop = FALSE, col = nord_contrast)
+```
+
+```{r}
+data_mcar <- introduce_mcar(synthetic_data, prop_missing = 0.1, missing_cols = "X3")
+data_mar <- introduce_mar(synthetic_data, prop_missing = 0.1, predictor_cols = c("X1", "X2"), target_cols = c("X3"))
 ```
