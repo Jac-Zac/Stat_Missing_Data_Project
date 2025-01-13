@@ -245,7 +245,8 @@ jsd_distance <- function(original_values, imputed_values) {
 #'
 #' @export
 compare_distributions <- function(original_data, imputed_data, metrics = c("wasserstein", "jsd")) {
-  
+  library(transport)
+  library(philentropy)
   # Check if dimensions match (for data frames)
   if (is.data.frame(original_data) && is.data.frame(imputed_data)) {
     if (!identical(dim(original_data), dim(imputed_data))) {

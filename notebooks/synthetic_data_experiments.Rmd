@@ -75,12 +75,99 @@ median_results <- evaluate_imputation_method(simple_imputation, data_mcar, data_
 ```
 
 ## 4. Regression Imputation
+> NOTE: In the final version this is the idea (fit a model correctly here we simply used stepAIC) for each of the inputation techniqeus were this is needed
 
 Regression imputation replaces missing values using predictions from a regression model built on complete data, preserving sample size and assuming data is missing at random (MAR). It includes single and multivariate regression methods, depending on the number of missing variables. 
 
-```{r}
+```{r, class.source = 'fold-show'}
+library(MASS)  # For stepAIC
+
+#' Regression Imputation with Stepwise Selection
+#' @param data Data frame with missing values
+#' @return Data frame with missing values imputed using stepwise regression
+regression_imputation <- function(data) {
+  for (col in names(data)) {
+    if (any(is.na(data[[col]])) && is.numeric(data[[col]])) {
+      # Get complete cases for this column
+      complete_data <- data[complete.cases(data), ]
+      incomplete_rows <- which(is.na(data[[col]]))
+      predictors <- setdiff(names(data), col)
+      
+      # Fit initial model
+      initial_model <- lm(as.formula(paste(col, "~ .")), data = complete_data)
+      
+      # Perform stepwise selection
+      step_model <- stepAIC(initial_model, direction = "both", trace = FALSE)
+      
+      # Priting the summary of the models obtained
+      print(summary(step_model))
+      
+      # Make predictions using the stepwise model
+      predictions <- predict(step_model, newdata = data[incomplete_rows, predictors, drop = FALSE])
+      
+      # Impute the missing values
+      data[[col]][incomplete_rows] <- predictions
+    }
+  }
+  return(data)
+}
+
+# Perform imputation on MCAR and MAR datasets
+imputed_result_mcar <- regression_imputation(data_mcar)
+imputed_result_mar <- regression_imputation(data_mar)
+
+# Split the imputed datasets into training and testing sets
+train_mcar <- imputed_result_mcar[train_index, ]
+test_mcar <- imputed_result_mcar[-train_index, ]
+
+train_mar <- imputed_result_mar[train_index, ]
+test_mar <- imputed_result_mar[-train_index, ]
+
+# Build and evaluate models
+model_mcar <- lm(target ~ ., data = train_mcar)
+predictions_mcar <- predict(model_mcar, test_mcar)
+rmse_mcar <- sqrt(mean((test_mcar$target - predictions_mcar)^2))
+
+model_mar <- lm(target ~ ., data = train_mar)
+predictions_mar <- predict(model_mar, test_mar)
+rmse_mar <- sqrt(mean((test_mar$target - predictions_mar)^2))
+
+# Define dist_metrics
+dist_metrics = c("wasserstein", "jsd")
+
+# Calculate distribution metrics for MCAR
+dist_metrics_mcar <- compare_distributions(
+  original_data = synthetic_data,
+  imputed_data = imputed_result_mcar,
+  metrics = dist_metrics
+)
+
+# Calculate distribution metrics for MAR
+dist_metrics_mar <- compare_distributions(
+  original_data = synthetic_data,
+  imputed_data = imputed_result_mar,
+  metrics = dist_metrics
+)
+
+# Calculate traditional differences (if needed)
+diff_mcar <- compare_imputed_to_original(synthetic_data, imputed_result_mcar)
+diff_mar <- compare_imputed_to_original(synthetic_data, imputed_result_mar)
+
+
+# Store and print results
+regression_results <- list(
+    rmse_mcar = rmse_mcar,
+    rmse_mar = rmse_mar,
+    diff_mcar = diff_mcar,
+    diff_mar = diff_mar,
+    distribution_metrics = list(
+      mcar = dist_metrics_mcar,
+      mar = dist_metrics_mar
+    )
+)
+
 # Evaluate imputation method using regression imputation
-regression_results <- evaluate_imputation_method(regression_imputation, data_mcar, data_mar, train_index, synthetic_data)
+# regression_results <- evaluate_imputation_method(regression_imputation, data_mcar, data_mar, train_index, synthetic_data)
 ```
 
 ## 5. Hot-deck Imputation
@@ -236,6 +323,40 @@ comparison_results <- data.frame(
 
 # Remove any rows where all metrics are NA
 comparison_results <- comparison_results[rowSums(is.na(comparison_results[,-1])) < ncol(comparison_results)-1, ]
+
+# First, create the distribution metrics dataframe
+comparison_methods <- c("Listwise", "Pairwise", "Mean", "Median", "Regression", "Hot-deck", "EM", "GAM", "Tree")
+distribution_results <- data.frame(
+  Method = rep(comparison_methods, 2),
+  Metric_Type = c(rep("Wasserstein", length(comparison_methods)), 
+                 rep("JSD", length(comparison_methods))),
+  Value = c(
+    # Wasserstein distances
+    sapply(list(
+      listwise_results$distribution_metrics$mcar,
+      pairwise_results$distribution_metrics$mcar,
+      mean_results$distribution_metrics$mcar,
+      median_results$distribution_metrics$mcar,
+      regression_results$distribution_metrics$mcar,
+      hotdeck_results$distribution_metrics$mcar,
+      em_results$distribution_metrics$mcar,
+      gam_results$distribution_metrics$mcar,
+      tree_results$distribution_metrics$mcar
+    ), function(x) safe_extract(x, "wasserstein")),
+    # JSD values
+    sapply(list(
+      listwise_results$distribution_metrics$mcar,
+      pairwise_results$distribution_metrics$mcar,
+      mean_results$distribution_metrics$mcar,
+      median_results$distribution_metrics$mcar,
+      regression_results$distribution_metrics$mcar,
+      hotdeck_results$distribution_metrics$mcar,
+      em_results$distribution_metrics$mcar,
+      gam_results$distribution_metrics$mcar,
+      tree_results$distribution_metrics$mcar
+    ), function(x) safe_extract(x, "jsd"))
+  )
+)
 ```
 
 ### Plot the difference metrics between datasets
@@ -244,22 +365,47 @@ comparison_results <- comparison_results[rowSums(is.na(comparison_results[,-1]))
 # Plot 1: RMSE of Prediction Models
 p1 <- create_bar_plot(results, "reorder(Method, RMSE_Prediction)", "RMSE_Prediction", "#88C0D0", 
                       "Prediction Model Performance")
-print(p1)
-
 # Plot 2: MAE
 p2 <- create_bar_plot(comparison_results, "reorder(Method, MAE)", "MAE", "#A3BE8C", 
                       "Mean Absolute Error")
-print(p2)
-
 # Plot 3: RMSE Comparison
 p3 <- create_bar_plot(comparison_results, "reorder(Method, RMSE)", "RMSE", "#EBCB8B", 
                       "Root Mean Square Error")
-print(p3)
-
 # Plot 4: Correlation
 p4 <- create_bar_plot(comparison_results, "reorder(Method, Correlation)", "Correlation", "#B48EAD", 
                       "Correlation with Original Data")
+
+# Remove rows with NA values
+distribution_results_filtered <- distribution_results[!is.na(distribution_results$Value), ]
+
+# Create the faceted distribution metrics plot with filtered data
+p5 <- ggplot(distribution_results_filtered, 
+             aes(x = reorder(Method, Value), 
+                 y = Value)) +
+  geom_bar(stat = "identity", 
+           fill = "#5E81AC") +
+  geom_text(aes(label = round(Value, 3)), 
+            vjust = -0.5,
+            size = 3) +
+  facet_wrap(~Metric_Type, 
+             scales = "free_y",  # Allow different y-axis scales for each metric
+             ncol = 2) +        # Place plots side by side
+  labs(title = "Distribution Metrics Comparison",
+       x = "Method",
+       y = "Metric Value") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1),
+        plot.title = element_text(hjust = 0.5),
+        strip.text = element_text(size = 12, face = "bold"),
+        strip.background = element_rect(fill = "#E5E9F0", color = NA),
+        panel.spacing = unit(2, "lines"))  # Add some space between the facets
+
+# Print all plots
+print(p1)
+print(p2)
+print(p3)
 print(p4)
+print(p5)
 ```
 
 ## Imputation Performance Comparison

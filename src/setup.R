@@ -12,6 +12,8 @@
 # install.packages("reshape2")
 # install.packages("mice")
 # install.packages("missMethods")
+# install.packages("transport")
+# install.packages("philentropy")
 # install ...
 
 # Inputation methods

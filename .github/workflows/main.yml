@@ -19,7 +19,12 @@ jobs:
 
       - name: Install dependencies
         run: |
-          R -e 'install.packages(c("ggplot2", "GGally", "reshape2", "corrplot", "here", "pROC", "randomForest", "mgcv", "rpart", "mice", "missMethods", "VIM", "RColorBrewer", "nord"))'
+          R -e 'install.packages(c("rmarkdown", "ggplot2", "GGally", "reshape2", "corrplot", "here", "pROC", "randomForest", "mgcv", "rpart", "mice", "missMethods", "VIM", "RColorBrewer", "nord", "transport", "philentropy"))'
+
+      - name: Install Pandoc
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y pandoc
 
       - name: Render R Markdown
         run: |
