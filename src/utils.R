@@ -135,10 +135,28 @@ evaluate_imputation_method <- function(imputation_function, data_mcar, data_mar,
 #' create_bar_plot(data, x_var = "Method", y_var = "Value", 
 #'                 fill_color = "steelblue", title = "Example Bar Plot")
 create_bar_plot <- function(data, x_var, y_var, fill_color, title, 
-                            x_label = "Method", y_label = y_var, text_vjust = -0.5) {
-  ggplot(data, aes_string(x = x_var, y = y_var)) +
+                            x_label = "Method", y_label = NULL, text_vjust = -0.5) {
+  # Ensure y_label defaults to y_var if not explicitly set
+  y_label <- y_label %||% y_var  
+  
+  # Preprocess the data for reordering if needed
+  if (grepl("reorder", x_var)) {
+    matches <- regmatches(x_var, regexec("reorder\\(([^,]+),\\s*([^\\)]+)\\)", x_var))
+    if (length(matches[[1]]) == 3) {
+      x_var_actual <- matches[[1]][2]
+      reorder_by <- matches[[1]][3]
+      
+      # Perform reordering using base R
+      data[[x_var_actual]] <- reorder(data[[x_var_actual]], data[[reorder_by]])
+      x_var <- x_var_actual  # Update x_var to use the actual column name
+    } else {
+      stop("Invalid syntax for reorder in x_var.")
+    }
+  }
+  
+  ggplot(data, aes(x = .data[[x_var]], y = .data[[y_var]])) +
     geom_bar(stat = "identity", fill = fill_color) +
-    geom_text(aes_string(label = paste0("round(", y_var, ", 3)")), vjust = text_vjust) +
+    geom_text(aes(label = round(.data[[y_var]], 3)), vjust = text_vjust) +
     labs(title = title,
          x = x_label,
          y = y_label) +

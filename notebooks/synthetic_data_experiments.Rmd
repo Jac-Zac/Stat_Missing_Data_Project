@@ -34,7 +34,7 @@ child = here::here("dataset_analysis", "synthetic_data_analysis.Rmd")
 
 #### NOTES:
 
-For each of the inputation methods, we can test the performances of different approaches.
+For each of the imputation methods, we can test the performances of different approaches.
 Perhaps doing a function to test them all, and we can test this with different simulated datasets.
 Then we can test the best performing one on a real dataset and discuss.
 
