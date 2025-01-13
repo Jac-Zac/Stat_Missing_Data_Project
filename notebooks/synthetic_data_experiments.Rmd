@@ -31,7 +31,7 @@ child <- here("notebooks", "dataset_analysis", "synthetic_data_analysis.Rmd")
 
 ```{r, child = here("notebooks", "dataset_analysis", "synthetic_data_analysis.Rmd"), cache = TRUE}
 # Run the file which does data analyses even if not knitted by runned manually
-render(child)
+rmarkdown::render(child)
 ```
 # Imputation Methods
 
