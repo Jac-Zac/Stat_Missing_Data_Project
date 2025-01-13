@@ -58,11 +58,12 @@ synthetic_data <- synthetic_dataset_gen(n_samples = 1000,
 # Summary of the dataset
 summary(synthetic_data)
 ```
-The summary is not very informative considering this is just a synthetic dataset.
+The summary is not very informative considering this is just a synthetic dataset. 
+We also tried to generate other more complex datasets (with non-linear and polynomials relationships among variables) but we decided to report here only a simpler example, by way of illustration. 
 
 ## Data Visualization
 
-This section should be expanded to explore the dataset more in depth
+This section should be expanded to explore the dataset more in depth.
 
 The first step in our analyses is to visualize the correlation between the continuous covariates in our dataset.
 
@@ -82,6 +83,19 @@ corrplot.mixed(cor_matrix,
                tl.cex = 0.7,
                lower.col = colorRampPalette(c(blue_nord, "white", red_nord))(100),
                upper.col = colorRampPalette(c(blue_nord, "white", red_nord))(100))
+```
+
+Since for other datasets we considered non-linear relationships among variables the correlation matrix should be not informative in these two cases. Indeed traditional correlation coefficients like Pearson's may not adequately capture the strength or nature of variable's associations.
+
+For this reason we can use scatterplots to visually assess relationships between variables. Trhough these, non-linear patterns may become evident, guiding the selection of appropriate analytical methods.
+
+We considered a scatterplot for each pair of variables in the datasets.
+
+```{r, echo = F}
+# Scatter plot matrix linear covariates
+pairs(synthetic_data[, c("X1", "X2", "X3", "X4", "X5")],
+      main = "Scatter Plot Matrix")
+
 ```
 
 We can also plot histograms for each covariate to showcase their distributions.
@@ -113,8 +127,7 @@ ggplot(continuous_melted, aes(x = value)) +
 
 ### Regression Model on Original Dataset (Baseline)
 
-Fit a regression model using the complete dataset without any missing values for baseline comparison.
-
+In the third step of our analysis on the complete dataset we want to fit regression models that we will later use for baseline comparison.
 *We should instead use a subset of the covariate (that is relevant) for this linear model.*
 
 ```{r}
@@ -137,8 +150,52 @@ baseline_rmse <- sqrt(mean((baseline_predictions - test_data$target)^2))
 summary(baseline_model)
 paste("RMSE on the test set: ", baseline_rmse)
 ```
+We can fit also different models, that we expect to perform not better than the linear model when the relations are linear, but better in other cases. 
 
+```{r}
+
+library(caret)  
+library(rpart)  
+library(mgcv)   
+
+# Generalized Additive Model
+gam_model <- gam(target ~ s(X1) + s(X2) + s(X3) + s(X4)+ s(X5), data = synthetic_data)
+
+# Decision Tree
+rpart_model <- rpart(target ~ ., data = synthetic_data)
+
+```
 # Missing Data Analysis
+
+In statistical analysis, understanding the patterns of missing data is crucial for selecting appropriate handling methods. The primary patterns are:
+
+**Univariate Missing Data**: Occurs when only a single variable has missing values. This pattern is uncommon across most disciplines and typically arises in experimental studies. 
+
+**Monotone Missing Data**: Characterized by a situation where the missingness of one variable implies the missingness of all subsequent variables. This pattern is often observed in longitudinal studies where participants drop out and do not return. The monotone pattern is generally easier to manage, as the missingness follows a clear, observable sequence. 
+
+**Non-Monotone Missing Data**: Occurs when the missingness of one variable does not predict the missingness of other variables. This pattern is more complex and requires careful analysis to handle appropriately. 
+
+Recognizing these patterns helps in choosing suitable methods for handling missing data, thereby improving the robustness and validity of statistical analyses.
+Let's start from our synthetic datasets. Obviously no missing data are present there. Let's check it.
+
+### Missing data in the original dataset
+> Obviously, no missing data is present in our dataset; it is synthetically generated.
+
+```{r}
+# Plot missing data patterns in the original dataset
+original_missing <- as.data.frame(sapply(synthetic_data_complex_poly, is.na))
+original_missing$index <- 1:nrow(original_missing)
+original_missing_melted <- melt(original_missing, id.vars = "index")
+
+original_missing <- as.data.frame(sapply(synthetic_data_poly_spline, is.na))
+original_missing$index <- 1:nrow(original_missing)
+original_missing_melted <- melt(original_missing, id.vars = "index")
+
+ggplot(original_missing_melted, aes(x = index, y = variable, fill = value)) +
+  geom_tile() +
+  scale_fill_manual(values = c("white", red_nord)) +
+  labs(title = "Missing Data Pattern - Original", x = "Index", y = "Variable")
+```
 
 The missing data theory, established by Rubin, categorizes missingness into three main mechanisms based on the observed and missing data. The data set, denoted as $Y$, is divided into observed $Y_o$) and missing $Y_m$ data. A missing value matrix, $R$$, is defined to indicate the presence or absence of data: 
 
@@ -158,8 +215,7 @@ Here is a summary focusing on Missing Completely at Random (MCAR) and Conditiona
 **Definition**: In the MCAR mechanism, the missingness is entirely independent of both observed and unobserved data. The probability that data is missing does not depend on any feature values. The probability of MCAR is defined as:
 $$P(R|q)$$
 
-Missing values are inserted randomly across the dataset, either using Bernoulli trials or random selection methods. Common configurations include univariate (one feature) or multivariate (multiple features) generation, with random positions selected for deletion.
-
+Missing values are inserted randomly across the dataset, either using Bernoulli trials or random selection methods. 
 MCAR mechanisms are straightforward since missingness is independent of any feature values. Various methods can be used to generate MCAR data:
 
 **Univariate MCAR Implementation**: Only one feature in the dataset has missing values:
@@ -207,22 +263,8 @@ The MAR implementations can be sensitive to the choice of the determining featur
 
 ## Introducing Missing Data
 
-### Missing data in the original dataset
-> Obviously, no missing data is present in our dataset; it is synthetically generated.
 
-```{r}
-# Plot missing data patterns in the original dataset
-original_missing <- as.data.frame(sapply(synthetic_data, is.na))
-original_missing$index <- 1:nrow(original_missing)
-original_missing_melted <- melt(original_missing, id.vars = "index")
-
-ggplot(original_missing_melted, aes(x = index, y = variable, fill = value)) +
-  geom_tile() +
-  scale_fill_manual(values = c("white", red_nord)) +
-  labs(title = "Missing Data Pattern - Original", x = "Index", y = "Variable")
-```
-
-### Showcase mnissing data functions
+### Showcase missing data functions
 
 Showcase Introduce Mar function (example to show how to use print_function)
 
@@ -232,44 +274,111 @@ print_function_code(introduce_mcar)
 
 ### Introducing missing data with different mechanisms
 
-```{r, echo =T, class.source = 'fold-show'}
-data_mcar <- introduce_mcar(synthetic_data, prop_missing = 0.1, missing_cols = "X3")
-data_mar <- introduce_mar(synthetic_data, prop_missing = 0.1, predictor_cols = c("X1", "X2"), target_cols = c("X3"))
+##MCAR mechanism
+
+We start by delating the 10% of values from the first covariate of our dataset in order to perform univariate deletion. 
+```{r}
+data.MCAR.uni <- delete_MCAR(synthetic_data, p = 0.1, cols_mis = c('X1'), n_mis_stochastic = F)
+aggr(data.MCAR.uni, numbers=TRUE, sortVars=TRUE, labels=names(data))
+```
+This is the easiest case to deal with, but not very common in real world.
+
+The following code demonstrates how to simulate missing data under the MCAR assumption in specific columns of a dataset and visualize the resulting missing data patterns.  The resulting data.MCAR.multi dataset is a modified version of the original, with 10% of the entries in columns 'X1', 'X2', and 'X3' replaced with NA values. 
+```{r}
+data.MCAR.multi <- delete_MCAR(synthetic_data, p = 0.1, cols_mis = c('X1','X2','X3'), n_mis_stochastic = F)
+aggr(data.MCAR.multi, numbers=TRUE, labels=names(synthetic_data_complex_poly), prop = c(TRUE, FALSE))
+```
+The `delete_MAR_censoring()` function in R creates Missing At Random (MAR) values by censoring data in one column (`cols_mis`) based on values in another column (`cols_ctrl`). It divides the data into groups using either sorting or quantiles. Missing values are created:
+
+- where = "lower": in rows with the smallest values in cols_ctrl.
+- where = "upper": in rows with the largest values.
+- where = "both": in both extremes, splitting missingness between the smallest and largest values.
+
+The p parameter determines the proportion of missing values, and sorting controls whether to use sorting or quantiles for determining cutoffs.
+
+##MAR mechanism
+
+The following function introduces Missing At Random (MAR) values into the dataset.
+We want that 10% of the data in the columns listed in cols_mis (X1) should be missing and the missingness in X1 is determined by the values in X2. For example, missingness might be more likely when X2 is below or above a threshold.
+This creates a modified dataset (data.MAR.uni) where values in X1 are missing based on the values in X2.
+
+
+```{r}
+data.MAR.uni <- delete_MAR_censoring(synthetic_data,p = 0.1, cols_mis = c('X1'), cols_ctrl = c('X2'))
+aggr(data.MAR.uni, numbers=TRUE, labels=names(synthetic_data), prop = c(TRUE, FALSE))
+plot(synthetic_data$X1,synthetic$X2, col = 'red')
+points(data.MAR.uni$X1,data.MAR.uni$X2)
+```
+
+In general, the `delete_MAR_1_to_x()` function in R creates **Missing At Random (MAR)** values by controlling missingness in one column (`cols_mis`) based on the values of another column (`cols_ctrl`). It splits the data into two groups using a cutoff value (e.g., median) in `cols_ctrl`. Group 1 contains rows below the cutoff, and group 2 contains rows above. The `x` parameter sets the odds ratio of missing data: for `x = 3`, group 2 is **3 times** more likely to have missing values than group 1.
+
+
+The delete_MAR_1_to_x Function creates MAR values in multiple columns (cols_mis) based on other columns (cols_ctrl).
+In our example we introduced missing values in X1 and X2 and missingness in X1 and X2 is controlled by X3 and X4. For example, missingness may increase when X3 or X4 exceeds a threshold.
+x = 10: The odds ratio for missingness between two groups (e.g., above and below the median of cols_ctrl) is 10:1.
+
+```{r}
+data.MAR.multi <- delete_MAR_1_to_x(synthetic_data,p = 0.1, cols_mis = c('X1','X2'), cols_ctrl = c('X3','X4'), x = 10)
+```
+```{r}
+aggr(data.MAR.multi, numbers=TRUE, labels=names(data), prop = c(TRUE, FALSE))
+```
+
+```{r}
+plot(synthetic_data$X1, synthetic_data$X3, col = 'red')
+points(data.MAR.multi$X1,data.MAR.multi$X3)
+
+plot(synthetic_data$X2,synthetic_data$X4, col = 'red')
+points(data.MAR.multi$X2,data.MAR.multi$X4)
+
+The MAR mechanism ensures that missingness in one or more columns is correlated with values in other columns, making the data realistic.
+The visualizations using aggr and scatter plots help understand how missing values are distributed and how they relate to control variables (cols_ctrl).
+
 
 # Ensuring methods work as expected
-sum(is.na(data_mcar)) / nrow(data_mcar)  # Should be approximately 10%
-sum(is.na(data_mar)) / nrow(data_mar) # Should be approximately 10%
+sum(is.na(data.MAR.uni)) / nrow(data.MAR.uni)  # Should be approximately 10%
+sum(is.na(data.MAR.multi)) / nrow(data.MAR.multi) # Should be approximately 10%
 ```
 
 ```{r, echo =F}
 # Analyze missing patterns and summarize
-# print(summarize_missing(data_mcar))
-# print(summary(data_mcar))
-# print(summarize_missing(data_mar))
-# print(summary(data_mar))
+#For MCAR
+ print(summarize_missing(data.MCAR.uni))
+ print(summary(data.MCAR.uni))
+ print(summarize_missing(data.MCAR.multi))
+ print(summary(data.MCAR.multi))
+#For MAR
+ print(summarize_missing(data.MAR.uni))
+ print(summary(data.MAR.uni))
+ print(summarize_missing(data.MAR.multi))
+ print(summary(data.MAR.multi))
 ```
 
 ### Plot missing data for the different mechanisms
 
 #### Custom missing data visualization
 
+We can use the following tools to verify how missing data are distributed in our dataset. These will be very useful in the analysis of our definitive dataset, since it can help us in finding the best strategies to deal with missing values.
+
 ```{r, class.source = 'fold-show'}
 ## Plot for MCAR
-plot_missing_data(data_mcar, "MCAR", c("white", red_nord))
+plot_missing_data(data.MCAR.uni, "MCAR uni", c("white", red_nord))
+plot_missing_data(data.MCAR.multi, "MCAR multi", c("white", red_nord))
 
 # Plot for MAR
-plot_missing_data(data_mar, "MAR", c("white", red_nord))
+plot_missing_data(data.MAR.uni, "MAR uni", c("white", red_nord))
+plot_missing_data(data.MAR.multi, "MAR multi", c("white", red_nord))
 ```
 
-
+In the final dataset we will create different datasets using these functions and we will analyse them in order to perform the imputation or delation technique that is more suitable for the type of dataset. 
 #### VIM package missing data visualization
 
 ```{r, class.source = 'fold-show'}
 nord_contrast = c(blue_nord, red_nord)
 
 # For data mcar
-aggr(data_mcar, plot = TRUE, numbers = TRUE, prop = FALSE, col = nord_contrast)
+aggr(data.MCAR.multi, plot = TRUE, numbers = TRUE, prop = FALSE, col = nord_contrast)
 
 # For data_mar
-aggr(data_mar, plot = TRUE, numbers = TRUE, prop = FALSE, col = nord_contrast)
+aggr(data.MAR.multi, plot = TRUE, numbers = TRUE, prop = FALSE, col = nord_contrast)
 ```
