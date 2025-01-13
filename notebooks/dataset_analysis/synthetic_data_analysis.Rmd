@@ -140,77 +140,70 @@ paste("RMSE on the test set: ", baseline_rmse)
 
 # Missing Data Analysis
 
-The **mechanisms for generating missing data** can be classified into different types based on how the data is missing in relation to the observed and unobserved values. 
+The missing data theory, established by Rubin, categorizes missingness into three main mechanisms based on the observed and missing data. The data set, denoted as $Y$, is divided into observed $Y_o$) and missing $Y_m$ data. A missing value matrix, $R$$, is defined to indicate the presence or absence of data: 
 
-Here is a summary focusing on **Missing Completely at Random (MCAR)** and **Conditionally at Random (CAR, often referred to as MAR – Missing At Random)** mechanisms:
+$$
+R = \begin{cases}
+0 & \text{if } Y \text{ is observed} \\
+1 & \text{if } Y \text{ is missing}
+\end{cases}
+$$
+
+The relationship between missingness in $R$ and the data set $Y$ is represented by a vector $q$. These mechanisms help guide the handling of missing data in various methods.
+
+Here is a summary focusing on Missing Completely at Random (MCAR) and Conditionally at Random (CAR, often referred to as MAR – Missing At Random) mechanisms:
 
 ## Missing Completely at Random (MCAR)
 
-**Definition**: In the MCAR mechanism, the missingness is entirely independent of both observed and unobserved data. The probability that data is missing does not depend on any feature values.
-$$P(M | X, \xi) = P(M | \xi)$$
+**Definition**: In the MCAR mechanism, the missingness is entirely independent of both observed and unobserved data. The probability that data is missing does not depend on any feature values. The probability of MCAR is defined as:
+$$P(R|q)$$
 
-**Implementation**: Missing values are inserted randomly across the dataset, either using Bernoulli trials or random selection methods. Common configurations include univariate (one feature) or multivariate (multiple features) generation, with random positions selected for deletion.
+Missing values are inserted randomly across the dataset, either using Bernoulli trials or random selection methods. Common configurations include univariate (one feature) or multivariate (multiple features) generation, with random positions selected for deletion.
 
 MCAR mechanisms are straightforward since missingness is independent of any feature values. Various methods can be used to generate MCAR data:
 
-**Univariate MCAR Implementation**: Only one feature in the dataset has missing values. *Methods*:
+**Univariate MCAR Implementation**: Only one feature in the dataset has missing values:
 
   - **Random Position Selection**: Select a feature $x_{miss}$ and delete values at random positions using a random number generator or permutation.  
-  - **Bernoulli Trials**: Use Bernoulli trials to determine missingness. A success probability $p$ corresponds to the desired missing rate (MR). Each data point has a probability $p$ of being set as missing.  
-    Example: For a missing rate of 10% in a feature with 100 observations, 10 random positions are marked as missing.
-    
-**Challenges**:  
+  - **Bernoulli Trials**: Use Bernoulli trials to determine missingness. A success probability $p$ corresponds to the desired missing rate (MR). Each data point has a probability $p$ of being set as missing. For small datasets, Bernoulli trials may lead to variation in the actual missing rate due to random variation from small sample sizes.
 
-  - For small datasets, Bernoulli trials may lead to variation in the actual missing rate due to random variation from small sample sizes.
-
-**Multivariate MCAR Implementation**: Missing values are distributed across multiple features. *Methods*:
+**Multivariate MCAR Implementation**: Missing values are distributed across multiple features:
 
   - **Uniform Distribution**: Generate missing values equally across all features. Each feature has the same missing rate.  
   - **Random Distribution**: Choose a total number of missing values based on the desired MR and randomly select cells across the dataset.  
-    Example: For a dataset with 1,000 values and a 20% missing rate, 200 cells are randomly selected for deletion across all features.  
-
-**Strengths**: Simple and easy to implement; assumptions are often met in real-world data due to purely random events.  
-**Limitations**: The randomness does not reflect dependencies often present in real-world missingness patterns.
 
 ## Missing At Random (MAR or CAR)
 
 **Definition**: In the CAR (MAR) mechanism, the probability of missing data depends on the values of observed data but not on the unobserved (missing) values themselves. It assumes a dependency between missingness and observed features.
 
-$$P(M | X, \xi) = P(M | X_{obs}, \xi)$$
+The probability for MAR can be defined as:
 
-**Example**: Younger participants in a smoking survey might be more likely to skip reporting their cigarette consumption, but the missingness is independent of the actual number of cigarettes consumed.
+$$P(R|Y_o, q)$$
 
-**Implementation**: Several approaches exist, often involving a determining feature. For instance, missing values in one feature (like cigarette consumption) may depend on values of another observed feature (like age). Configurations can involve ranks, percentiles, or division into groups based on a feature’s value.
+E.g. Younger participants in a smoking survey might be more likely to skip reporting their cigarette consumption, but the missingness is independent of the actual number of cigarettes consumed.
+
+Several approaches exist, often involving a determining feature. For instance, missing values in one feature (like cigarette consumption) may depend on values of another observed feature (like age). Configurations can involve ranks, percentiles, or division into groups based on a feature’s value.
 
 Each mechanism carries implications for analysis and imputation, as assumptions about the data's structure influence how accurately the missing values can be predicted or imputed.
 
 In MAR mechanisms, missingness depends on observed values of other features but not on the missing values themselves. This adds complexity to the generation process:
 
-**Univariate MAR Implementation**: Missing values in one feature $x_{miss}$ are determined by the values of another feature $x_{obs}$ (also called the determining feature). *Methods*:
+**Univariate MAR Implementation**: Missing values in one feature $x_{miss}$ are determined by the values of another feature $x_{obs}$ (also called the determining feature):
 
-  - **Rank-Based Selection**: Compute the ranks of $x_{obs}$ and assign higher or lower probabilities for missingness based on these ranks.  
-    Example: Select a feature $x_{age}$. Younger participants (lower ranks) may have a higher probability of missingness in a related feature $x_{smoking\_habits}$.  
-    - Probability of missingness for each pattern:  
-      $P(x_{i,miss} = \text{missing}) = \frac{r_{i,obs}}{\sum r_{i,obs}}$  
-      where $r_{i,obs}$ is the rank of the $i^{th}$ observation of $x_{obs}$.  
+  - **Rank-Based Selection**: Compute the ranks of $x_{obs}$ and assign higher or lower probabilities for missingness based on these ranks.
+  Probability of missingness for each pattern: $P(x_{i,miss} = \text{missing}) = \frac{r_{i,obs}}{\sum r_{i,obs}}$ where $r_{i,obs}$ is the rank of the $i^{th}$ observation of $x_{obs}$.  
   - **Percentile or Cut-off Method**: Sort the values of $x_{obs}$ and choose missing positions in $x_{miss}$ corresponding to lower values in $x_{obs}$. The cutoff may be determined by a percentile.  
-    Example: Missing values in $x_{income}$ might be set for individuals below the 25th percentile of $x_{education\_level}$.  
 
-**Multivariate MAR Implementation**: MAR for multiple features requires defining relationships among multiple pairs of features. *Methods*:
+**Multivariate MAR Implementation**: MAR for multiple features requires defining relationships among multiple pairs of features:
   
   - **Pairs of Features**:  
     Select pairs $\{x_{obs}, x_{miss}\}$ for each combination of features. Missing values in $x_{miss}$ are inserted based on observed values in $x_{obs}$.  
-    Example: Create missing values in $x_{cholesterol}$ based on high or low values of $x_{age}$. Adjust missing rates for individual features to maintain the overall dataset’s MR.  
 
   - **Correlated Feature Sets**:  
     When the dataset contains correlated features, missingness can be simulated in dependent features. MAR implementations often simulate this by ordering features by correlation or mutual information with the class label and generating missing values progressively.
 
-**Challenges**:  
 
-- MAR implementations can be sensitive to the choice of the determining feature. Consistent experimental design is crucial when evaluating imputation methods using synthetic MAR data.  
-- Generating accurate MAR patterns requires careful tuning of dependency relationships, especially when working with nominal or categorical features, as ranking or ordering becomes problematic.
-
-In R, the missMethods library allows efficient generation of missing values under different mechanisms (MCAR, MAR, MNAR), aiding in testing imputation methods and evaluating missing data impacts.
+The MAR implementations can be sensitive to the choice of the determining feature. Consistent experimental design is crucial when evaluating imputation methods using synthetic MAR data. Generating accurate MAR patterns requires careful tuning of dependency relationships, especially when working with nominal or categorical features, as ranking or ordering becomes problematic.
 
 ## Introducing Missing Data
 
@@ -244,8 +237,8 @@ data_mcar <- introduce_mcar(synthetic_data, prop_missing = 0.1, missing_cols = "
 data_mar <- introduce_mar(synthetic_data, prop_missing = 0.1, predictor_cols = c("X1", "X2"), target_cols = c("X3"))
 
 # Ensuring methods work as expected
-sum(is.na(data_mcar)) # Should be approximately 10%
-sum(is.na(data_mar)) # Should be approximately 10%
+sum(is.na(data_mcar)) / nrow(data_mcar)  # Should be approximately 10%
+sum(is.na(data_mar)) / nrow(data_mar) # Should be approximately 10%
 ```
 
 ```{r, echo =F}
@@ -267,6 +260,7 @@ plot_missing_data(data_mcar, "MCAR", c("white", red_nord))
 # Plot for MAR
 plot_missing_data(data_mar, "MAR", c("white", red_nord))
 ```
+
 
 #### VIM package missing data visualization
 
