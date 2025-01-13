@@ -50,7 +50,7 @@ editor_options:
   wrap: 72
 ---
   
-  ```{r, echo=F, class.source = 'fold-show'}
+```{r, echo=F, class.source = 'fold-show'}
 # Load utilities
 source("setup.R") 
 
@@ -103,7 +103,6 @@ suppressMessages(library(nord))
 # Fixes the seed for reproducibility
 set.seed(42)
 
-
 ```
 
 In this second part we will deal with the analysis of datasets containing missing data and tecnhiques employed to deal with this issue.
@@ -142,11 +141,14 @@ considers each variable separately. For each variable, all recorded values in ea
 observation are considered and missing data are ignored. This means that different calculations will use different cases and will have different sample sizes.It results in larger sample sizes than the previous method but may cause inconsistent sample sizes across analyses. However it offers better estimates than listwise delection but is unbiased only if the data are MCAR.
 
 ```{r}
-#Manually
+# Manually
+
 # Remove rows with any missing value
 synthetic_data_complete_cases <- na.omit(synthetic_data)
+
 # See the missing value now
 sum(is.na(synthetic_data_complete_cases))
+
 # Get the dimensions of the dataset (rows and columns)
 dim(synthetic_data_complete_cases)
 ```
@@ -166,7 +168,6 @@ Some key techniques include:
 - **CART **: CART tackles missing data in decision trees by using surrogate splits to assign cases with missing values to branches based on the best available information.
 
 However, for analyses that require complete datasets, missing values must be either filled in or removed beforehand. In cases where missing data is substantial or the mechanism behind it is non-random, **imputation techniques** are often more effective than ignoring techniques.
-
 
 # Imputation Methods
 

@@ -20,7 +20,7 @@ output:
 
 ```{r, echo = T}
 # Load utilities
-source("../setup.R")
+source("setup.R")
 ```
 
 
@@ -66,6 +66,7 @@ synthetic_data_linear <- synthetic_dataset_gen(n_samples = 1000,
 # Summary of the dataset
 summary(synthetic_data_linear)
 ```
+
 The summary is not very informative considering this is just a synthetic dataset.
 
 Second Dataset: we consider a second dataset in which the relations among covariates are more complex (non-linear relationships) and the target depends on covariates in a polynomial manner.
@@ -108,14 +109,11 @@ First model: since we assume linear relationships among variables we can plot th
 
 ```{r, echo = F}
 cor_matrix <- cor(synthetic_data_linear)
-install.packages("nord")
-library(nord)
 
 # Define colors using a Nord palette
 blue_nord <- nord("frost", 4)[[length(nord("frost", 4))]]  # Choose a Nord palette and number of colors
 red_nord <- nord("aurora", 1)
 
-library(corrplot)
 # Plot the correlation matrix
 corrplot.mixed(cor_matrix, 
                lower = "number", 
@@ -127,8 +125,6 @@ corrplot.mixed(cor_matrix,
                upper.col = colorRampPalette(c(blue_nord, "white", red_nord))(100))
 ```
 
-
-
 Since for the other two dataset we considered non-linear relationships among variables the correlation matrix should be not informative in these two cases. Indeed traditional correlation coefficients like Pearson's may not adequately capture the strength or nature of these associations.
 
 For this reason we can utilize scatterplots to visually assess relationships between variables. Non-linear patterns may become evident, guiding the selection of appropriate analytical methods.
@@ -139,22 +135,18 @@ First, consider a scatterplot for each pair of variables in the datasets.
 # Scatter plot matrix linear covariates
 pairs(synthetic_data_linear[, c("X1", "X2", "X3", "X4", "X5")],
       main = "Scatter Plot Matrix")
+library(GGally)
+ggpairs(synthetic_data_linear)
 
 ```
 
 ```{r, echo = F}
-# Scatter plot matrix non-linear covariates
-pairs(synthetic_data_complex_poly[, c("X1", "X2", "X3", "X4")],
-      main = "Scatter Plot Matrix")
-
+ggpairs(synthetic_data_complex_poly)
 ```
 
 
 ```{r, echo = F}
-# Scatter plot matrix polynomials covariates
-pairs(synthetic_data_poly_spline[, c("X1", "X2", "X3")],
-      main = "Scatter Plot Matrix")
-
+ggpairs(synthetic_data_poly_spline)
 ```
 
 We can also plot histograms for each covariate to showcase their distributions.
@@ -162,16 +154,12 @@ We can also plot histograms for each covariate to showcase their distributions.
 For the first model:
 ```{r, echo =F}
 # Define Nord color palette
-library(nord)
 nord_colors <- nord("frost", 4)  # Choose a Nord palette and the number of colors you want
 
 # Plot histogram for each continuous variable
 data_continuous <- synthetic_data_linear[, sapply(synthetic_data_linear, is.numeric)]
 
 continuous_melted <- reshape2::melt(data_continuous)
-
-install.packages("ggplot2")
-library(ggplot2)
 
 ggplot(continuous_melted, aes(x = value)) +
   geom_histogram(bins = 30, 
@@ -186,17 +174,12 @@ ggplot(continuous_melted, aes(x = value)) +
 
 For the second model:
 ```{r, echo =F}
-# Define Nord color palette
-library(nord)
 nord_colors <- nord("frost", 4)  # Choose a Nord palette and the number of colors you want
 
 # Plot histogram for each continuous variable
 data_continuous <- synthetic_data_complex_poly[, sapply(synthetic_data_complex_poly, is.numeric)]
 
 continuous_melted <- reshape2::melt(data_continuous)
-
-install.packages("ggplot2")
-library(ggplot2)
 
 ggplot(continuous_melted, aes(x = value)) +
   geom_histogram(bins = 30, 
@@ -211,17 +194,12 @@ ggplot(continuous_melted, aes(x = value)) +
 
 For the third model:
 ```{r, echo =F}
-# Define Nord color palette
-library(nord)
 nord_colors <- nord("frost", 4)  # Choose a Nord palette and the number of colors you want
 
 # Plot histogram for each continuous variable
 data_continuous <- synthetic_data_poly_spline[, sapply(synthetic_data_poly_spline, is.numeric)]
 
 continuous_melted <- reshape2::melt(data_continuous)
-
-install.packages("ggplot2")
-library(ggplot2)
 
 ggplot(continuous_melted, aes(x = value)) +
   geom_histogram(bins = 30, 
@@ -295,7 +273,6 @@ gam_model <- gam(target ~ s(X1) + s(X2) + s(X3), data = synthetic_data_poly_spli
 
 # Decision Tree
 rpart_model <- rpart(target ~ ., data = synthetic_data_poly_spline)
-
 ```
 
 
