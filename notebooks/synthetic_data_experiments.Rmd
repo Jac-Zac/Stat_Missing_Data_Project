@@ -62,25 +62,26 @@ The following imputation methods are tested on both the MCAR and MAR datasets. A
 
 ### 1. List‑wise (Case) Deletion
 
+List-wise deletion removes any case with missing values from analysis and is the default method in many statistical software tools. It works well when data is large and missing completely at random (MCAR). However, if these conditions are not met, it can lead to bias and loss of important information, making it a less suitable approach.
+
 ```{r}
 # Evaluate imputation method using listwise deletion
 listwise_results <- evaluate_imputation_method(listwise_deletion, data_mcar, data_mar, train_index, synthetic_data)
 ```
 
 
-#### 2. Pairwise Deletion
+### 2. Pairwise Deletion
+
+Pairwise deletion minimizes information loss compared to list-wise deletion by only removing data points when necessary to check if missing values are truly missing. It produces lower bias for data missing completely at random (MCAR) or missing at random (MAR).
 
 ```{r}
 # Evaluate imputation method using pairwise deletion
 pairwise_results <- evaluate_imputation_method(pairwise_deletion, data_mcar, data_mar, train_index, synthetic_data)
 ```
 
-#### 3. Simple Imputation
+### 3. Simple Imputation
 
-```{r}
-# Evaluate imputation method using mean imputation
-mean_results <- evaluate_imputation_method(simple_imputation, data_mcar, data_mar, train_index, synthetic_data)
-```
+Simple imputation replaces missing values using the mean, median, or mode of non-missing data, offering simplicity and ease of use. However, it can introduce bias or unrealistic results, especially in high-dimensional or large-scale data sets, making it unsuitable for handling big data effectively.
 
 ##### Mean Imputation
 
@@ -96,21 +97,27 @@ mean_results <- evaluate_imputation_method(simple_imputation, data_mcar, data_ma
 median_results <- evaluate_imputation_method(simple_imputation, data_mcar, data_mar, train_index, synthetic_data)
 ```
 
-#### 4. Regression Imputation
+### 4. Regression Imputation
+
+Regression imputation replaces missing values using predictions from a regression model built on complete data, preserving sample size and assuming data is missing at random (MAR). It includes single and multivariate regression methods, depending on the number of missing variables. 
 
 ```{r}
 # Evaluate imputation method using regression imputation
 regression_results <- evaluate_imputation_method(regression_imputation, data_mcar, data_mar, train_index, synthetic_data)
 ```
 
-#### 5. Hot-deck Imputation
+### 5. Hot-deck Imputation
+
+Hot-deck imputation replaces missing values by selecting a donor from similar cases with complete data, either randomly or based on the closest match. It is widely used because it preserves data structure, reduces bias, and avoids model dependency. However, it lacks a robust theoretical foundation compared to other imputation techniques. 
 
 ```{r}
 # Evaluate imputation method using hot-deck imputation
 hotdeck_results <- evaluate_imputation_method(hot_deck_imputation, data_mcar, data_mar, train_index, synthetic_data)
 ```
 
-#### 6. Expectation-Maximization (EM)
+### 6. Expectation-Maximization (EM)
+
+The expectation-maximization (EM) algorithm iteratively handles missing data using an "impute, estimate, and iterate" process until convergence. It alternates between the expectation step, estimating missing values based on observed data, and the maximization step, optimizing the likelihood of the complete data. It requires costly matrix computations.
 
 ```{r}
 # Evaluate imputation method using EM imputation
@@ -119,9 +126,11 @@ em_results <- evaluate_imputation_method(em_imputation, data_mcar, data_mar, tra
 
 ### 7. Multiple Imputation
 
-...
+Multiple imputation addresses missing data by generating multiple complete datasets using observed data distributions to estimate missing values, reflecting uncertainty. Analysis is performed on each dataset, and results are combined into a single estimate. This technique overcomes single imputation limitations, reducing bias and providing more reliable results. 
 
 ### 8. GAM Imputation
+
+GAM-based imputation leverages Generalized Additive Models to handle missing data, allowing for flexible modeling of relationships between variables. This technique is particularly effective when the relationship between predictors and the target variable is non-linear.
 
 ```{r}
 # Evaluate imputation method using GAM-based imputation
@@ -133,6 +142,8 @@ gam_results <- evaluate_imputation_method(gam_based_imputation, data_mcar, data_
 > Evaluate which of those one makes sense to actually test
 
 ## Decision tree / Random Forests
+
+Decision tree imputation builds a predictive model for each variable with missing data by constructing a decision tree where branches represent decisions based on predictor variables, and leaves represent the predicted values. This method can handle both categorical and numerical data while capturing complex interactions and patterns in the data.
 
 ```{r}
 # Evaluate imputation method using tree-based (Random Forest) imputation
