@@ -14,14 +14,13 @@
 # install.packages("missMethods")
 # install.packages("transport")
 # install.packages("philentropy")
-# install ...
+# install.package("transport")
+# install.packages("VIM") # (Visualization and Imputation of Missing Values) 
 
 # Inputation methods
 # install.packages("mice")
 # suppressMessages(library(mice))
 # Other alternative
-# install.packages("VIM") # (Visualization and Imputation of Missing Values) 
-
 
 ## Load requirements 
 suppressMessages(library(ggplot2))
@@ -37,6 +36,10 @@ suppressMessages(library(rpart))
 suppressMessages(library(mgcv))
 suppressMessages(library(mice))
 suppressMessages(library(missMethods))
+suppressMessages(library(randomForest))
+suppressMessages(library(philentropy))
+suppressMessages(library(transport))
+
 
 # suppressMessages(library(caret))
 

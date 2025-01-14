@@ -118,9 +118,7 @@ multiple_imputation <- function(data, m = 5) {
 #' Tree-Based Imputation
 #' @param data Data frame with missing values
 #' @return Data frame with missing values imputed using Random Forest
-tree_based_imputation <- function(data) {
-  library(randomForest)
-  
+tree_based_imputation <- function(data) { 
   # Loop through each column with missing values
   for (col in names(data)) {
     if (any(is.na(data[[col]]))) {
