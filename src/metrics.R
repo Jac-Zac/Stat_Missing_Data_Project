@@ -297,7 +297,9 @@ compare_distributions <- function(original_data, imputed_data, metrics = c("wass
           p <- orig_kde$y / sum(orig_kde$y)
           q <- imp_kde$y  / sum(imp_kde$y)
           distributions <- rbind(p, q)
-          jsd_val <- philentropy::JSD(distributions, unit = "log2")
+          # Suppress messages during JSD calculation
+          # jsd_val <- philentropy::JSD(distributions, unit = "log2")
+          jsd_val <- suppressMessages(philentropy::JSD(distributions, unit = "log2"))
           overall_metrics[[metric]] <- c(overall_metrics[[metric]], jsd_val)
         }
       }

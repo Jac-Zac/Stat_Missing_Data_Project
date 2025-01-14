@@ -15,6 +15,7 @@
 # install.packages("transport")
 # install.packages("philentropy")
 # install.package("transport")
+# install.packages("gridExtra")
 # install.packages("VIM") # (Visualization and Imputation of Missing Values) 
 
 # Inputation methods
@@ -39,7 +40,8 @@ suppressMessages(library(missMethods))
 suppressMessages(library(randomForest))
 suppressMessages(library(philentropy))
 suppressMessages(library(transport))
-
+suppressMessages(library(gridExtra))
+suppressMessages(library(MASS))  # For stepAIC
 
 # suppressMessages(library(caret))
 

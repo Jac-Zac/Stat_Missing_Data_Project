@@ -42,18 +42,14 @@ The following imputation methods are tested on both the MCAR and MAR datasets. A
 List-wise deletion removes any case with missing values from analysis and is the default method in many statistical software tools. It works well when data is large and missing completely at random (MCAR). However, if these conditions are not met, it can lead to bias and loss of important information, making it a less suitable approach.
 
 ```{r}
-# Evaluate imputation method using listwise deletion
-listwise_results <- evaluate_imputation_method(listwise_deletion, data_mcar, data_mar, train_index, synthetic_data)
+listwise_deletion_data <- listwise_deletion(data.MAR.uni)
 ```
-
-
 ## 2. Pairwise Deletion
 
 Pairwise deletion minimizes information loss compared to list-wise deletion by only removing data points when necessary to check if missing values are truly missing. It produces lower bias for data missing completely at random (MCAR) or missing at random (MAR).
 
 ```{r}
-# Evaluate imputation method using pairwise deletion
-pairwise_results <- evaluate_imputation_method(pairwise_deletion, data_mcar, data_mar, train_index, synthetic_data)
+pairwise_deletion_data <- pairwise_deletion(data.MAR.uni)
 ```
 
 ## 3. Simple Imputation
@@ -64,24 +60,23 @@ Simple imputation replaces missing values using the mean, median, or mode of non
 
 ```{r}
 # Evaluate imputation method using mean imputation
-mean_results <- evaluate_imputation_method(simple_imputation, data_mcar, data_mar, train_index, synthetic_data)
+mean_imputation_data <- simple_imputation(data.MAR.uni, "mean")
+mean_metrics <- compare_distributions(train_data, mean_imputation_data)
 ```
 
 #### Median Imputation
 
 ```{r}
 # Evaluate imputation method using median imputation
-median_results <- evaluate_imputation_method(simple_imputation, data_mcar, data_mar, train_index, synthetic_data)
+median_imputation_data <- simple_imputation(data.MAR.uni, "median")
+median_metrics <- compare_distributions(train_data, median_imputation_data)
 ```
-
 ## 4. Regression Imputation
 > NOTE: In the final version this is the idea (fit a model correctly here we simply used stepAIC) for each of the inputation techniqeus were this is needed
 
 Regression imputation replaces missing values using predictions from a regression model built on complete data, preserving sample size and assuming data is missing at random (MAR). It includes single and multivariate regression methods, depending on the number of missing variables. 
 
 ```{r, class.source = 'fold-show'}
-library(MASS)  # For stepAIC
-
 #' Regression Imputation with Stepwise Selection
 #' @param data Data frame with missing values
 #' @return Data frame with missing values imputed using stepwise regression
@@ -113,61 +108,15 @@ regression_imputation <- function(data) {
 }
 
 # Perform imputation on MCAR and MAR datasets
-imputed_result_mcar <- regression_imputation(data_mcar)
-imputed_result_mar <- regression_imputation(data_mar)
+regression_imputation_data <- regression_imputation(data.MAR.uni)
+regression_metrics <- compare_distributions(train_data, regression_imputation_data)
+```
 
-# Split the imputed datasets into training and testing sets
-train_mcar <- imputed_result_mcar[train_index, ]
-test_mcar <- imputed_result_mcar[-train_index, ]
-
-train_mar <- imputed_result_mar[train_index, ]
-test_mar <- imputed_result_mar[-train_index, ]
-
+```{r, echo = F}
 # Build and evaluate models
-model_mcar <- lm(target ~ ., data = train_mcar)
-predictions_mcar <- predict(model_mcar, test_mcar)
-rmse_mcar <- sqrt(mean((test_mcar$target - predictions_mcar)^2))
-
-model_mar <- lm(target ~ ., data = train_mar)
-predictions_mar <- predict(model_mar, test_mar)
-rmse_mar <- sqrt(mean((test_mar$target - predictions_mar)^2))
-
-# Define dist_metrics
-dist_metrics = c("wasserstein", "jsd")
-
-# Calculate distribution metrics for MCAR
-dist_metrics_mcar <- compare_distributions(
-  original_data = synthetic_data,
-  imputed_data = imputed_result_mcar,
-  metrics = dist_metrics
-)
-
-# Calculate distribution metrics for MAR
-dist_metrics_mar <- compare_distributions(
-  original_data = synthetic_data,
-  imputed_data = imputed_result_mar,
-  metrics = dist_metrics
-)
-
-# Calculate traditional differences (if needed)
-diff_mcar <- compare_imputed_to_original(synthetic_data, imputed_result_mcar)
-diff_mar <- compare_imputed_to_original(synthetic_data, imputed_result_mar)
-
-
-# Store and print results
-regression_results <- list(
-    rmse_mcar = rmse_mcar,
-    rmse_mar = rmse_mar,
-    diff_mcar = diff_mcar,
-    diff_mar = diff_mar,
-    distribution_metrics = list(
-      mcar = dist_metrics_mcar,
-      mar = dist_metrics_mar
-    )
-)
-
-# Evaluate imputation method using regression imputation
-# regression_results <- evaluate_imputation_method(regression_imputation, data_mcar, data_mar, train_index, synthetic_data)
+model <- lm(target ~ ., data = regression_imputation_data)
+predictions <- predict(model, test_data)
+regression_imputation_rmse <- sqrt(mean((test_data$target - predictions)^2))
 ```
 
 ## 5. Hot-deck Imputation
@@ -176,7 +125,8 @@ Hot-deck imputation replaces missing values by selecting a donor from similar ca
 
 ```{r}
 # Evaluate imputation method using hot-deck imputation
-hotdeck_results <- evaluate_imputation_method(hot_deck_imputation, data_mcar, data_mar, train_index, synthetic_data)
+hotdeck_imputation_data <- hot_deck_imputation(data.MAR.uni)
+hotdeck_metrics <- compare_distributions(train_data, hotdeck_imputation_data)
 ```
 
 ## 6. Expectation-Maximization (EM)
@@ -185,7 +135,8 @@ The expectation-maximization (EM) algorithm iteratively handles missing data usi
 
 ```{r}
 # Evaluate imputation method using EM imputation
-em_results <- evaluate_imputation_method(em_imputation, data_mcar, data_mar, train_index, synthetic_data)
+em_imputation_data <- em_imputation(data.MAR.uni)
+em_metrics <- compare_distributions(train_data, em_imputation_data)
 ```
 
 ## 7. Multiple Imputation
@@ -198,28 +149,83 @@ GAM-based imputation leverages Generalized Additive Models to handle missing dat
 
 ```{r}
 # Evaluate imputation method using GAM-based imputation
-gam_results <- evaluate_imputation_method(gam_based_imputation, data_mcar, data_mar, train_index, synthetic_data)
+gam_imputation_data <- gam_based_imputation(data.MAR.uni)
+gam_metrics <- compare_distributions(train_data, gam_imputation_data)
 ```
 
-# Imputation methods inspired by ML
+## Imputation methods inspired by ML
 
 > Evaluate which of those one makes sense to actually test
 
-## Decision tree / Random Forests
+### Decision tree / Random Forests
 
 Decision tree imputation builds a predictive model for each variable with missing data by constructing a decision tree where branches represent decisions based on predictor variables, and leaves represent the predicted values. This method can handle both categorical and numerical data while capturing complex interactions and patterns in the data.
 
 ```{r}
 # Evaluate imputation method using tree-based (Random Forest) imputation
-tree_results <- evaluate_imputation_method(tree_based_imputation, data_mcar, data_mar, train_index, synthetic_data)
+forest_imputation_data <- tree_based_imputation(data.MAR.uni)
+forest_metrics <- compare_distributions(train_data, forest_imputation_data)
 ```
-
 
 ## Ensemble methods
 
+...
+
 # Results and Discussion
 
-## Performance metrics
+## Performance metrics between Datasets
+> Comparing the different datasets obtained via inputation
+
+...
+
+```{r, echo = T, class.source = 'fold-show'}
+# Create comparison results dataframe with safe extraction for MAE, RMSE, and Correlation
+comparison_methods <- c("Mean", "Median", "Regression", "Hot-deck", "EM", "GAM", "Tree")
+
+# Create a data frame from the list of metrics
+distribution_comparison <- data.frame(
+  Method = rep(comparison_methods, each = 2),  # Repeat each method for two metrics
+  Metric_Type = rep(c("Wasserstein", "JSD"), times = length(comparison_methods)),
+  Value = c(mean_metrics$wasserstein, mean_metrics$jsd,
+            median_metrics$wasserstein, median_metrics$jsd,
+            regression_metrics$wasserstein, regression_metrics$jsd,
+            hotdeck_metrics$wasserstein, hotdeck_metrics$jsd,
+            em_metrics$wasserstein, em_metrics$jsd,
+            gam_metrics$wasserstein, gam_metrics$jsd,
+            forest_metrics$wasserstein, forest_metrics$jsd)
+)
+```
+
+```{r, echo = F}
+# Create the faceted distribution metrics plot with filtered data
+p1 <- ggplot(distribution_comparison, 
+             aes(x = reorder(Method, Value), 
+                 y = Value)) +
+  geom_bar(stat = "identity", 
+           fill = "#5E81AC") +
+  geom_text(aes(label = round(Value, 3)), 
+            vjust = -0.5,
+            size = 3) +
+  facet_wrap(~Metric_Type, 
+             scales = "free_y",  # Allow different y-axis scales for each metric
+             ncol = 2) +        # Place plots side by side
+  labs(title = "Distribution Metrics Comparison",
+       x = "Method",
+       y = "Metric Value") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1),
+        plot.title = element_text(hjust = 0.5),
+        strip.text = element_text(size = 12, face = "bold"),
+        strip.background = element_rect(fill = "#E5E9F0", color = NA),
+        panel.spacing = unit(2, "lines"))  # Add some space between the facets
+
+# Print the plot
+print(p1)
+```
+
+We need to add some description here ...
+
+## Performance metrics for the Prediction
 
 - **Mean Absolute Error (MAE)**
 
@@ -266,153 +272,17 @@ tree_results <- evaluate_imputation_method(tree_based_imputation, data_mcar, dat
 # auc_value <- auc(roc_obj)
 ```
 
-### Comparison of Results
+### Comparing Predictions
 
-Create a summary table and plots to compare RMSE, mean absolute differences across all methods 
-
-```{r, echo = T}
-# Create results dataframe with RMSE
-results <- data.frame(
-  Method = c("Listwise", "Pairwise", "Mean", "Median", "Regression", "Hot-deck", "EM", "GAM", "Tree"),
-  RMSE_Prediction = c(
-    listwise_results$rmse_mcar, 
-    pairwise_results$rmse_mcar, 
-    mean_results$rmse_mcar, 
-    median_results$rmse_mcar, 
-    regression_results$rmse_mcar, 
-    hotdeck_results$rmse_mcar, 
-    em_results$rmse_mcar, 
-    gam_results$rmse_mcar, 
-    tree_results$rmse_mcar
-  )
-)
-
-# Create comparison results dataframe with safe extraction for MAE, RMSE, and Correlation
-comparison_methods <- c("Mean", "Median", "Regression", "Hot-deck", "EM", "GAM", "Tree")
-
-# Ensure you include the corresponding differences for Tree-based methods as well
-comparison_diffs <- list(mean_results$diff_mcar, 
-                         median_results$diff_mcar, 
-                         regression_results$diff_mcar, 
-                         hotdeck_results$diff_mcar, 
-                         em_results$diff_mcar, 
-                         gam_results$diff_mcar, 
-                         tree_results$diff_mcar)
-
-# Custom function to safely extract values from the list of metrics
-safe_extract <- function(metric_list, metric_name) {
-  if (!is.null(metric_list) && metric_name %in% names(metric_list)) {
-    if (length(metric_list[[metric_name]]) > 0) {
-      return(metric_list[[metric_name]][1])  # Extract the first value
-    } else {
-      return(NA)  # If the metric is an empty vector, return NA
-    }
-  } else {
-    message(paste("Warning: Metric", metric_name, "not found in metric_list. Returning NA."))
-    return(NA)
-  }
-}
-
-# Extract metrics for comparison
-comparison_results <- data.frame(
-  Method = comparison_methods,
-  MAE = sapply(comparison_diffs, safe_extract, "mae"),
-  RMSE = sapply(comparison_diffs, safe_extract, "rmse"),
-  Correlation = sapply(comparison_diffs, safe_extract, "correlation")
-)
-
-# Remove any rows where all metrics are NA
-comparison_results <- comparison_results[rowSums(is.na(comparison_results[,-1])) < ncol(comparison_results)-1, ]
-
-# First, create the distribution metrics dataframe
-comparison_methods <- c("Listwise", "Pairwise", "Mean", "Median", "Regression", "Hot-deck", "EM", "GAM", "Tree")
-distribution_results <- data.frame(
-  Method = rep(comparison_methods, 2),
-  Metric_Type = c(rep("Wasserstein", length(comparison_methods)), 
-                 rep("JSD", length(comparison_methods))),
-  Value = c(
-    # Wasserstein distances
-    sapply(list(
-      listwise_results$distribution_metrics$mcar,
-      pairwise_results$distribution_metrics$mcar,
-      mean_results$distribution_metrics$mcar,
-      median_results$distribution_metrics$mcar,
-      regression_results$distribution_metrics$mcar,
-      hotdeck_results$distribution_metrics$mcar,
-      em_results$distribution_metrics$mcar,
-      gam_results$distribution_metrics$mcar,
-      tree_results$distribution_metrics$mcar
-    ), function(x) safe_extract(x, "wasserstein")),
-    # JSD values
-    sapply(list(
-      listwise_results$distribution_metrics$mcar,
-      pairwise_results$distribution_metrics$mcar,
-      mean_results$distribution_metrics$mcar,
-      median_results$distribution_metrics$mcar,
-      regression_results$distribution_metrics$mcar,
-      hotdeck_results$distribution_metrics$mcar,
-      em_results$distribution_metrics$mcar,
-      gam_results$distribution_metrics$mcar,
-      tree_results$distribution_metrics$mcar
-    ), function(x) safe_extract(x, "jsd"))
-  )
-)
-```
-
-### Plot the difference metrics between datasets
-
-```{r}
-# Plot 1: RMSE of Prediction Models
-p1 <- create_bar_plot(results, "reorder(Method, RMSE_Prediction)", "RMSE_Prediction", "#88C0D0", 
-                      "Prediction Model Performance")
-# Plot 2: MAE
-p2 <- create_bar_plot(comparison_results, "reorder(Method, MAE)", "MAE", "#A3BE8C", 
-                      "Mean Absolute Error")
-# Plot 3: RMSE Comparison
-p3 <- create_bar_plot(comparison_results, "reorder(Method, RMSE)", "RMSE", "#EBCB8B", 
-                      "Root Mean Square Error")
-# Plot 4: Correlation
-p4 <- create_bar_plot(comparison_results, "reorder(Method, Correlation)", "Correlation", "#B48EAD", 
-                      "Correlation with Original Data")
-
-# Remove rows with NA values
-distribution_results_filtered <- distribution_results[!is.na(distribution_results$Value), ]
-
-# Create the faceted distribution metrics plot with filtered data
-p5 <- ggplot(distribution_results_filtered, 
-             aes(x = reorder(Method, Value), 
-                 y = Value)) +
-  geom_bar(stat = "identity", 
-           fill = "#5E81AC") +
-  geom_text(aes(label = round(Value, 3)), 
-            vjust = -0.5,
-            size = 3) +
-  facet_wrap(~Metric_Type, 
-             scales = "free_y",  # Allow different y-axis scales for each metric
-             ncol = 2) +        # Place plots side by side
-  labs(title = "Distribution Metrics Comparison",
-       x = "Method",
-       y = "Metric Value") +
-  theme_minimal() +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1),
-        plot.title = element_text(hjust = 0.5),
-        strip.text = element_text(size = 12, face = "bold"),
-        strip.background = element_rect(fill = "#E5E9F0", color = NA),
-        panel.spacing = unit(2, "lines"))  # Add some space between the facets
-
-# Print all plots
-print(p1)
-print(p2)
-print(p3)
-print(p4)
-print(p5)
-```
-
-## Imputation Performance Comparison
+> Here I have to add back the predictions and the plots
 
 ## Computational Performance
 
+.. Some small note on this
+
 # Conclusions and Recommendations
+
+> Perhaps some final plots and small discussions
 
 (Add your conclusions and recommendations based on the analysis results)
 
@@ -426,6 +296,7 @@ print(p5)
 > Can pretty much always be reconducted to MAR
 
 #### References
+> Need to add references
 
 ```{r}
 citation("pROC")

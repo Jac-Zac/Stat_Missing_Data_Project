@@ -55,88 +55,28 @@ plot_missing_data <- function(data, mechanism_name, color_palette = c("white", "
     labs(title = paste("Missing Data Pattern -", mechanism_name), x = "Index", y = "Variable")
 }
 
-
-#' Evaluate Imputation Method
+#' Evaluate Model Performance on Imputed Data
 #'
-#' This function evaluates an imputation method by performing imputation on two datasets (MCAR and MAR),
-#' splitting the data into training and testing sets, and fitting linear regression models. It calculates
-#' the Root Mean Squared Error (RMSE) of the predictions for both MCAR and MAR datasets and compares
-#' distributions between original and imputed data using various metrics.
+#' This function evaluates the performance of a linear regression model
+#' by training on imputed data and testing on the original test data,
+#' calculating the RMSE of predictions.
 #'
-#' @param imputation_function A function that performs imputation on a dataset.
-#' @param data_mcar A data frame containing the dataset with Missing Completely at Random (MCAR) data.
-#' @param data_mar A data frame containing the dataset with Missing at Random (MAR) data.
-#' @param train_index An index vector specifying the training set for model fitting.
-#' @param synthetic_data An optional data frame containing the original synthetic dataset for comparison.
-#' @param dist_metrics A character vector of distribution metrics to calculate. Default: c("wasserstein", "jsd")
-#' @return A list containing RMSE values, comparisons with original data, and distribution metrics.
+#' @param imputed_data A data frame containing the imputed dataset for training
+#' @param test_data A data frame containing the original test dataset
+#' @return A numeric value representing the RMSE of the model predictions
 #' @examples
-#' # Assume 'listwise_deletion' is a defined function and synthetic_data exists
-#' results <- evaluate_imputation_method(listwise_deletion, data_mcar, data_mar, train_index, synthetic_data)
-#' print(results)
-evaluate_imputation_method <- function(imputation_function, data_mcar, data_mar, train_index, 
-                                     synthetic_data = NULL, 
-                                     dist_metrics = c("wasserstein", "jsd")) {
+#' rmse_value <- evaluate_model_performance(imputed_data, test_data)
+evaluate_model_performance <- function(imputed_data, test_data) {
+  # Build linear regression model on imputed data
+  model <- lm(target ~ ., data = imputed_data)
   
-  # Perform imputation for MCAR and MAR datasets using the provided function
-  imputed_result_mcar <- imputation_function(data_mcar)
-  imputed_result_mar <- imputation_function(data_mar)
+  # Make predictions on test data
+  predictions <- predict(model, test_data)
   
-  # Split the imputed datasets into training and testing sets
-  train_mcar <- imputed_result_mcar[train_index, ]
-  test_mcar <- imputed_result_mcar[-train_index, ]
+  # Calculate RMSE
+  rmse_value <- rmse(test_data$target, predictions)
   
-  train_mar <- imputed_result_mar[train_index, ]
-  test_mar <- imputed_result_mar[-train_index, ]
-  
-  # Build and evaluate the linear regression models for both MCAR and MAR datasets
-  model_mcar <- lm(target ~ ., data = train_mcar)
-  predictions_mcar <- predict(model_mcar, test_mcar)
-  rmse_mcar <- rmse(test_mcar$target, predictions_mcar)
-  
-  model_mar <- lm(target ~ ., data = train_mar)
-  predictions_mar <- predict(model_mar, test_mar)
-  rmse_mar <- rmse(test_mar$target, predictions_mar)
-  
-  # Initialize distribution metrics results
-  dist_metrics_mcar <- NULL
-  dist_metrics_mar <- NULL
-  
-  # If synthetic data is provided, compare distributions and calculate metrics
-  if (!is.null(synthetic_data)) {
-    # Calculate distribution metrics for MCAR
-    dist_metrics_mcar <- compare_distributions(
-      original_data = synthetic_data,
-      imputed_data = imputed_result_mcar,
-      metrics = dist_metrics
-    )
-    
-    # Calculate distribution metrics for MAR
-    dist_metrics_mar <- compare_distributions(
-      original_data = synthetic_data,
-      imputed_data = imputed_result_mar,
-      metrics = dist_metrics
-    )
-    
-    # Calculate traditional differences (if needed)
-    diff_mcar <- compare_imputed_to_original(synthetic_data, imputed_result_mcar)
-    diff_mar <- compare_imputed_to_original(synthetic_data, imputed_result_mar)
-  } else {
-    diff_mcar <- NULL
-    diff_mar <- NULL
-  }
-  
-  # Return the evaluation results as a list
-  return(list(
-    rmse_mcar = rmse_mcar,
-    rmse_mar = rmse_mar,
-    diff_mcar = diff_mcar,
-    diff_mar = diff_mar,
-    distribution_metrics = list(
-      mcar = dist_metrics_mcar,
-      mar = dist_metrics_mar
-    )
-  ))
+  return(rmse_value)
 }
 
 #' Create a Bar Plot with Custom Parameters
