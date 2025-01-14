@@ -97,6 +97,7 @@ Detailed documentation is available in the following notebooks:
 - [Outliers and missing values](https://sci-hub.ru/10.1111/j.1440-1681.2007.04860.x)
 - [Various imputation techniques in detail](https://www.researchgate.net/publication/220579612_Missing_Data_Imputation_Techniques)
 - [Generating Synthetic Missing Data: A Review by Missing Mechanism](https://ieeexplore.ieee.org/document/8605316/)
+- [Imputation techniques: an overview](https://www.researchgate.net/publication/220579612_Missing_Data_Imputation_Techniques)
 
 ## Preliminary Results
 
