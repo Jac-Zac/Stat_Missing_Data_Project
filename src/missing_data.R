@@ -40,7 +40,23 @@ introduce_mcar <- function(data, prop_missing = 0.1, missing_cols = names(data))
 #' @param predictor_cols Columns used to determine missingness (must be specified)
 #' @param target_cols Columns to introduce missing values into (must be specified)
 #' @return Data frame with MAR missing values
-introduce_mar <- function(data, prop_missing = 0.1, predictor_cols, target_cols) {
+g_fun <- function(p) {
+  # Vector of weights for each decile
+  weights <- c(0.5, 0.4, 0.4, 0.4, 0.4, 0.4, 0.3, 0.2, 0.2, 0.1)
+  
+  # Determine the decile index from 1 to 10
+  decile_index <- floor(p * 10) + 1
+  
+  # Return the weight associated with that decile
+  weights[decile_index]
+}
+
+introduce_mar <- function(data, 
+                          prop_missing = 0.1, 
+                          predictor_cols, 
+                          target_cols, 
+                          method = "percentile", 
+                          g = function(p) p) {
   # Check inputs
   if (missing(predictor_cols) || missing(target_cols)) {
     stop("You must specify both predictor_cols and target_cols.")
@@ -56,24 +72,60 @@ introduce_mar <- function(data, prop_missing = 0.1, predictor_cols, target_cols)
   total_values <- nrow(data) * length(target_cols)
   n_missing <- ceiling(total_values * prop_missing)
   
-  # Create missingness probabilities based on predictor columns using rank
-  predictors <- data[, predictor_cols, drop = FALSE]
-  ranks <- apply(predictors, 1, function(row) {
-    sum(rank(as.numeric(row), na.last = "keep"), na.rm = TRUE)
-  })
-  
-  # Normalize ranks to create probabilities
-  missing_probs <- ranks / sum(ranks, na.rm = TRUE)
-  
-  # Introduce missing values
-  for (target_col in target_cols) {
-    target_indices <- sample(
-      seq_len(nrow(data)), 
-      size = n_missing, 
-      prob = missing_probs, 
-      replace = FALSE
-    )
-    data[target_indices, target_col] <- NA
+  if (method == "percentile") {
+    # Create a single score from the predictor columns (e.g., sum or average).
+    # If there is only one predictor column, you could use that directly.
+    predictors <- data[, predictor_cols, drop = FALSE]
+    combined_score <- rowSums(predictors, na.rm = TRUE)
+    
+    # Compute the empirical distribution function (ECDF)
+    ecdf_fun <- ecdf(combined_score)
+    
+    # Convert each row's score to a percentile in [0,1]
+    percentiles <- ecdf_fun(combined_score)
+    
+    # Apply the user-defined function g() to the percentiles
+    # g should return non-negative values (acting like "weights")
+    g_values <- g(percentiles)
+    
+    # Normalize these values to use them as probabilities in 'sample()'
+    sum_g_values <- sum(g_values, na.rm = TRUE)
+    if (sum_g_values == 0) {
+      stop("The sum of g(percentiles) is zero. Please check the definition of g().")
+    }
+    missing_probs <- g_values / sum_g_values
+    
+    # Introduce missing values for each target column
+    for (target_col in target_cols) {
+      target_indices <- sample(
+        seq_len(nrow(data)), 
+        size = n_missing, 
+        prob = missing_probs, 
+        replace = FALSE
+      )
+      data[target_indices, target_col] <- NA
+    }
+    
+  }else {
+    # Create missingness probabilities based on predictor columns using rank
+    predictors <- data[, predictor_cols, drop = FALSE]
+    ranks <- apply(predictors, 1, function(row) {
+      sum(rank(as.numeric(row), na.last = "keep"), na.rm = TRUE)
+    })
+    
+    # Normalize ranks to create probabilities
+    missing_probs <- ranks / sum(ranks, na.rm = TRUE)
+    
+    # Introduce missing values
+    for (target_col in target_cols) {
+      target_indices <- sample(
+        seq_len(nrow(data)), 
+        size = n_missing, 
+        prob = missing_probs, 
+        replace = FALSE
+      )
+      data[target_indices, target_col] <- NA
+    }
   }
   
   return(data)
