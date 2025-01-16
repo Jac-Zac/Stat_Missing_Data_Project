@@ -36,8 +36,14 @@ source(here("src", "setup.R"))
 # nord_show_palette("frost")
 # nord_show_palette("aurora")
 # Define colors using a Nord palette
-blue_nord <- nord("frost", 4)[[length(nord("frost", 4))]]  # Choose a Nord palette and number of colors
-red_nord <- nord("aurora", 1)
+# Select Nord palettes
+frost_palette <- nord("frost", 4)
+aurora_palette <- nord("aurora", 4)
+
+# Choose specific colors
+blue_nord <- frost_palette[[length(frost_palette)]]
+red_nord <- aurora_palette[[1]]
+green_nord <- aurora_palette[[3]]
 
 # Defind a color pallet for red and blue
 nord_contrast = c(blue_nord, red_nord)
