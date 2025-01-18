@@ -137,46 +137,69 @@ tree_based_imputation <- function(data) {
   return(data)
 }
 
-gam_based_imputation <- function(data) {
-  library(mgcv)  # For gam function
+gam_based_imputation <- function(data, max_predictors = 3) {
+  # Create a copy of the data
+  imputed_data <- data
   
-  # Create a row_number column if it doesn't exist
-  if (!"row_number" %in% names(data)) {
-    data$row_number <- 1:nrow(data)
+  # Function to find best predictor columns
+  find_predictors <- function(target_col, data, max_predictors) {
+    numeric_cols <- names(data)[sapply(data, is.numeric)]
+    numeric_cols <- setdiff(numeric_cols, target_col)
+    
+    if (length(numeric_cols) == 0) return(character(0))
+    
+    # Calculate correlations with target column
+    correlations <- sapply(numeric_cols, function(col) {
+      abs(cor(data[[target_col]], data[[col]], 
+          use = "pairwise.complete.obs"))
+    })
+    
+    # Sort and select top predictors
+    predictors <- names(sort(correlations, decreasing = TRUE))
+    predictors[1:min(length(predictors), max_predictors)]
   }
   
-  # Loop through each column with missing values
-  for (col in names(data)) {
-    if (any(is.na(data[[col]]))) {
-      # Only apply GAM imputation to numeric columns
-      if (is.numeric(data[[col]])) {
-        # Get the rows with no missing values for fitting the model
-        complete_data <- data[!is.na(data[[col]]), ]
+  # Process each column
+  for (col in names(imputed_data)) {
+    if (any(is.na(imputed_data[[col]])) && is.numeric(imputed_data[[col]])) {
+      # Find rows with missing values
+      missing_indices <- which(is.na(imputed_data[[col]]))
+      
+      # Skip if too few complete cases
+      if (sum(!is.na(imputed_data[[col]])) < 10) next
+      
+      # Find best predictor columns
+      predictors <- find_predictors(col, imputed_data, max_predictors)
+      
+      if (length(predictors) > 0) {
+        # Create formula for GAM
+        formula_terms <- paste("s(", predictors, ")", collapse = " + ")
+        formula_str <- paste(col, "~", formula_terms)
         
-        # Fit a GAM model to predict the missing values
-        gam_model <- gam(as.formula(paste(col, "~ s(row_number)")), data = complete_data)
+        # Prepare training data
+        train_data <- imputed_data[!is.na(imputed_data[[col]]), 
+          c(col, predictors)]
         
-        # Predict the missing values using the fitted GAM model
-        missing_indices <- which(is.na(data[[col]]))
-        
-        # Ensure to predict for missing rows only
-        if (length(missing_indices) > 0) {
-          missing_rows <- data[missing_indices, ]
-          missing_rows$row_number <- data$row_number[missing_indices]  # Include row_number in the prediction
-          predicted_values <- predict(gam_model, newdata = missing_rows)
+        # Fit GAM model and predict
+        tryCatch({
+          gam_model <- gam(as.formula(formula_str), data = train_data)
           
-          # Impute the missing values
-          data[[col]][missing_indices] <- predicted_values
-        }
+          # Prepare prediction data
+          pred_data <- imputed_data[missing_indices, predictors, drop = FALSE]
+          
+          # Make predictions
+          predictions <- predict(gam_model, newdata = pred_data)
+          
+          # Impute missing values
+          imputed_data[[col]][missing_indices] <- predictions
+        }, error = function(e) {
+          warning(paste("Failed to impute", col, ":", e$message))
+        })
       }
     }
   }
   
-  # Remove row_number if you don't want it in the final imputed dataset
-  data$row_number <- NULL
-  
-  # Return the data with imputed values
-  return(data)
+  return(imputed_data)
 }
 
 # Example usage
