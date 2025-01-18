@@ -1,0 +1,253 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+```{r}
+library(missMethods)
+library(here)
+
+# Load utilities
+source(here("src", "setup.R"))
+```
+
+```{r}
+n <- 100
+p <- 0.3
+```
+
+
+# linear
+
+```{r}
+eps <- rnorm(n, 0,0.1)
+inf <- -1
+sup <- 1
+x1 <- runif(n, inf, sup)
+x2 <- x1 + eps
+
+data <- delete_MAR_1_to_x(data.frame(x1,x2), p, cols_mis = "x2", cols_ctrl = "x1", x = 10)
+
+plot(data$x1, x2, col = ifelse(is.na(data$x2), "red", "black"), 
+     xlab = "x1", ylab = "x2")
+
+```
+
+```{r}
+mean_imputation_data <- simple_imputation(data, "mean")
+knn_imputation_data <- kNN(data, variable = "x2")
+regression_imputation_data <- regression_imputation(data)
+hotdeck_imputation_data <- hot_deck_imputation(data)
+em_imputation_data <- impute_EM(data)
+gam_imputation_data <- gam_based_imputation(data)
+forest_imputation_data <- tree_based_imputation(data)
+
+
+plot(mean_imputation_data$x1, mean_imputation_data$x2, 
+     col = ifelse(is.na(data$x2), "red", "black"),
+     xlab = "x1", ylab = "x2", title("mean"))
+
+plot(knn_imputation_data$x1, knn_imputation_data$x2, 
+     col = ifelse(is.na(data$x2), "red", "black"),
+     xlab = "x1", ylab = "x2", title("kNN"))
+
+plot(regression_imputation_data$x1, regression_imputation_data$x2,
+     col = ifelse(is.na(data$x2), "red", "black"),
+     xlab = "x1", ylab = "x2", title("regression"))
+
+plot(hotdeck_imputation_data$x1, hotdeck_imputation_data$x2,
+     col = ifelse(is.na(data$x2), "red", "black"),
+     xlab = "x1", ylab = "x2", title("hotdeck"))
+
+plot(em_imputation_data$x1, em_imputation_data$x2,
+     col = ifelse(is.na(data$x2), "red", "black"),
+     xlab = "x1", ylab = "x2", title("em"))
+
+plot(gam_imputation_data$x1, gam_imputation_data$x2,
+     col = ifelse(is.na(data$x2), "red", "black"),
+     xlab = "x1", ylab = "x2", title("gam"))
+
+plot(forest_imputation_data$x1, forest_imputation_data$x2,
+     col = ifelse(is.na(data$x2), "red", "black"),
+     xlab = "x1", ylab = "x2", title("forest"))
+
+```
+
+
+# quadratic
+
+```{r}
+
+eps <- rnorm(n, 0,0.1)
+inf <- -1
+sup <- 1
+x1 <- runif(n, inf, sup)
+x2 <- x1^2 + eps
+
+
+data <- delete_MAR_1_to_x(data.frame(x1,x2), p, cols_mis = "x2", cols_ctrl = "x1", x = 10)
+
+plot(data$x1, x2, col = ifelse(is.na(data$x2), "red", "black"), 
+     xlab = "x1", ylab = "x2")
+
+```
+
+```{r}
+mean_imputation_data <- simple_imputation(data, "mean")
+knn_imputation_data <- kNN(data, variable = "x2")
+regression_imputation_data <- regression_imputation(data)
+hotdeck_imputation_data <- hot_deck_imputation(data)
+em_imputation_data <- impute_EM(data)
+gam_imputation_data <- gam_based_imputation(data)
+forest_imputation_data <- tree_based_imputation(data)
+
+
+plot(mean_imputation_data$x1, mean_imputation_data$x2, 
+     col = ifelse(is.na(data$x2), "red", "black"),
+     xlab = "x1", ylab = "x2", title("mean"))
+
+plot(knn_imputation_data$x1, knn_imputation_data$x2, 
+     col = ifelse(is.na(data$x2), "red", "black"),
+     xlab = "x1", ylab = "x2", title("kNN"))
+
+plot(regression_imputation_data$x1, regression_imputation_data$x2,
+     col = ifelse(is.na(data$x2), "red", "black"),
+     xlab = "x1", ylab = "x2", title("regression"))
+
+plot(hotdeck_imputation_data$x1, hotdeck_imputation_data$x2,
+     col = ifelse(is.na(data$x2), "red", "black"),
+     xlab = "x1", ylab = "x2", title("hotdeck"))
+
+plot(em_imputation_data$x1, em_imputation_data$x2,
+     col = ifelse(is.na(data$x2), "red", "black"),
+     xlab = "x1", ylab = "x2", title("em"))
+
+plot(gam_imputation_data$x1, gam_imputation_data$x2,
+     col = ifelse(is.na(data$x2), "red", "black"),
+     xlab = "x1", ylab = "x2", title("gam"))
+
+plot(forest_imputation_data$x1, forest_imputation_data$x2,
+     col = ifelse(is.na(data$x2), "red", "black"),
+     xlab = "x1", ylab = "x2", title("forest"))
+
+```
+
+
+# cubic
+
+```{r}
+
+eps <- rnorm(n, 0,0.1)
+inf <- -1
+sup <- 1
+x1 <- runif(n, inf, sup)
+x2 <- x1^3 + eps
+
+
+data <- delete_MAR_1_to_x(data.frame(x1,x2), p, cols_mis = "x2", cols_ctrl = "x1", x = 10)
+
+
+plot(data$x1, x2, col = ifelse(is.na(data$x2), "red", "black"), 
+     xlab = "x1", ylab = "x2")
+
+```
+
+```{r}
+mean_imputation_data <- simple_imputation(data, "mean")
+knn_imputation_data <- kNN(data, variable = "x2")
+regression_imputation_data <- regression_imputation(data)
+hotdeck_imputation_data <- hot_deck_imputation(data)
+em_imputation_data <- impute_EM(data)
+gam_imputation_data <- gam_based_imputation(data)
+forest_imputation_data <- tree_based_imputation(data)
+
+
+plot(mean_imputation_data$x1, mean_imputation_data$x2, 
+     col = ifelse(is.na(data$x2), "red", "black"),
+     xlab = "x1", ylab = "x2", title("mean"))
+
+plot(knn_imputation_data$x1, knn_imputation_data$x2, 
+     col = ifelse(is.na(data$x2), "red", "black"),
+     xlab = "x1", ylab = "x2", title("kNN"))
+
+plot(regression_imputation_data$x1, regression_imputation_data$x2,
+     col = ifelse(is.na(data$x2), "red", "black"),
+     xlab = "x1", ylab = "x2", title("regression"))
+
+plot(hotdeck_imputation_data$x1, hotdeck_imputation_data$x2,
+     col = ifelse(is.na(data$x2), "red", "black"),
+     xlab = "x1", ylab = "x2", title("hotdeck"))
+
+plot(em_imputation_data$x1, em_imputation_data$x2,
+     col = ifelse(is.na(data$x2), "red", "black"),
+     xlab = "x1", ylab = "x2", title("em"))
+
+plot(gam_imputation_data$x1, gam_imputation_data$x2,
+     col = ifelse(is.na(data$x2), "red", "black"),
+     xlab = "x1", ylab = "x2", title("gam"))
+
+plot(forest_imputation_data$x1, forest_imputation_data$x2,
+     col = ifelse(is.na(data$x2), "red", "black"),
+     xlab = "x1", ylab = "x2", title("forest"))
+
+```
+
+
+# log
+
+```{r}
+
+eps <- rnorm(n, 0,0.2)
+inf <- 1
+sup <- 100
+x1 <- runif(n, inf, sup)
+x2 <- log(x1) + eps
+
+
+data <- delete_MAR_1_to_x(data.frame(x1,x2), p, cols_mis = "x2", cols_ctrl = "x1", x = 10)
+
+
+plot(data$x1, x2, col = ifelse(is.na(data$x2), "red", "black"), 
+     xlab = "x1", ylab = "x2")
+
+```
+
+```{r}
+mean_imputation_data <- simple_imputation(data, "mean")
+knn_imputation_data <- kNN(data, variable = "x2")
+regression_imputation_data <- regression_imputation(data)
+hotdeck_imputation_data <- hot_deck_imputation(data)
+em_imputation_data <- impute_EM(data)
+gam_imputation_data <- gam_based_imputation(data)
+forest_imputation_data <- tree_based_imputation(data)
+
+
+plot(mean_imputation_data$x1, mean_imputation_data$x2, 
+     col = ifelse(is.na(data$x2), "red", "black"),
+     xlab = "x1", ylab = "x2", title("mean"))
+
+plot(knn_imputation_data$x1, knn_imputation_data$x2, 
+     col = ifelse(is.na(data$x2), "red", "black"),
+     xlab = "x1", ylab = "x2", title("kNN"))
+
+plot(regression_imputation_data$x1, regression_imputation_data$x2,
+     col = ifelse(is.na(data$x2), "red", "black"),
+     xlab = "x1", ylab = "x2", title("regression"))
+
+plot(hotdeck_imputation_data$x1, hotdeck_imputation_data$x2,
+     col = ifelse(is.na(data$x2), "red", "black"),
+     xlab = "x1", ylab = "x2", title("hotdeck"))
+
+plot(em_imputation_data$x1, em_imputation_data$x2,
+     col = ifelse(is.na(data$x2), "red", "black"),
+     xlab = "x1", ylab = "x2", title("em"))
+
+plot(gam_imputation_data$x1, gam_imputation_data$x2,
+     col = ifelse(is.na(data$x2), "red", "black"),
+     xlab = "x1", ylab = "x2", title("gam"))
+
+plot(forest_imputation_data$x1, forest_imputation_data$x2,
+     col = ifelse(is.na(data$x2), "red", "black"),
+     xlab = "x1", ylab = "x2", title("forest"))
+
+```
