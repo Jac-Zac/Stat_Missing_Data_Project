@@ -1,253 +1,90 @@
 ---
-title: "R Notebook"
-output: html_notebook
+title: "Imputation Techniques Visualization"
+author: "Jacopo Zacchigna, Devid Rosa, Cristiano Baldassi, Ludovica Bianchi"
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+output:
+  html_document:
+    toc: true
+    toc_depth: 3
+    toc_float: true
+    code_fold: hide # Hidden by default unless specified otherwise
+    df_print: paged
+    highlight: tango
+    theme: flatly
+    number_sections: true
+    toc_collapsible: true  # Enable collapsible TOC
+editor_options:
+  markdown:
+    wrap: 72
 ---
 
-```{r}
-library(missMethods)
+```{r setup, include=FALSE}
 library(here)
 
 # Load utilities
 source(here("src", "setup.R"))
+knitr::opts_chunk$set(fig.width = 18, fig.height = 14)
 ```
+
+# Testing Different Relationships
+
+## Linear Relationship
+
+In a linear relationship, we expect methods like regression imputation to perform well since they can capture the linear pattern in the data.
 
 ```{r}
 n <- 100
 p <- 0.3
+
+# Generate and create missing data
+linear_data <- generate_data(n, "linear")
+linear_missing <- delete_MAR_1_to_x(linear_data, p, cols_mis = "x2", cols_ctrl = "x1", x = 10)
+
+plot_all_imputations(linear_data, linear_missing)
 ```
 
+## Quadratic Relationship
 
-# linear
+For quadratic relationships, we expect more flexible methods like GAM and Random Forest to perform better than simple linear regression.
 
 ```{r}
-eps <- rnorm(n, 0,0.1)
-inf <- -1
-sup <- 1
-x1 <- runif(n, inf, sup)
-x2 <- x1 + eps
+# Generate and create missing data
+quad_data <- generate_data(n, "quadratic")
+quad_missing <- delete_MAR_1_to_x(quad_data, p, cols_mis = "x2", cols_ctrl = "x1", x = 10)
 
-data <- delete_MAR_1_to_x(data.frame(x1,x2), p, cols_mis = "x2", cols_ctrl = "x1", x = 10)
-
-plot(data$x1, x2, col = ifelse(is.na(data$x2), "red", "black"), 
-     xlab = "x1", ylab = "x2")
-
+plot_all_imputations(quad_data, quad_missing)
 ```
+
+## Cubic Relationship
+
+Cubic relationships are even more complex, highlighting the advantages of more flexible methods.
 
 ```{r}
-mean_imputation_data <- simple_imputation(data, "mean")
-knn_imputation_data <- kNN(data, variable = "x2")
-regression_imputation_data <- regression_imputation(data)
-hotdeck_imputation_data <- hot_deck_imputation(data)
-em_imputation_data <- impute_EM(data)
-gam_imputation_data <- gam_based_imputation(data)
-forest_imputation_data <- tree_based_imputation(data)
+# Generate and create missing data
+cubic_data <- generate_data(n, "cubic")
+cubic_missing <- delete_MAR_1_to_x(cubic_data, p, cols_mis = "x2", cols_ctrl = "x1", x = 10)
 
-
-plot(mean_imputation_data$x1, mean_imputation_data$x2, 
-     col = ifelse(is.na(data$x2), "red", "black"),
-     xlab = "x1", ylab = "x2", title("mean"))
-
-plot(knn_imputation_data$x1, knn_imputation_data$x2, 
-     col = ifelse(is.na(data$x2), "red", "black"),
-     xlab = "x1", ylab = "x2", title("kNN"))
-
-plot(regression_imputation_data$x1, regression_imputation_data$x2,
-     col = ifelse(is.na(data$x2), "red", "black"),
-     xlab = "x1", ylab = "x2", title("regression"))
-
-plot(hotdeck_imputation_data$x1, hotdeck_imputation_data$x2,
-     col = ifelse(is.na(data$x2), "red", "black"),
-     xlab = "x1", ylab = "x2", title("hotdeck"))
-
-plot(em_imputation_data$x1, em_imputation_data$x2,
-     col = ifelse(is.na(data$x2), "red", "black"),
-     xlab = "x1", ylab = "x2", title("em"))
-
-plot(gam_imputation_data$x1, gam_imputation_data$x2,
-     col = ifelse(is.na(data$x2), "red", "black"),
-     xlab = "x1", ylab = "x2", title("gam"))
-
-plot(forest_imputation_data$x1, forest_imputation_data$x2,
-     col = ifelse(is.na(data$x2), "red", "black"),
-     xlab = "x1", ylab = "x2", title("forest"))
-
+plot_all_imputations(cubic_data, cubic_missing)
 ```
 
+## Logarithmic Relationship
 
-# quadratic
+Logarithmic relationships demonstrate how methods perform with non-linear but monotonic relationships.
 
 ```{r}
+# Generate and create missing data
+log_data <- generate_data(n, "log", x_range = c(1, 100))
+log_missing <- delete_MAR_1_to_x(log_data, p, cols_mis = "x2", cols_ctrl = "x1", x = 10)
 
-eps <- rnorm(n, 0,0.1)
-inf <- -1
-sup <- 1
-x1 <- runif(n, inf, sup)
-x2 <- x1^2 + eps
-
-
-data <- delete_MAR_1_to_x(data.frame(x1,x2), p, cols_mis = "x2", cols_ctrl = "x1", x = 10)
-
-plot(data$x1, x2, col = ifelse(is.na(data$x2), "red", "black"), 
-     xlab = "x1", ylab = "x2")
-
+plot_all_imputations(log_data, log_missing)
 ```
 
-```{r}
-mean_imputation_data <- simple_imputation(data, "mean")
-knn_imputation_data <- kNN(data, variable = "x2")
-regression_imputation_data <- regression_imputation(data)
-hotdeck_imputation_data <- hot_deck_imputation(data)
-em_imputation_data <- impute_EM(data)
-gam_imputation_data <- gam_based_imputation(data)
-forest_imputation_data <- tree_based_imputation(data)
+# Conclusions
 
+The visualizations demonstrate that:
 
-plot(mean_imputation_data$x1, mean_imputation_data$x2, 
-     col = ifelse(is.na(data$x2), "red", "black"),
-     xlab = "x1", ylab = "x2", title("mean"))
-
-plot(knn_imputation_data$x1, knn_imputation_data$x2, 
-     col = ifelse(is.na(data$x2), "red", "black"),
-     xlab = "x1", ylab = "x2", title("kNN"))
-
-plot(regression_imputation_data$x1, regression_imputation_data$x2,
-     col = ifelse(is.na(data$x2), "red", "black"),
-     xlab = "x1", ylab = "x2", title("regression"))
-
-plot(hotdeck_imputation_data$x1, hotdeck_imputation_data$x2,
-     col = ifelse(is.na(data$x2), "red", "black"),
-     xlab = "x1", ylab = "x2", title("hotdeck"))
-
-plot(em_imputation_data$x1, em_imputation_data$x2,
-     col = ifelse(is.na(data$x2), "red", "black"),
-     xlab = "x1", ylab = "x2", title("em"))
-
-plot(gam_imputation_data$x1, gam_imputation_data$x2,
-     col = ifelse(is.na(data$x2), "red", "black"),
-     xlab = "x1", ylab = "x2", title("gam"))
-
-plot(forest_imputation_data$x1, forest_imputation_data$x2,
-     col = ifelse(is.na(data$x2), "red", "black"),
-     xlab = "x1", ylab = "x2", title("forest"))
-
-```
-
-
-# cubic
-
-```{r}
-
-eps <- rnorm(n, 0,0.1)
-inf <- -1
-sup <- 1
-x1 <- runif(n, inf, sup)
-x2 <- x1^3 + eps
-
-
-data <- delete_MAR_1_to_x(data.frame(x1,x2), p, cols_mis = "x2", cols_ctrl = "x1", x = 10)
-
-
-plot(data$x1, x2, col = ifelse(is.na(data$x2), "red", "black"), 
-     xlab = "x1", ylab = "x2")
-
-```
-
-```{r}
-mean_imputation_data <- simple_imputation(data, "mean")
-knn_imputation_data <- kNN(data, variable = "x2")
-regression_imputation_data <- regression_imputation(data)
-hotdeck_imputation_data <- hot_deck_imputation(data)
-em_imputation_data <- impute_EM(data)
-gam_imputation_data <- gam_based_imputation(data)
-forest_imputation_data <- tree_based_imputation(data)
-
-
-plot(mean_imputation_data$x1, mean_imputation_data$x2, 
-     col = ifelse(is.na(data$x2), "red", "black"),
-     xlab = "x1", ylab = "x2", title("mean"))
-
-plot(knn_imputation_data$x1, knn_imputation_data$x2, 
-     col = ifelse(is.na(data$x2), "red", "black"),
-     xlab = "x1", ylab = "x2", title("kNN"))
-
-plot(regression_imputation_data$x1, regression_imputation_data$x2,
-     col = ifelse(is.na(data$x2), "red", "black"),
-     xlab = "x1", ylab = "x2", title("regression"))
-
-plot(hotdeck_imputation_data$x1, hotdeck_imputation_data$x2,
-     col = ifelse(is.na(data$x2), "red", "black"),
-     xlab = "x1", ylab = "x2", title("hotdeck"))
-
-plot(em_imputation_data$x1, em_imputation_data$x2,
-     col = ifelse(is.na(data$x2), "red", "black"),
-     xlab = "x1", ylab = "x2", title("em"))
-
-plot(gam_imputation_data$x1, gam_imputation_data$x2,
-     col = ifelse(is.na(data$x2), "red", "black"),
-     xlab = "x1", ylab = "x2", title("gam"))
-
-plot(forest_imputation_data$x1, forest_imputation_data$x2,
-     col = ifelse(is.na(data$x2), "red", "black"),
-     xlab = "x1", ylab = "x2", title("forest"))
-
-```
-
-
-# log
-
-```{r}
-
-eps <- rnorm(n, 0,0.2)
-inf <- 1
-sup <- 100
-x1 <- runif(n, inf, sup)
-x2 <- log(x1) + eps
-
-
-data <- delete_MAR_1_to_x(data.frame(x1,x2), p, cols_mis = "x2", cols_ctrl = "x1", x = 10)
-
-
-plot(data$x1, x2, col = ifelse(is.na(data$x2), "red", "black"), 
-     xlab = "x1", ylab = "x2")
-
-```
-
-```{r}
-mean_imputation_data <- simple_imputation(data, "mean")
-knn_imputation_data <- kNN(data, variable = "x2")
-regression_imputation_data <- regression_imputation(data)
-hotdeck_imputation_data <- hot_deck_imputation(data)
-em_imputation_data <- impute_EM(data)
-gam_imputation_data <- gam_based_imputation(data)
-forest_imputation_data <- tree_based_imputation(data)
-
-
-plot(mean_imputation_data$x1, mean_imputation_data$x2, 
-     col = ifelse(is.na(data$x2), "red", "black"),
-     xlab = "x1", ylab = "x2", title("mean"))
-
-plot(knn_imputation_data$x1, knn_imputation_data$x2, 
-     col = ifelse(is.na(data$x2), "red", "black"),
-     xlab = "x1", ylab = "x2", title("kNN"))
-
-plot(regression_imputation_data$x1, regression_imputation_data$x2,
-     col = ifelse(is.na(data$x2), "red", "black"),
-     xlab = "x1", ylab = "x2", title("regression"))
-
-plot(hotdeck_imputation_data$x1, hotdeck_imputation_data$x2,
-     col = ifelse(is.na(data$x2), "red", "black"),
-     xlab = "x1", ylab = "x2", title("hotdeck"))
-
-plot(em_imputation_data$x1, em_imputation_data$x2,
-     col = ifelse(is.na(data$x2), "red", "black"),
-     xlab = "x1", ylab = "x2", title("em"))
-
-plot(gam_imputation_data$x1, gam_imputation_data$x2,
-     col = ifelse(is.na(data$x2), "red", "black"),
-     xlab = "x1", ylab = "x2", title("gam"))
-
-plot(forest_imputation_data$x1, forest_imputation_data$x2,
-     col = ifelse(is.na(data$x2), "red", "black"),
-     xlab = "x1", ylab = "x2", title("forest"))
-
-```
+1. Simple mean imputation tends to perform poorly as it ignores the relationship between variables
+2. kNN and hot deck methods can work well when there are similar cases nearby
+3. Regression imputation works best for linear relationships
+4. GAM and Random Forest methods are more flexible and can handle non-linear relationships better
+5. The choice of imputation method should depend on the underlying relationship between variables

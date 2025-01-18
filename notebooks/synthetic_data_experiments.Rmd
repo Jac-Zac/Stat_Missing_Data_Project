@@ -245,7 +245,6 @@ $$
 W_p(P,Z) \le W_p(P,Q) + W_p(Q,Z).
 $$
 
-
 #### The Discrete Case
 
 The Kantorovich problem can also be expressed in discrete form.
@@ -458,7 +457,7 @@ print(p1)
 # auc_value <- auc(roc_obj)
 ```
 
-### Make different predictions for each Imputation method
+### Test linear model for each Imputation method
 
 ```{r}
 # List of precomputed imputed datasets
@@ -494,8 +493,10 @@ metrics_results <- do.call(rbind, lapply(names(imputed_datasets), function(metho
 }))
 ```
 
-#### Comparing Predictions (RMSE and MAE) for each method
+#### Comparing Predictions (RMSE and MAE) of the linear model for each method
 > The original dataset is highlighted in red.
+
+Here we simply made a simple linear model with all of the covariate (knowing our synthetic dataset). To compare the RMSE and MAE when dealing with different inputated dataset.
 
 ```{r, echo = FALSE}
 # Define the function to create the plot with horizontal bars

@@ -25,36 +25,6 @@ print_function_code <- function(fun) {
   cat("```r\n", paste(fun_code, collapse = "\n"), "\n```", sep = "")
 }
 
-#' Plot Missing Data Patterns
-#'
-#' This function visualizes the pattern of missing data in a dataset. It creates a heatmap where
-#' missing values are shown in red and observed values are shown in white. The `index` is plotted
-#' on the x-axis, representing the rows of the data, and the variables (columns) are shown on the y-axis.
-#'
-#' @param data A data frame that contains the dataset for which missing data is to be visualized.
-#' @param mechanism_name A string to label the missing data plot (e.g., "Missing Completely at Random").
-#' @param color_palette A vector of two colors to represent observed and missing values. Defaults to white and red.
-#' @return A ggplot object displaying a heatmap of missing data patterns.
-#' @examples
-#' # Create a sample dataset with missing values
-#' sample_data <- data.frame(a = c(1, NA, 3, 4), b = c(NA, 2, 3, 4), c = c(1, 2, NA, 4))
-#' # Plot missing data patterns with a custom color palette
-#' plot_missing_data(sample_data, "Missing Completely at Random", color_palette = c("white", "red"))
-plot_missing_data <- function(data, mechanism_name, color_palette = c("white", "red")) {
-  # Create a logical matrix indicating missing data
-  data_missing <- as.data.frame(sapply(data, is.na))
-  data_missing$index <- 1:nrow(data_missing)
-  
-  # Reshape the data for plotting
-  data_missing_melted <- reshape2::melt(data_missing, id.vars = "index")
-  
-  # Plot the missing data patterns using ggplot
-  ggplot(data_missing_melted, aes(x = index, y = variable, fill = value)) +
-    geom_tile() +
-    scale_fill_manual(values = color_palette) +
-    labs(title = paste("Missing Data Pattern -", mechanism_name), x = "Index", y = "Variable")
-}
-
 #' Evaluate Model Performance on Imputed Data
 #'
 #' This function evaluates the performance of a linear regression model
@@ -83,4 +53,55 @@ evaluate_model_performance <- function(imputed_data, test_data) {
   
   # Return both RMSE and MAE as a named list
   return(list(rmse = rmse_value, mae = mae_value))
+}
+
+
+#' Plot Comparison of Different Imputation Methods
+#'
+#' This function generates comparison plots for various imputation methods,
+#' showing how each imputation method addresses missing data in a dataset.
+#' It performs multiple imputations, creates individual plots for each method,
+#' and arranges the plots in a grid for easy comparison.
+#'
+#' @param original_data A data frame containing the original complete dataset
+#' @param missing_data A data frame containing the dataset with missing values
+#' @return A grid of plots comparing the different imputation methods
+#' @examples
+#' plot_all_imputations(original_data, missing_data)
+#'
+plot_all_imputations <- function(original_data, missing_data) {
+  # Perform mean imputation
+  mean_imp <- simple_imputation(missing_data, "mean")
+  
+  # Perform k-Nearest Neighbors (kNN) imputation
+  knn_imp <- kNN(missing_data, variable = "x2")
+  
+  # Perform regression-based imputation
+  reg_imp <- regression_imputation(missing_data)
+  
+  # Perform hot deck imputation
+  hotdeck_imp <- hot_deck_imputation(missing_data)
+  
+  # Perform Expectation-Maximization (EM) imputation
+  em_imp <- impute_EM(missing_data)
+  
+  # Perform Generalized Additive Model (GAM) based imputation
+  gam_imp <- gam_based_imputation(missing_data)
+  
+  # Perform Random Forest-based imputation
+  forest_imp <- tree_based_imputation(missing_data)
+
+  # Create individual plots for each imputation method
+  plots <- list(
+    create_imputation_plot(missing_data, mean_imp, "Mean Imputation"),
+    create_imputation_plot(missing_data, knn_imp, "kNN Imputation"),
+    create_imputation_plot(missing_data, reg_imp, "Regression Imputation"),
+    create_imputation_plot(missing_data, hotdeck_imp, "Hot Deck Imputation"),
+    create_imputation_plot(missing_data, em_imp, "EM Imputation"),
+    create_imputation_plot(missing_data, gam_imp, "GAM Imputation"),
+    create_imputation_plot(missing_data, forest_imp, "Random Forest Imputation")
+  )
+
+  # Arrange all plots in a grid with 2 columns
+  grid.arrange(grobs = plots, ncol = 2)
 }

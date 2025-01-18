@@ -50,6 +50,7 @@ source(here("src", "synthetic_data.R"))
 source(here("src", "missing_data.R"))
 source(here("src", "inputation_methods.R"))
 source(here("src", "metrics.R"))
+source(here("src", "plots.R"))
 source(here("src", "utils.R"))
 
 # Fixes the seed for reproducibility
