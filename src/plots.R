@@ -78,3 +78,78 @@ create_imputation_plot <- function(data, imputed_data, title) {
             legend.text = element_text(size = 14)  # Increased legend text size
         )
 }
+
+#' Create Distribution Metrics Comparison Plot
+#'
+#' @param metrics_list A named list where each name corresponds to a method, and each value is a list containing `wasserstein` and `jsd` metrics
+#' @return A ggplot object for the comparison
+create_distribution_metrics_plot <- function(original_data, imputed_datasets) {
+  # Function to calculate the metrics for each imputed dataset
+  metrics_list <- lapply(imputed_datasets, function(imputed_data) {
+    # Assuming `original_data` is your original (non-imputed) dataset
+    compare_distributions(original_data, imputed_data, metrics = c("wasserstein", "jsd"))
+  })
+
+
+  # Extract methods and metrics
+  methods <- names(metrics_list)
+  metrics_df <- do.call(rbind, lapply(methods, function(method) {
+    data.frame(
+      Method = method,
+      Metric_Type = c("Wasserstein", "JSD"),
+      Value = c(metrics_list[[method]]$wasserstein, metrics_list[[method]]$jsd)
+    )
+  }))
+  
+  # Create the plot
+  ggplot(metrics_df, aes(x = reorder(Method, Value), y = Value)) +
+    geom_bar(stat = "identity", fill = "#5E81AC") +
+    geom_text(aes(label = round(Value, 3)), vjust = -0.5, size = 3) +
+    facet_wrap(~Metric_Type, scales = "free_y", ncol = 2) +
+    labs(title = "Distribution Metrics Comparison", x = "Method", y = "Metric Value") +
+    theme_minimal() +
+    theme(
+      axis.text.x = element_text(angle = 45, hjust = 1),
+      plot.title = element_text(hjust = 0.5),
+      strip.text = element_text(size = 12, face = "bold"),
+      strip.background = element_rect(fill = "#E5E9F0", color = NA),
+      panel.spacing = unit(2, "lines")
+    )
+}
+
+#' Plot Comparison of Different Imputation Methods and Distribution Metrics
+#'
+#' @param original_data A data frame containing the original complete dataset
+#' @param missing_data A data frame containing the dataset with missing values
+#' @param imputation_methods A named list containing the imputation methods and corresponding functions
+#' @return A list containing two elements: a list of individual plots comparing the imputation methods and the distribution metrics plot
+#'
+plot_imputations_and_metrics <- function(original_data, missing_data, imputation_methods) {
+  # Create a list to store the imputed datasets
+  imputed_datasets <- list()
+  
+  # Create a list to store the individual plots for each method
+  plots <- lapply(names(imputation_methods), function(method_name) {
+    # Apply the imputation method to the missing_data
+    imputed_data <- imputation_methods[[method_name]](missing_data)
+    
+    # Store the imputed dataset in the list with method name as key
+    imputed_datasets[[method_name]] <<- imputed_data  # Use global assignment to ensure persistence
+
+    # Create a plot comparing the imputed_data to the original_data
+    create_imputation_plot(
+      data = missing_data,            # Pass the dataset with missing values
+      imputed_data = imputed_data,    # Pass the imputed dataset
+      title = paste("Imputation Method:", method_name)  # Add method name to the title
+    )
+  })
+  
+  # Create the metrics distribution plot using the imputed datasets
+  metrics_plot <- create_distribution_metrics_plot(original_data, imputed_datasets)
+  
+  # Return both the list of individual plots and the metrics plot
+  return(list(
+    imputation_plots = plots,        # Return the list of individual plots
+    metrics_plot = metrics_plot      # Return the distribution metrics plot
+  ))
+}

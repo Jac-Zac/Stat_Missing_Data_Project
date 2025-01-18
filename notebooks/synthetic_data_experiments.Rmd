@@ -364,50 +364,20 @@ where \(\mathrm{KL}(\cdot \,\|\, \cdot)\) denotes the KL divergence, defined by:
    \]
    This metric satisfies the triangle inequality.
 
-
-```{r, echo = T, class.source = 'fold-show'}
-# Create comparison results dataframe with safe extraction for MAE, RMSE, and Correlation
-comparison_methods <- c("Mean", "Median", "Regression", "Hot-deck", "EM", "GAM", "Tree")
-
-# Create a data frame from the list of metrics
-distribution_comparison <- data.frame(
-  Method = rep(comparison_methods, each = 2),  # Repeat each method for two metrics
-  Metric_Type = rep(c("Wasserstein", "JSD"), times = length(comparison_methods)),
-  Value = c(mean_metrics$wasserstein, mean_metrics$jsd,
-            median_metrics$wasserstein, median_metrics$jsd,
-            regression_metrics$wasserstein, regression_metrics$jsd,
-            hotdeck_metrics$wasserstein, hotdeck_metrics$jsd,
-            em_metrics$wasserstein, em_metrics$jsd,
-            gam_metrics$wasserstein, gam_metrics$jsd,
-            forest_metrics$wasserstein, forest_metrics$jsd)
-)
-```
-
 ```{r, echo = F}
-# Create the faceted distribution metrics plot with filtered data
-p1 <- ggplot(distribution_comparison, 
-             aes(x = reorder(Method, Value), 
-                 y = Value)) +
-  geom_bar(stat = "identity", 
-           fill = "#5E81AC") +
-  geom_text(aes(label = round(Value, 3)), 
-            vjust = -0.5,
-            size = 3) +
-  facet_wrap(~Metric_Type, 
-             scales = "free_y",  # Allow different y-axis scales for each metric
-             ncol = 2) +        # Place plots side by side
-  labs(title = "Distribution Metrics Comparison",
-       x = "Method",
-       y = "Metric Value") +
-  theme_minimal() +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1),
-        plot.title = element_text(hjust = 0.5),
-        strip.text = element_text(size = 12, face = "bold"),
-        strip.background = element_rect(fill = "#E5E9F0", color = NA),
-        panel.spacing = unit(2, "lines"))  # Add some space between the facets
+# List of precomputed imputed datasets (used for retrieving the metrics)
+imputed_datasets <- list(
+  "Mean" = mean_imputation_data,
+  "Median" = median_imputation_data,
+  "Regression" = regression_imputation_data,
+  "Hot-deck" = hotdeck_imputation_data,
+  "EM" = em_imputation_data,
+  "GAM" = gam_imputation_data,
+  "Tree" = forest_imputation_data
+)
 
-# Print the plot
-print(p1)
+# Use the created function to generate the plot
+create_distribution_metrics_plot(train_data, imputed_datasets)
 ```
 
 ## Performance metrics for the Prediction
