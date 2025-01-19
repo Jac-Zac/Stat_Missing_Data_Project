@@ -11,15 +11,16 @@
 This project focuses on analyzing **Missing At Random (MAR)** data patterns using simulated dataset. The analysis is conducted through various statistical methods to understand and handle missing data scenarios effectively.
 The entire experiment is guided by many metrics that give us a way to compare the results.
 
-### Presentation Outline
+## Presentation Outline
 
 > 5 Minutes
 
 Abstract and study objective. Description of project structure.
 Description of project structure.
 
-- #### Part 1: Synthetic Data Study
-  > 10 Minutes
+### Part 1: Synthetic Data Study
+
+> 10 Minutes
 
 Missing value generation mechanisms.
 **Imputation strategies:**
@@ -37,8 +38,9 @@ To measure the divergence between the original and imputed datasets, two key met
 
 **Visualization and comparison of imputation strategies**
 
-- #### Part 2: Case Study
-  > 10 Minutes
+### Part 2: Case Study
+
+> 10 Minutes
 
 This part will be a case study on a real dataset with missing data. In this section we will apply the techniques we have study previously taking in consideration what we learned.
 
