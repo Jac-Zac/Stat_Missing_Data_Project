@@ -8,21 +8,51 @@
 
 ## Project Overview
 
-This project focuses on analyzing Missing At Random (MAR) data patterns using simulated dataset. The analysis is conducted through various statistical methods to understand and handle missing data scenarios effectively. The entire experiment is guided by many metrics that give us a way to compare the results.
+This project focuses on analyzing **Missing At Random (MAR)** data patterns using simulated dataset. The analysis is conducted through various statistical methods to understand and handle missing data scenarios effectively.
+The entire experiment is guided by many metrics that give us a way to compare the results.
 
-## Description
+### Presentation Outline
 
-This project investigates Missing At Random (MAR) patterns in data using simulation studies. The primary objective is to develop and evaluate methodologies for handling missing data, with a focus on minimizing the divergence from the original data distribution and ensuring robust model performance.
+> 5 Minutes
 
-The experiment begins with data cleaning and preprocessing, followed by an **80/20 train-test split** to facilitate performance comparison of various models. The analysis proceeds in two stages: the training set undergoes exploratory analysis and model fitting, serving as a baseline for evaluation; a cloned version of the training set is modified by introducing missing data through MAR mechanisms, simulating real-world scenarios of missingness.
+Abstract and study objective. Description of project structure.
+Description of project structure.
 
-Our primary goal is to impute or reconstruct the missing data to approximate the original distribution as closely as possible. The following techniques are employed for imputation:
+- #### Part 1: Synthetic Data Study
+  > 10 Minutes
 
-- **Conditional statistics** (e.g., median, conditional mean),
-- **Data deletion** strategies (e.g., pairwise and listwise deletion),
-- **Predictive modeling** using various regression approaches (GLM, GAM, and Random Forest).
+Missing value generation mechanisms.
+**Imputation strategies:**
 
-To measure the divergence between the original and imputed datasets, two key metrics are utilized: Wasserstein Distance to quantify distributional differences and Jensen-Shannon Divergence to measure the similarity between probability distributions.
+- Linear with heteroscedasticity
+
+- Polynomial imbalanced
+
+- Categorical
+
+- Non-polynomial
+
+Explanation of different Metrics for differences between distributional, and why we choose to use them.
+To measure the divergence between the original and imputed datasets, two key metrics are utilized: Wasserstein Distance to quantify distributional differences and sqrt of Jensen-Shannon Divergence to measure the similarity between probability distributions.
+
+**Visualization and comparison of imputation strategies**
+
+- #### Part 2: Case Study
+  > 10 Minutes
+
+This part will be a case study on a real dataset with missing data. In this section we will apply the techniques we have study previously taking in consideration what we learned.
+
+- Dataset description
+
+  - Highlight missing value mechanisms
+  - Exploratory data analysis
+  - Train-test split
+
+- Dataset imputation
+
+- Model fitting
+
+- Results comparison using distance-based metrics
 
 After imputation, the datasets generated under different conditions (e.g., 5% and 15% missing data) are analyzed, and models are fitted to assess the quality of reconstruction. Finally, using standard prediction metrics, the performance of models trained on the imputed datasets is compared to those trained on the original dataset. This comparison allows for a comprehensive evaluation of the effectiveness of different imputation techniques.
 
@@ -32,13 +62,14 @@ After imputation, the datasets generated under different conditions (e.g., 5% an
 .
 ├── notebooks
 │   ├── dataset_analysis
-│   │   └── synthetic_data_analysis.Rmd
+│   │   └── ...
 │   ├── final_results.Rmd
-│   ├── synthetic_data_experiments.Rmd
-│   └── setup.R
+│   └── imputation_techniques_visualization.Rmd
 ├── src
 │   ├── inputation_methods.R
 │   ├── metrics.R
+│   ├── setup.R
+│   ├── plots.R
 │   ├── missing_data.R
 │   ├── synthetic_data.R
 │   └── utils.R
@@ -49,8 +80,8 @@ After imputation, the datasets generated under different conditions (e.g., 5% an
 
 Detailed documentation is available in the following notebooks:
 
-- [`synthetic_data_experiments.Rmd`](notebooks/synthetic_data_experiments.Rmd): Initial analysis, validation of different methods to deal with missing data on synthetic dataset
-- [`synthetic_data_analysis.Rmd`](notebooks/dataset_analysis/synthetic_data_analysis.Rmd): Initial analysis of the dataset + artificial creation of missing data
+- [`imputation_techniques_visualization.Rmd`](notebooks/imputation_techniques_visualization.Rmd): First part of the project, Analyzing imputation on synthetic data
+- [`case_study.Rmd`](notebooks/imputation_techniques_visualization.Rmd): This will contain a case study on a real dataset
 - [`final_results.Rmd`](notebooks/final_results.Rmd): Comprehensive results and conclusions
 
 #### Utilities
@@ -63,7 +94,7 @@ Detailed documentation is available in the following notebooks:
 
 ### Project Map
 
-![showcase](.assets/diagram.png)
+To add new version ...
 
 ## TODO
 
@@ -73,17 +104,8 @@ Detailed documentation is available in the following notebooks:
 
   > Showcase what happens
 
-- Test for two different percentage 5% - 15% (or 10% - 20%, tbd)
-
-- [x] Testing more complex imputation mechanisms
-  - **Still missing**:
-    - [ ] Multiple imputation
-    - [ ] Some other possible ideas
-- [ ] Test on more complex synthetic_datasets so that the GAM and Trees can shine
-- [ ] Put everything in a cleaner and presentable format
-- [ ] Implement the function to compute wasserstein distance (and Jensen-Shannon divegence?)
-- [ ] Review functions inside [`synthetic_data.R`](src/synthetic_data.R)
-- [x] Review functions inside [`missing_data.R`](src/missing_data.R)
+- [ ] Perform the study on the real dataset
+- [ ] Continue the exploration of synthetic data
 
 #### Useful resources for mice:
 
@@ -101,10 +123,6 @@ Detailed documentation is available in the following notebooks:
 - [Various imputation techniques in detail](https://www.researchgate.net/publication/220579612_Missing_Data_Imputation_Techniques)
 - [Generating Synthetic Missing Data: A Review by Missing Mechanism](https://ieeexplore.ieee.org/document/8605316/)
 - [Imputation techniques: an overview](https://www.researchgate.net/publication/220579612_Missing_Data_Imputation_Techniques)
-
-## Preliminary Results
-
-_Note: Preliminary results should be submitted 10 days before the exam for feedback on next steps._
 
 ## Contributors
 
