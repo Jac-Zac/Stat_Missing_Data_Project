@@ -65,6 +65,37 @@ regression_imputation <- function(data, noise = FALSE) {
   return(data)
 }
 
+# ALTERNATIVE APPROACH TO DISCUSS
+#' Regression Imputation with Empirical Noise
+#' @param data Data frame with missing values
+#' @param noise Logical; if TRUE, adds noise to the imputed values based on residuals (default = FALSE)
+#' @return Data frame with missing values imputed using regression
+# regression_imputation <- function(data, noise = FALSE) {
+#   for (col in names(data)) {
+#     if (any(is.na(data[[col]])) && is.numeric(data[[col]])) {
+#       complete_data <- data[complete.cases(data), ]
+#       incomplete_rows <- which(is.na(data[[col]]))
+#       predictors <- setdiff(names(data), col)
+#       model <- lm(as.formula(paste(col, "~ .")), data = complete_data)
+#       predictions <- predict(model, newdata = data[incomplete_rows, predictors, drop = FALSE])
+#       
+#       if (noise) {
+#         # Use residuals as a proxy for noise
+#         residuals <- model$residuals
+#         
+#         # Sample noise from the residuals to preserve their empirical distribution
+#         noise_values <- sample(residuals, size = length(predictions), replace = TRUE)
+#         
+#         # Add the sampled noise to the predictions
+#         predictions <- predictions + noise_values
+#       }
+#       
+#       data[[col]][incomplete_rows] <- predictions
+#     }
+#   }
+#   return(data)
+# }
+
 #' Hot-deck Imputation
 #' @param data Data frame with missing values
 #' @return Data frame with missing values imputed using hot-deck imputation

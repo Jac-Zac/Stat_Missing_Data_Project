@@ -62,7 +62,7 @@ In a linear relationship, we expect methods like regression imputation to perfor
 n <- 200
 p <- 0.3
 
-linear_data <- generate_data(n, "linear", noise_sd = 0.2)
+linear_data <- generate_data(n, "linear", noise_sd = 0.4)
 linear_missing <- delete_MAR_1_to_x(linear_data, p, cols_mis = "x2", cols_ctrl = "x1", x = 10)
 
 # Use the new combined analysis function
