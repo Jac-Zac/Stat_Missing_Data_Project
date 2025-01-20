@@ -41,9 +41,11 @@ imputation_methods <- list(
   return(imputed_data)
   },
   "Regression Imputation" = function(data) { regression_imputation(data) },
+  "Regression Imputation with Noise" = function(data) { regression_imputation(data, noise = TRUE) },
   "Hot Deck Imputation" = function(data) { hot_deck_imputation(data) },
   "EM Imputation" = function(data) { impute_EM(data) },
   "GAM Imputation" = function(data) { gam_based_imputation(data) },
+  "GAM Imputation with Noise" = function(data) { gam_based_imputation(data, noise = TRUE) },
   "Random Forest Imputation" = function(data) { tree_based_imputation(data) }
 )
 ```
@@ -57,10 +59,10 @@ In a linear relationship, we expect methods like regression imputation to perfor
 
 ```{r, fig.width=18, fig.height=14}
 # Generate and create missing data
-n <- 100
+n <- 200
 p <- 0.3
 
-linear_data <- generate_data(n, "linear")
+linear_data <- generate_data(n, "linear", noise_sd = 0.2)
 linear_missing <- delete_MAR_1_to_x(linear_data, p, cols_mis = "x2", cols_ctrl = "x1", x = 10)
 
 # Use the new combined analysis function
@@ -160,3 +162,7 @@ The visualizations demonstrate that:
 3. Regression imputation works best for linear relationships
 4. GAM and Random Forest methods are more flexible and can handle non-linear relationships better
 5. The choice of imputation method should depend on the underlying relationship between variables
+
+# References
+
+- Zhang Z. Missing data imputation: focusing on single imputation. Ann Transl Med. 2016 Jan;4(1):9. doi: 10.3978/j.issn.2305-5839.2015.12.38. PMID: 26855945; PMCID: PMC4716933.

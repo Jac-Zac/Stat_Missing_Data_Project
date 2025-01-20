@@ -38,8 +38,9 @@ simple_imputation <- function(data, method = "mean") {
 
 #' Regression Imputation
 #' @param data Data frame with missing values
+#' @param noise Logical; if TRUE, adds noise to the imputed values (default = FALSE)
 #' @return Data frame with missing values imputed using regression
-regression_imputation <- function(data) {
+regression_imputation <- function(data, noise = FALSE) {
   for (col in names(data)) {
     if (any(is.na(data[[col]])) && is.numeric(data[[col]])) {
       complete_data <- data[complete.cases(data), ]
@@ -47,6 +48,17 @@ regression_imputation <- function(data) {
       predictors <- setdiff(names(data), col)
       model <- lm(as.formula(paste(col, "~ .")), data = complete_data)
       predictions <- predict(model, newdata = data[incomplete_rows, predictors, drop = FALSE])
+
+      if (noise) {
+        # Calculate residuals and their standard deviation
+        residuals <- model$residuals
+        residual_sd <- sd(residuals, na.rm = TRUE)
+
+        # Add random noise to the predictions (scaled by residual_sd)
+        noise_values <- rnorm(length(predictions), mean = 0, sd = residual_sd)
+        predictions <- predictions + noise_values
+      }
+
       data[[col]][incomplete_rows] <- predictions
     }
   }
@@ -137,59 +149,86 @@ tree_based_imputation <- function(data) {
   return(data)
 }
 
-gam_based_imputation <- function(data, max_predictors = 3) {
+
+#' Generalized Additive Model (GAM) Based Imputation
+#' 
+#' This function performs imputation of missing numeric values in a data frame using 
+#' a Generalized Additive Model (GAM). Users can optionally add noise to the imputed values 
+#' to mimic the variability of the original data.
+#' 
+#' @param data A data frame containing numeric and/or categorical columns with missing values.
+#' @param max_predictors The maximum number of predictors to use for the GAM model. Default is 3.
+#' @param noise Logical. If TRUE, adds random noise to the predictions based on the residuals' 
+#'   standard deviation. Default is TRUE.
+#' @return A data frame with missing numeric values imputed using GAM, optionally with added noise.
+#' @examples
+#' # Example usage:
+#' data <- data.frame(a = c(1, 2, NA, 4), b = c(2, NA, 3, 4), c = c(NA, 1, 2, 3))
+#' imputed_data <- gam_based_imputation_with_noise(data, max_predictors = 2, noise = TRUE)
+#' @export
+gam_based_imputation <- function(data,noise = FALSE, max_predictors = 3) {
   # Create a copy of the data
   imputed_data <- data
-  
+
   # Function to find best predictor columns
   find_predictors <- function(target_col, data, max_predictors) {
     numeric_cols <- names(data)[sapply(data, is.numeric)]
     numeric_cols <- setdiff(numeric_cols, target_col)
-    
+
     if (length(numeric_cols) == 0) return(character(0))
-    
+
     # Calculate correlations with target column
     correlations <- sapply(numeric_cols, function(col) {
       abs(cor(data[[target_col]], data[[col]], 
           use = "pairwise.complete.obs"))
     })
-    
+
     # Sort and select top predictors
     predictors <- names(sort(correlations, decreasing = TRUE))
     predictors[1:min(length(predictors), max_predictors)]
   }
-  
+
   # Process each column
   for (col in names(imputed_data)) {
     if (any(is.na(imputed_data[[col]])) && is.numeric(imputed_data[[col]])) {
       # Find rows with missing values
       missing_indices <- which(is.na(imputed_data[[col]]))
-      
+
       # Skip if too few complete cases
       if (sum(!is.na(imputed_data[[col]])) < 10) next
-      
+
       # Find best predictor columns
       predictors <- find_predictors(col, imputed_data, max_predictors)
-      
+
       if (length(predictors) > 0) {
         # Create formula for GAM
         formula_terms <- paste("s(", predictors, ")", collapse = " + ")
         formula_str <- paste(col, "~", formula_terms)
-        
+
         # Prepare training data
         train_data <- imputed_data[!is.na(imputed_data[[col]]), 
           c(col, predictors)]
-        
+
         # Fit GAM model and predict
         tryCatch({
           gam_model <- gam(as.formula(formula_str), data = train_data)
-          
+
           # Prepare prediction data
           pred_data <- imputed_data[missing_indices, predictors, drop = FALSE]
-          
+
           # Make predictions
           predictions <- predict(gam_model, newdata = pred_data)
-          
+
+          if (noise) {
+            # Calculate residuals and their standard deviation
+            residuals <- residuals(gam_model)
+            residual_sd <- sd(residuals, na.rm = TRUE)
+
+            # Add random noise to the predictions (scaled by residual_sd)
+            noise_values <- rnorm(length(predictions), mean = 0, sd = residual_sd)
+            predictions <- predictions + noise_values
+          }
+
           # Impute missing values
           imputed_data[[col]][missing_indices] <- predictions
         }, error = function(e) {
@@ -198,7 +237,7 @@ gam_based_imputation <- function(data, max_predictors = 3) {
       }
     }
   }
-  
+
   return(imputed_data)
 }
 

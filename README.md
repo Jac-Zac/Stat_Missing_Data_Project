@@ -68,7 +68,7 @@ After imputation, the datasets generated under different conditions (e.g., 5% an
 │   ├── final_results.Rmd
 │   └── imputation_techniques_visualization.Rmd
 ├── src
-│   ├── inputation_methods.R
+│   ├── imputation_methods.R
 │   ├── metrics.R
 │   ├── setup.R
 │   ├── plots.R
@@ -89,7 +89,7 @@ Detailed documentation is available in the following notebooks:
 #### Utilities
 
 - [`synthetic_data.R`](src/synthetic_data.R): Functions to generate a synthetic dataset
-- [`inputation_methods.R`](src/inputation_methods.R): Functions to implement different imputation techniques
+- [`imputation_methods.R`](src/imputation_methods.R): Functions to implement different imputation techniques
 - [`missing_data.R`](src/missing_data.R): Functions to artificially generate missing data
 - [`metrics.R`](src/metrics.R): Functions to evaluate different strategies to handle missing data
 - [`utils.R`](src/utils.R): Functions that are general utilities
