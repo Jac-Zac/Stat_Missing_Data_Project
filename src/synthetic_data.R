@@ -53,7 +53,7 @@ generate_data <- function(n,
                  log(x1) + eps
                },
                "piecewise" = {
-                 pivot <- (max + min) / 2
+                 pivot <- (x_range[2] + x_range[1]) / 2
                  
                  # Create the dependent variable x2 using a piecewise structure
                  x2 <- ifelse(x1 < pivot, 
