@@ -4,6 +4,11 @@
 #' @param relationship The relationship between `x1` and `x2`. Options: "linear", "quadratic", "cubic", or "log".
 #' @param noise_sd Standard deviation of the noise added to the relationship.
 #' @param x_range A numeric vector of length 2 specifying the range for `x1`.
+#' @param homoscedasticity Boolean indicating if the noise is homoschedastic, if FALSE add linear noise
+#' @param min_sd_noise Numeric specifying min noise when homoschedastic is FALSE
+#' @param balanced Boolean indicating if the dataset is balance, if FALSE use beta distribution
+#' @param alpha numeric for beta distributio
+#' @param beta numeric for beta distribution
 #' @return A data frame with two columns: `x1` (independent variable) and `x2` (dependent variable).
 #' @details The function generates synthetic data with a specified relationship between `x1` and `x2`, adding noise to simulate real-world variability. If the `relationship` is "log", `x_range` must ensure positive values for `x1`.
 #' @examples
@@ -12,12 +17,31 @@
 #' 
 #' # Generate data with a quadratic relationship
 #' data <- generate_data(n = 100, relationship = "quadratic", noise_sd = 0.2, x_range = c(-2, 2))
-generate_data <- function(n, relationship = "linear", noise_sd = 0.1, x_range = c(-1, 1)) {
-  # Generate random noise
-  eps <- rnorm(n, 0, noise_sd)
+generate_data <- function(n, 
+                          relationship = "linear", 
+                          noise_sd = 0.1, 
+                          x_range = c(-1, 1), 
+                          homoscedasticity = TRUE, min_sd_noise = 0,
+                          balanced = TRUE, alpha = 2, beta = 5) {
   
-  # Generate x1 uniformly within the specified range
-  x1 <- runif(n, x_range[1], x_range[2])
+  
+  # Generate random noise
+  if(homoscedasticity == TRUE){
+    eps <- rnorm(n, 0, noise_sd) 
+  } else {
+    eps <- rnorm(n, mean = 0, sd = seq(min_sd_noise, noise_sd, length.out = n))
+  }
+  
+  if(balanced == TRUE) {
+    x1 <- runif(n, x_range[1], x_range[2])  # Balanced, uniform distribution
+  } else {
+    # Unbalanced, Beta distribution
+    beta_values <- rbeta(n, shape1 = alpha, shape2 = beta)
+    # Rescale to the desired range [x_range[1], x_range[2]]
+    x1 <- x_range[1] + (x_range[2] - x_range[1]) * beta_values
+  }
+  # ugly workaround for summing linear eps after
+  x1 <- sort(x1)
   
   # Compute x2 based on the specified relationship
   x2 <- switch(relationship,
@@ -27,6 +51,15 @@ generate_data <- function(n, relationship = "linear", noise_sd = 0.1, x_range = 
                "log" = {
                  if (x_range[1] <= 0) stop("X range must be positive for log relationship")
                  log(x1) + eps
+               },
+               "piecewise" = {
+                 pivot <- (max + min) / 2
+                 
+                 # Create the dependent variable x2 using a piecewise structure
+                 x2 <- ifelse(x1 < pivot, 
+                              runif(1, min = -10, max = 10) + runif(1, min = -10, max = 10) * x1,    # For x1 < pivot
+                              runif(1, min = -10, max = 10) + runif(1, min = -10, max = 10) * x1)    # For x1 >= pivot
+                 x2 = x2 + eps
                })
   
   # Return the generated data as a data frame
