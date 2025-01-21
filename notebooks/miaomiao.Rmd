@@ -1,0 +1,155 @@
+---
+title: "parte2"
+author: "Devid Rosa"
+date: "2025-01-20"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(VIM)
+library(missMethods)
+library(ggplot2)
+library(GGally)
+library(cowplot)
+library(corrplot)
+library(Metrics)
+library(reshape2)
+library(e1071)
+library(GGally)
+library(gridExtra)
+```
+
+```{r}
+set.seed(100)
+```
+
+
+missing.rows = dim(lifExp)[1] -  dim(na.omit(lifExp))[1]
+sprintf("Dimensione del dataset: [%s]", toString(dim(lifExp)))
+sprintf("Missing rows: %s (%s%%)", missing.rows, round((missing.rows*100)/dim(lifExp)[1], 2))
+
+missings_df <- data.frame(type=c("missing", "non-missing") ,count = c(missing.rows,  dim(na.omit(lifExp))[1]))
+
+ggplot(missings_df, aes(fill=type, y="", x=count)) + 
+    geom_bar(position="stack", stat="identity")+
+    ggtitle("Valori mancanti vs non") +
+    xlab("Osservazioni") + ylab("") +
+    theme(text = element_text(size = 18))+
+    scale_fill_manual(values = c(nord_colors[2], nord_colors[3]))+
+    theme_bw()
+
+```{r}
+data_original<-read.csv("Boston-house-price-data.csv")
+data_original$CHAS<-as.factor(data_original$CHAS)
+#data_original$quality <- factor(
+#  ifelse(as.numeric(data_original$quality) >= 6, "good", "bad")
+#)
+# Remove AGE and INDUS columns
+data_original <- data_original %>% select(-c(AGE, INDUS))
+
+str(data_original)
+summary(data_original)
+```
+```{r}
+library(MASS)
+# Load dplyr package
+library(dplyr)
+
+
+full_model <- lm(MEDV ~ ., data = data_original)  # Full model
+null_model <- lm(MEDV ~ 1, data = data_original)  # Null model
+stepwise_model <- stepAIC(full_model, direction = "both")  # Both directions
+
+n <- nrow(data_original) 
+stepwise_model_bic <- stepAIC(full_model, direction = "both", k = log(n))
+
+# View the final model selected by BIC
+summary(stepwise_model_bic)
+
+summary(full_model)
+summary(null_model)
+summary(stepwise_model)
+
+```
+
+
+```{r}
+nord_colors= c("#5e81ac", "#bf616a", "#a3be8c", "#d08770", "#ebcb8b", "#b48ead")
+```
+
+```{r}
+# Exclude factor variables
+corr <- round(cor(subset(data_original, select =-c(CHAS))), 3)
+
+# Plot the correlation matrix with different upper and lower
+corrplot.mixed(corr, 
+    lower="number", 
+    upper ="ellipse",
+    addgrid.col = "gray",
+    tl.col = "black",
+    tl.cex = 0.9,
+    lower.col = colorRampPalette(c("blue", "white", "red"))(100),
+    upper.col = colorRampPalette(c(nord_colors[1], "white", nord_colors[2]))(100)
+)
+```
+```{r}
+
+```
+
+```{r}
+
+par(mfrow=c(1,3))
+# Example scatterplot
+ggplot(data_original, aes(x = CRIM, y = TAX)) +
+  geom_point(alpha = 0.7, color = nord_colors[1], size = 3) +
+  ggtitle("Distribuzione dell'aspettativa di vita") +
+  theme(text = element_text(size = 15)) +
+  theme_bw()
+
+ggplot(data_original, aes(x = NOX, y = DIS)) +
+  geom_point(alpha = 0.7, color = nord_colors[2], size = 3) +
+  ggtitle("Distribuzione dell'aspettativa di vita") +
+  theme(text = element_text(size = 15)) +
+  theme_bw()
+
+ggplot(data_original, aes(x = RM, y = LSTAT)) +
+  geom_point(alpha = 0.7, color = nord_colors[3], size = 3) +
+  ggtitle("Distribuzione dell'aspettativa di vita") +
+  theme(text = element_text(size = 15)) +
+  theme_bw()
+
+```
+
+```{r}
+missingMar<-delete_MAR_1_to_x(data_original, p = c(0.2, 0.3, 0.1), cols_mis = c("NOX", "LSTAT", "CRIM"), cols_ctrl = c("DIS", "RM", "TAX"), x =10)
+aggr_plot <- aggr(missingMar, numbers = TRUE,labels=names(data_original), prop = c(TRUE, FALSE) )
+``` 
+```{r}
+plot(data_original$RM,data_original$LSTAT, col = 'red')
+points(missingMar$RM, missingMar$LSTAT)
+
+plot(data_original$RAD,data_original$CRIM, col = 'red')
+points(missingMar$RAD, missingMar$CRIM)
+
+plot(data_original$DIS,data_original$NOX, col = 'red')
+points(missingMar$DIS, missingMar$NOX)
+
+```
+
+```{r}
+miaomean<-impute_mean(missingMar)
+```
+
+```{r}
+fitmiao<-lm(MEDV~., data = miaomean)
+summary(fitmiao)
+
+```
+
+
+
+

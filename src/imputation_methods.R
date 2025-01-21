@@ -158,10 +158,11 @@ multiple_imputation <- function(data, m = 5) {
   return(imputations)
 }
 
-#' Tree-Based Imputation
+#' Tree-Based Imputation with Optional Noise
 #' @param data Data frame with missing values
+#' @param noise Logical; if TRUE, adds noise to the imputed values based on residuals (default = FALSE)
 #' @return Data frame with missing values imputed using Random Forest
-tree_based_imputation <- function(data) { 
+tree_based_imputation <- function(data, noise = FALSE) { 
   # Loop through each column with missing values
   for (col in names(data)) {
     if (any(is.na(data[[col]]))) {
@@ -169,11 +170,24 @@ tree_based_imputation <- function(data) {
       missing_indices <- which(is.na(data[[col]]))
       complete_data <- data[!is.na(data[[col]]), ]
       
-      # Random Forest model: Use other columns to predict the missing column
+      # Fit the Random Forest model
       rf_model <- randomForest(as.formula(paste(col, "~ .")), data = complete_data)
       
-      # Impute the missing values using the Random Forest model
+      # Predict missing values
       imputed_values <- predict(rf_model, newdata = data[missing_indices, ])
+      
+      if (noise) {
+        # Calculate residuals
+        residuals <- complete_data[[col]] - predict(rf_model, newdata = complete_data)
+        
+        # Sample noise from residuals
+        noise_values <- sample(residuals, size = length(imputed_values), replace = TRUE)
+        
+        # Add noise to imputed values
+        imputed_values <- imputed_values + noise_values
+      }
+      
+      # Replace missing values with imputed values
       data[[col]][missing_indices] <- imputed_values
     }
   }

@@ -40,13 +40,14 @@ imputation_methods <- list(
   # Return the imputed dataset without the '_imp' column
   return(imputed_data)
   },
-  "Regression Imputation" = function(data) { regression_imputation(data) },
-  "Regression Imputation with Noise" = function(data) { regression_imputation(data, noise = TRUE) },
-  "Hot Deck Imputation" = function(data) { hot_deck_imputation(data) },
-  "EM Imputation" = function(data) { impute_EM(data) },
-  "GAM Imputation" = function(data) { gam_based_imputation(data) },
-  "GAM Imputation with Noise" = function(data) { gam_based_imputation(data, noise = TRUE) },
-  "Random Forest Imputation" = function(data) { tree_based_imputation(data) }
+  "Regression" = function(data) { regression_imputation(data) },
+  "Regression with Noise" = function(data) { regression_imputation(data, noise = TRUE) },
+  "Hot Deck" = function(data) { hot_deck_imputation(data) },
+  "EM" = function(data) { impute_EM(data) },
+  "GAM" = function(data) { gam_based_imputation(data) },
+  "GAM with Noise" = function(data) { gam_based_imputation(data, noise = TRUE) },
+  "Random Forest" = function(data) { tree_based_imputation(data) },
+  "Random Forest with Noise" = function(data) { tree_based_imputation(data, noise=TRUE) }
 )
 ```
 
@@ -62,7 +63,7 @@ In a linear relationship, we expect methods like regression imputation to perfor
 n <- 200
 p <- 0.3
 
-linear_data <- generate_data(n, "linear", noise_sd = 0.4)
+linear_data <- generate_data(n, "linear", noise_sd = 0.5)
 linear_missing <- delete_MAR_1_to_x(linear_data, p, cols_mis = "x2", cols_ctrl = "x1", x = 10)
 
 # Use the new combined analysis function
