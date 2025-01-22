@@ -25,6 +25,7 @@
 
 ## Load requirements 
 suppressMessages(library(ggplot2))
+suppressMessages(library(ggExtra))
 suppressMessages(library(here))
 suppressMessages(library(pROC))
 suppressMessages(library(corrplot))
