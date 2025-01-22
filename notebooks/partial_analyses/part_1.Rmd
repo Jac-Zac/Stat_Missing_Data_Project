@@ -51,21 +51,11 @@ The following paragraph presents visualizations of various imputation techniques
 imputation_methods <- list(
   "Mean Imputation" = function(data) { simple_imputation(data, "mean") },
   # Return only necessary collums
-  "KNN Imputation" = function(data) {
-  # Perform the kNN imputation
-  imputed_data <- kNN(data, variable = "x2")
-  
-  # Remove the column with the '_imp' suffix (e.g., x2_imp)
-  imputed_data <- imputed_data[, !grepl("_imp$", colnames(imputed_data))]
-  
-  # Return the imputed dataset without the '_imp' column
-  return(imputed_data)
-  },
-  "Regression" = function(data) { regression_imputation(data) },
-  "Regression with Noise" = function(data) { regression_imputation(data, noise = TRUE) },
-  "Regression with Empirical Noise" = function(data) { regression_imputation_emp(data, noise = TRUE) },
   "Hot Deck" = function(data) { hot_deck_imputation(data) },
   "EM" = function(data) { impute_EM(data) },
+  "KNN Imputation" = function(data) { imputed_data <- kNN(data, imp_var = FALSE)},
+  "Regression" = function(data) { regression_imputation(data) },
+  "Regression with Noise" = function(data) { regression_imputation(data, noise = TRUE) },
   "GAM" = function(data) { gam_based_imputation(data) },
   "GAM with Noise" = function(data) { gam_based_imputation(data, noise = TRUE) },
   "Random Forest" = function(data) { tree_based_imputation(data) },
@@ -78,15 +68,61 @@ imputation_methods <- list(
 
 We begin by testing the imputation techniques on data characterized by a linear relationship and heteroscedasticity. Methods such as regression imputation are expected to perform well in this scenario, as they are designed to capture and model linear patterns within the data.
 
-```{r, fig.width=18, fig.height=20}
+#### Analyses of noise in regression imputation
+
+We begin by demonstrating how various noise strategies can be incorporated into the imputation methods, as this technique will be applicable in future scenarios as well.
+
+```{r, fig.width=18, fig.height=10}
 # Generate and create missing data
 n <- 200
 p <- 0.3
 linear_data <- generate_data(n, "linear",x_range = c(0, 1),  noise_sd = 0.5, 
-                             homoscedasticity = F, min_sd_noise = 0.05)
+                             homoscedasticity = F, min_sd_noise = 0.1)
 
 linear_missing <- delete_MAR_1_to_x(linear_data, p, cols_mis = "x2", cols_ctrl = "x1", x = 10)
 
+noise_imputation_methods <- list(
+  "Regression" = function(data) { regression_imputation(data) },
+  "Regression with Noise" = function(data) { regression_imputation(data, noise = TRUE) }
+)
+
+# Use the new combined analysis function
+noise_result <- plot_imputations_and_metrics(original_data = linear_data, missing_data = linear_missing, imputation_methods = noise_imputation_methods)
+
+# Access the list of individual plots
+noise_plots <- noise_result$imputation_plots
+
+# Arrange and display them as needed
+grid.arrange(grobs = noise_plots, ncol = 2)
+```
+
+```{r}
+# Custom method registration
+# Ensure the custom function is correctly named
+mice.impute.custom_regression <- custom_regression_impute
+
+# Perform multiple imputation
+imputed_data <- mice(linear_missing, method ="custom_regression", m = 5)
+
+# Extract completed data (first imputed dataset)
+completed_data <- complete(imputed_data, action = 1)
+
+# Identify observed and imputed values for x2
+is_imputed <- is.na(linear_missing$x2)
+observed_values <- completed_data[!is_imputed, ]
+imputed_values <- completed_data[is_imputed, ]
+
+# Custom plot
+plot(completed_data$x1, completed_data$x2, col = ifelse(is_imputed, red_nord, "black"),
+     pch = 19, xlab = "x1", ylab = "x2",
+     main = "Imputed Values (Red) vs Observed Values (Black)")
+legend("topright", legend = c("Observed", "Imputed"), col = c("black", red_nord), pch = 19)
+
+```
+
+#### Comparison of the different techniques for the simple dataset
+
+```{r, fig.width=18, fig.height=20}
 # Use the new combined analysis function
 linear_result <- plot_imputations_and_metrics(original_data = linear_data, missing_data = linear_missing, imputation_methods = imputation_methods)
 

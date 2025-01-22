@@ -96,6 +96,26 @@ regression_imputation_emp <- function(data, noise = FALSE) {
   return(data)
 }
 
+#' Custom regression imputation which can work with mice
+custom_regression_impute <- function(y, ry, x, noise = FALSE, ...) {
+# custom_regression_impute <- function(y, ry, x, noise = TRUE, ...) {
+  # Ensure `x` is a data frame
+  x <- as.data.frame(x)
+  
+  # Fit a linear model using observed data
+  model <- lm(y ~ ., data = data.frame(y = y[ry], x = x[ry, , drop = FALSE]))
+  predictions <- predict(model, newdata = x[!ry, , drop = FALSE])
+  
+  if (noise) {
+    # Use residuals as noise
+    residuals <- model$residuals
+    noise_values <- sample(residuals, size = length(predictions), replace = TRUE)
+    predictions <- predictions + noise_values
+  }
+  
+  return(predictions)
+}
+
 #' Hot-deck Imputation
 #' @pram data Data frame with missing values
 #' @return Data frame with missing values imputed using hot-deck imputation
@@ -110,35 +130,9 @@ hot_deck_imputation <- function(data) {
 #' @param data Data frame with missing values
 #' @return Data frame with missing values imputed using a simple EM-like approach
 em_imputation <- function(data) {
-  imputed_data <- mice(data, method = "norm", m = 1, maxit = 10, printFlag = FALSE)
+  imputed_data <- mice(data, method = "norm", m = 1, maxit = 1, printFlag = FALSE)
   complete_data <- complete(imputed_data)
   return(complete_data)
-}
-
-#' Multiple Imputation
-#' @param data Data frame with missing values
-#' @param m Number of imputations to generate
-#' @return List of imputed data frames
-multiple_imputation <- function(data, m = 5) {
-  imputations <- vector("list", m)
-  
-  for (i in seq_len(m)) {
-    imputed_data <- data
-    for (col in names(imputed_data)) {
-      if (any(is.na(imputed_data[[col]])) && is.numeric(imputed_data[[col]])) {
-        missing_indices <- which(is.na(imputed_data[[col]]))
-        
-        # Simple predictive method for imputation
-        observed_values <- imputed_data[[col]][!is.na(imputed_data[[col]])]
-        imputed_values <- observed_values + rnorm(length(missing_indices), 0, sd(observed_values, na.rm = TRUE))
-        
-        imputed_data[[col]][missing_indices] <- imputed_values
-      }
-    }
-    imputations[[i]] <- imputed_data
-  }
-  
-  return(imputations)
 }
 
 #' Tree-Based Imputation with Optional Noise
