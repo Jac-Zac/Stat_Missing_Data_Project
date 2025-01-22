@@ -16,7 +16,7 @@ output:
     toc_collapsible: true  # Enable collapsible TOC
 ---
 
-```{r, echo = T}
+```{r, echo = F}
 # Load utilities
 suppressMessages(library(here))
 
@@ -52,7 +52,7 @@ imputation_methods <- list(
   "Mean Imputation" = function(data) { simple_imputation(data, "mean") },
   # Return only necessary collums
   "Hot Deck" = function(data) { hot_deck_imputation(data) },
-  "EM" = function(data) { impute_EM(data) },
+  # "EM" = function(data) { impute_EM(data) },
   "KNN Imputation" = function(data) { imputed_data <- kNN(data, imp_var = FALSE)},
   "Regression" = function(data) { regression_imputation(data) },
   "Regression with Noise" = function(data) { regression_imputation(data, noise = TRUE) },
