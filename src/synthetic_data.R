@@ -91,7 +91,7 @@ synthetic_dataset_gen <- function(n_samples, n_covariates, correlation = "linear
   # Validate inputs
   if (n_samples <= 0 || n_covariates <= 0) 
     stop("n_samples and n_covariates must be positive integers.")
-  if (!correlation %in% c("linear", "polynomial", "complex")) 
+  if (!correlation %in% c("linear", "polynomial", "complex","none")) 
     stop("Invalid correlation type.")
   if (!target_type %in% c("linear", "polynomial", "categorical", "spline")) 
     stop("Invalid target type.")
@@ -106,7 +106,7 @@ synthetic_dataset_gen <- function(n_samples, n_covariates, correlation = "linear
     covariates <- covariates^2 + covariates^3
   } else if (correlation == "complex") {
     covariates <- sin(covariates) + cos(covariates^2)
-  }
+  } else if (correlation == "none") { }
   
   # Generate target variable
   if (target_type == "linear") {
