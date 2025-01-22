@@ -32,28 +32,6 @@ suppressMessages(library(here))
 source(here("src", "setup.R"))
 ```
 
-
-```{r, echo = F}
-# Display all available palettes
-# Show each palette individually
-# nord_show_palette("polarnight")
-# nord_show_palette("snowstorm")
-# nord_show_palette("frost")
-# nord_show_palette("aurora")
-# Define colors using a Nord palette
-# Select Nord palettes
-frost_palette <- nord("frost", 4)
-aurora_palette <- nord("aurora", 4)
-
-# Choose specific colors
-blue_nord <- frost_palette[[length(frost_palette)]]
-red_nord <- aurora_palette[[1]]
-green_nord <- aurora_palette[[3]]
-
-# Defind a color pallet for red and blue
-nord_contrast = c(blue_nord, red_nord)
-```
-
 ## Missing value patterns
 
 In statistical analysis, understanding the patterns of missing data is crucial for selecting appropriate handling methods. The primary patterns are:
