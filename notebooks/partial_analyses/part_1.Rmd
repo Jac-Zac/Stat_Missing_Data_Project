@@ -100,9 +100,15 @@ grid.arrange(grobs = noise_plots, ncol = 2)
 # Custom method registration
 # Ensure the custom function is correctly named
 mice.impute.custom_regression <- custom_regression_impute
+# Register the custom imputation function
+mice.impute.gam <- mice_impute_gam
+
+# norm.predict: Deterministic regression imputation
+# norm: Deterministic regression imputation
 
 # Perform multiple imputation
-imputed_data <- mice(linear_missing, method ="custom_regression", m = 5)
+# imputed_data <- mice(linear_missing, method ="custom_regression", m = 5)
+imputed_data <- mice(linear_missing, method ="gam", m = 5)
 
 # Extract completed data (first imputed dataset)
 completed_data <- complete(imputed_data, action = 1)
