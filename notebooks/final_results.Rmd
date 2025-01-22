@@ -46,6 +46,7 @@ Recognizing these patterns helps in choosing suitable methods for handling missi
 
 
 ##  Missing value generation mechanisms
+Another way to classify missing values is based on their underlying mechanism.
 
 Rubin's missing data theory introduces a dataset $Y$ that is partitioned into observed values ($Y_o$) and missing values ($Y_m$). The presence or absence of data is tracked by an indicator matrix $R$ defined for each element of $Y$ as:
 
@@ -58,73 +59,37 @@ $$
 
 **Missing Completely at Random (MCAR)** defines a mechanism where the probability of missingness $P(R|q)$ has no relationship with any values in the dataset. Implementation can be univariate, where missing values are inserted through random selection or Bernoulli trials with probability $p$, or multivariate, where missing values are distributed either uniformly or randomly across the entire dataset.
 
-**Missing At Random (MAR/CAR)** occurs when missingness probability $P(R|Y_o, q)$ depends on observed data patterns but not on missing values. For univariate cases, missing values are determined by another observed feature using rank-based probability ($P(x_{i,miss} = \text{missing}) = \frac{r_{i,obs}}{\sum r_{i,obs}}$) or percentile thresholds. In multivariate cases, missingness is generated through related feature pairs or correlation patterns.
+**Missing At Random (MAR/CAR)** occurs when missingness probability $P(R|Y_o, q)$ depends on observed data patterns but not on missing values. For univariate cases, missing values are determined by the patterns of observed data, such as rank-based probabilities or percentile thresholds. In multivariate cases, missingness arises due to relationships or correlations between feature pairs. 
+
+**Missing Not at Random (MNAR)**: Missingness depends on both the observed and unobserved data $p(R|Y_0,Y_m,q$, making it difficult to model and handle. Identifying and managing MNAR data requires complex assumptions about the relationship between missing and observed values.
 
 This study focuses on Missing at Random (MAR) data due to its practical relevance and analytical tractability compared to Missing Completely at Random (MCAR) and Missing Not at Random (MNAR).
 
 We exclude Missing Completely at Random (MCAR) data because its randomness preserves the dataset’s underlying distribution, making missingness equivalent to reduced sample size without introducing bias. Handling MNAR (Missing Not at Random) data is beyond this study’s scope because identifying and modeling its dependence on unobserved variables is often ambiguous and requires unverifiable assumptions.
 
-### Implementation and missing data exploration
+### Syntetich MAR mechanism
 
-Showcase Introduce MAR function (example to show how to use print_function)
+> cite paper
 
-```{r eval=TRUE, echo=FALSE, results='asis'}
-print_function_code(introduce_mar)
-```
+Let's create a simple dataset to demonstrate the different mechanisms of missing values and explore various ways to visualize them.
 
-
-### Synthetic Dataset Creation
-
-We begin by analyzing simpler datasets to explore various imputation methods. Initially, we generate datasets without missing values. 
-In the subsequent step, we introduce missing values according to two mechanisms: Missing Completely at Random (MCAR) and Missing at Random (MAR).
-
-Our analysis starts with the creation of a synthetic dataset designed to exhibit specific correlations among covariates. We define a target variable that has a different types of relationships with these covariates.
-
-First Dataset: This simpler dataset assumes a linear relationship among covariates, with the target variable linearly dependent on them.
-By structuring our study in this manner, we can systematically assess how different imputation methods perform under varying conditions of data missingness and correlation structures.
-
-```{r, echo=T}
-# Generate synthetic dataset with 5 covariates, a linear relationship between the variable and predictor
-# And also a linear relationship with the covariates.
-synthetic_data <- synthetic_dataset_gen(n_samples = 1000, 
+```{r, echo=T, class.source = 'fold-show'}
+synthetic_data <- synthetic_dataset_gen(n_samples = 500, 
                                         n_covariates = 5, 
-                                        correlation = "linear", 
+                                        correlation = "none", 
                                         target_type = "linear", 
                                         noise_level = 0.5)
-
-# Summary of the dataset
-summary(synthetic_data)
-```
-The summary is not very informative considering this is just a synthetic dataset. 
-We also tried to generate other more complex datasets (with non-linear and polynomials relationships among variables) but we decided to report here only a simpler example, by way of illustration. 
-
-### MCAR mechanism
-
-We start by deleting the 10% of values from the first covariate of our dataset in order to perform univariate deletion. 
-
-```{r}
-data.MCAR.uni <- introduce_mcar(synthetic_data, prop_missing = 0.1, missing_cols = "X1")
-aggr(data.MCAR.uni, sortVars=TRUE, plot = TRUE, numbers = TRUE , labels=names(synthetic_data), col = nord_contrast)
-```
-This is the easiest case to deal with, but not very common in real world.
-
-The following code demonstrates how to simulate missing data under the MCAR assumption in specific columns of a dataset and visualize the resulting missing data patterns.  The resulting data.MCAR.multi dataset is a modified version of the original, with 10% of the entries in columns 'X1', 'X2', and 'X3' replaced with NA values. 
-
-```{r}
-data.MCAR.multi <- introduce_mcar(synthetic_data, prop_missing = 0.1, missing_cols =  c('X1','X2','X3'))
-aggr(data.MCAR.multi, sortVars=TRUE, plot = TRUE, numbers = TRUE , labels=names(synthetic_data), col = nord_contrast)
 ```
 
-### MAR mechanism
+#### Censoring method
 
-The following function introduces Missing At Random (MAR) values into the dataset.
-We want that 10% of the data in the columns listed in target_cols (X1) should be missing and the missingness in X1 is determined by the values in X2. For example, missingness might be more likely when X2 is below or above a threshold.
-This creates a modified dataset (data.MAR.uni) where values in X1 are missing based on the values in X2.
+The `delete_MAR_censoring` function introduces missing values in a dataset based on a MAR mechanism. Missingness depends on values in a **control column** (`cols_ctrl`). Censoring mechanism:
+
+- Sorting: Rows are sorted by the control column, and missing values are added to the smallest, largest, or both extremes.
+- Quantile: Missing values are based on calculated quantiles of the control column, without sorting.
 
 
 ```{r}
-# data_MAR.uni <- introduce_mar(synthetic_data, prop_missing = 0.1, predictor_cols = c("X2"), target_cols = c("X1"))
-
 data.MAR.uni <- delete_MAR_censoring(synthetic_data, p = 0.1, cols_mis = c('X1'), cols_ctrl = c('X2'))
 aggr(data.MAR.uni, sortVars=TRUE, plot = TRUE, numbers = TRUE , labels=names(synthetic_data), col = nord_contrast)
 
@@ -132,105 +97,241 @@ aggr(data.MAR.uni, sortVars=TRUE, plot = TRUE, numbers = TRUE , labels=names(syn
 intersection_dataset <- synthetic_data
 intersection_dataset$missing <- ifelse(is.na(data.MAR.uni$X1), "Missing", "Present")
 
-# Plot the data using the new dataset
-ggplot(intersection_dataset, aes(x = X1, y = X2, color = missing)) +
+plot_missing_data(data.MAR.uni, "MAR uni", c("white", red_nord))
+```
+
+```{r, fig.width=10, fig.height=10}
+# Calculate global ranges for X1 and all Y variables (X2-X5)
+x_range <- range(synthetic_data$X1, na.rm = TRUE)
+y_range <- range(synthetic_data[,paste0("X", 2:5)], na.rm = TRUE)
+
+# Add padding to ranges
+x_pad <- diff(x_range) * 0.05
+y_pad <- diff(y_range) * 0.05
+
+# Plot for X1 vs X2
+plot_data2 <- data.frame(
+  X1 = synthetic_data$X1,
+  Y = synthetic_data$X2,
+  missing = ifelse(is.na(data.MAR.uni$X1), "Missing", "Present")
+)
+
+scatter_plot2 <- ggplot(plot_data2, aes(x = X1, y = Y, color = missing)) +
   geom_point() +
   scale_color_manual(values = c("Missing" = red_nord, "Present" = "black")) +
+  scale_x_continuous(limits = c(x_range[1] - x_pad, x_range[2] + x_pad)) +
+  scale_y_continuous(limits = c(y_range[1] - y_pad, y_range[2] + y_pad)) +
   theme_minimal() +
-  labs(
-    color = "Data Status",
-    title = "Highlighting Missing Data in a New Dataset",
-    x = "X1",
-    y = "X2"
-  )
-```
+  labs(color = "Data Status", x = "X1", y = "X2") +
+  theme(legend.position = "none") +
+  coord_fixed()
 
-In general, the `delete_MAR_1_to_x()` function in R creates **Missing At Random (MAR)** values by controlling missingness in one column (`cols_mis`) based on the values of another column (`cols_ctrl`). It splits the data into two groups using a cutoff value (e.g., median) in `cols_ctrl`. Group 1 contains rows below the cutoff, and group 2 contains rows above. The `x` parameter sets the odds ratio of missing data: for `x = 3`, group 2 is **3 times** more likely to have missing values than group 1.
+final_plot2 <- ggMarginal(scatter_plot2, margins = "y", 
+                         groupColour = TRUE, groupFill = TRUE,
+                         type = "boxplot", size = 10, width = 0.15, outlier.size = 1)
 
-
-The delete_MAR_1_to_x Function creates MAR values in multiple columns (cols_mis) based on other columns (cols_ctrl).
-In our example we introduced missing values in X1 and X2 and missingness in X1 and X2 is controlled by X3 and X4. For example, missingness may increase when X3 or X4 exceeds a threshold.
-x = 10: The odds ratio for missingness between two groups (e.g., above and below the median of cols_ctrl) is 10:1.
-
-```{r}
-data.MAR.multi <- delete_MAR_1_to_x(synthetic_data ,p = 0.1, cols_mis = c('X1','X2'), cols_ctrl = c('X3','X4'), x = 10)
-# data.MAR.multi <- delete_MAR_1_to_x(synthetic_data , p = 0.1, cols_mis = c('X1','X2'), cols_ctrl = c('X3','X4'), x = 2)
-aggr(data.MAR.multi, sortVars=TRUE, plot = TRUE, numbers = TRUE , labels=names(synthetic_data), col = nord_contrast)
-```
-
-```{r}
 # Plot for X1 vs X3
-# Create a new dataset indicating missing status
-intersection_dataset <- synthetic_data
-intersection_dataset$missing <- ifelse(is.na(data.MAR.uni$X1) | is.na(data.MAR.uni$X3), "Missing", "Present")
+plot_data3 <- data.frame(
+  X1 = synthetic_data$X1,
+  Y = synthetic_data$X3,
+  missing = ifelse(is.na(data.MAR.uni$X1), "Missing", "Present")
+)
 
-# Plot the data using the new dataset
-ggplot(intersection_dataset, aes(x = X1, y = X3, color = missing)) +
+scatter_plot3 <- ggplot(plot_data3, aes(x = X1, y = Y, color = missing)) +
   geom_point() +
   scale_color_manual(values = c("Missing" = red_nord, "Present" = "black")) +
+  scale_x_continuous(limits = c(x_range[1] - x_pad, x_range[2] + x_pad)) +
+  scale_y_continuous(limits = c(y_range[1] - y_pad, y_range[2] + y_pad)) +
   theme_minimal() +
-  labs(
-    color = "Data Status",
-    title = "Highlighting Missing Data in a New Dataset",
-    x = "X1",
-    y = "X3"
-  )
+  labs(color = "Data Status", x = "X1", y = "X3") +
+  theme(legend.position = "none") +
+  coord_fixed()
 
-# Plot for X2 vs X4
-intersection_dataset <- synthetic_data
-intersection_dataset$missing <- ifelse(is.na(data.MAR.uni$X1) | is.na(data.MAR.uni$X4), "Missing", "Present")
+final_plot3 <- ggMarginal(scatter_plot3, margins = "y",
+                         groupColour = TRUE, groupFill = TRUE,
+                         type = "boxplot", size = 10, width = 0.15, outlier.size = 1)
 
-ggplot(intersection_dataset, aes(x = X1, y = X4, color = missing)) +
+# Plot for X1 vs X4
+plot_data4 <- data.frame(
+  X1 = synthetic_data$X1,
+  Y = synthetic_data$X4,
+  missing = ifelse(is.na(data.MAR.uni$X1), "Missing", "Present")
+)
+
+scatter_plot4 <- ggplot(plot_data4, aes(x = X1, y = Y, color = missing)) +
   geom_point() +
   scale_color_manual(values = c("Missing" = red_nord, "Present" = "black")) +
+  scale_x_continuous(limits = c(x_range[1] - x_pad, x_range[2] + x_pad)) +
+  scale_y_continuous(limits = c(y_range[1] - y_pad, y_range[2] + y_pad)) +
   theme_minimal() +
-  labs(
-    color = "Data Status",
-    title = "Highlighting Missing Data in a New Dataset",
-    x = "X1",
-    y = "X4"
-  )
+  labs(color = "Data Status", x = "X1", y = "X4") +
+  theme(legend.position = "none") +
+  coord_fixed()
+
+final_plot4 <- ggMarginal(scatter_plot4, margins = "y",
+                         groupColour = TRUE, groupFill = TRUE,
+                         type = "boxplot", size = 10, width = 0.15, outlier.size = 1)
+
+# Plot for X1 vs X5
+plot_data5 <- data.frame(
+  X1 = synthetic_data$X1,
+  Y = synthetic_data$X5,
+  missing = ifelse(is.na(data.MAR.uni$X1), "Missing", "Present")
+)
+
+scatter_plot5 <- ggplot(plot_data5, aes(x = X1, y = Y, color = missing)) +
+  geom_point() +
+  scale_color_manual(values = c("Missing" = red_nord, "Present" = "black")) +
+  scale_x_continuous(limits = c(x_range[1] - x_pad, x_range[2] + x_pad)) +
+  scale_y_continuous(limits = c(y_range[1] - y_pad, y_range[2] + y_pad)) +
+  theme_minimal() +
+  labs(color = "Data Status", x = "X1", y = "X5") +
+  theme(legend.position = "none") +
+  coord_fixed()
+
+final_plot5 <- ggMarginal(scatter_plot5, margins = "y",
+                         groupColour = TRUE, groupFill = TRUE,
+                         type = "boxplot", size = 10, width = 0.15, outlier.size = 1)
+
+# Arrange the plots in a 2x2 grid
+grid.arrange(final_plot2, final_plot3, final_plot4, final_plot5, ncol = 2)
+
 ```
 
-The MAR mechanism ensures that missingness in one or more columns is correlated with values in other columns, making the data realistic.
-The visualizations using aggr and scatter plots help understand how missing values are distributed and how they relate to control variables (cols_ctrl).
 
-```{r, echo =F}
-# Ensuring methods work as expected
-sum(is.na(data.MAR.uni)) / nrow(data.MAR.uni)  # Should be approximately 10%
-sum(is.na(data.MAR.multi)) / nrow(data.MAR.multi) # Should be approximately  n_vars * 10%
+#### Likelihood method
 
-# Analyze missing patterns and summarize
-#For MCAR
-# print(summarize_missing(data.MCAR.uni))
-# print(summary(data.MCAR.uni))
-# print(summarize_missing(data.MCAR.multi))
-# print(summary(data.MCAR.multi))
-#For MAR
-# print(summarize_missing(data.MAR.uni))
-# print(summary(data.MAR.uni))
-# print(summarize_missing(data.MAR.multi))
-# print(summary(data.MAR.multi))
+The `delete_MAR_1_to_x()` function in R creates MAR values by controlling missingness in one column (`cols_mis`) based on the values of another column (`cols_ctrl`). It splits the data into two groups using a cutoff value (e.g., median) in `cols_ctrl`. Group 1 contains rows below the cutoff, and group 2 contains rows above. The `x` parameter sets the odds ratio of missing data: for `x = 3`, group 2 is **3 times** more likely to have missing values than group 1.
+
+```{r}
+data.MAR.multi <- delete_MAR_1_to_x(synthetic_data, 
+                                    p = 0.2, 
+                                    cols_mis = c('X1'), 
+                                    cols_ctrl = c('X3'), 
+                                    x = 50)
+
+data.MAR.multi <- delete_MAR_1_to_x(data.MAR.multi, 
+                                    p = 0.2, 
+                                    cols_mis = c('X1'), 
+                                    cols_ctrl = c('X4'), 
+                                    x = 50)
+
+data.MAR.multi <- delete_MAR_1_to_x(data.MAR.multi, 
+                                    p = 0.2, 
+                                    cols_mis = c('X2'), 
+                                    cols_ctrl = c('X5'), 
+                                    x = 50)
+
+par(mfcol=c(2, 2))
+aggr(data.MAR.multi, 
+     sortVars=TRUE, 
+     plot = TRUE, 
+     numbers = TRUE , 
+     labels=names(synthetic_data), 
+     col = nord_contrast)
+
+plot_missing_data(data.MAR.multi, "MAR multi", c("white", red_nord))
 ```
 
-### Plot missing data for the different mechanisms
 
-#### Custom missing data visualization
+```{r, fig.width=10, fig.height=10}
+# Calculate global ranges for X1 and all Y variables (X2-X5)
+x_range <- range(synthetic_data$X1, na.rm = TRUE)
+y_range <- range(synthetic_data[,paste0("X", 2:5)], na.rm = TRUE)
 
-We can use the following tools to verify how missing data are distributed in our dataset. These will be very useful in the analysis of our definitive dataset, since it can help us in finding the best strategies to deal with missing values.
+# Add padding to ranges
+x_pad <- diff(x_range) * 0.05
+y_pad <- diff(y_range) * 0.05
 
-```{r, class.source = 'fold-show'}
-# Create individual plots
-p1 <- plot_missing_data(data.MCAR.uni, "MCAR uni", c("white", red_nord))
-p2 <- plot_missing_data(data.MCAR.multi, "MCAR multi", c("white", red_nord))
-p3 <- plot_missing_data(data.MAR.uni, "MAR uni", c("white", red_nord))
-p4 <- plot_missing_data(data.MAR.multi, "MAR multi", c("white", red_nord))
+# Plot for X1 vs X2
+plot_data2 <- data.frame(
+  X1 = synthetic_data$X1,
+  Y = synthetic_data$X2,
+  missing = ifelse(is.na(data.MAR.multi$X1), "Missing", "Present")
+)
 
-# Combine plots into one
-grid.arrange(p1, p2, p3, p4, ncol = 2)
+scatter_plot2 <- ggplot(plot_data2, aes(x = X1, y = Y, color = missing)) +
+  geom_point() +
+  scale_color_manual(values = c("Missing" = red_nord, "Present" = "black")) +
+  scale_x_continuous(limits = c(x_range[1] - x_pad, x_range[2] + x_pad)) +
+  scale_y_continuous(limits = c(y_range[1] - y_pad, y_range[2] + y_pad)) +
+  theme_minimal() +
+  labs(color = "Data Status", x = "X1", y = "X2") +
+  theme(legend.position = "none") +
+  coord_fixed()
+
+final_plot2 <- ggMarginal(scatter_plot2, margins = "y", 
+                         groupColour = TRUE, groupFill = TRUE,
+                         type = "boxplot", size = 10, width = 0.15, outlier.size = 1)
+
+# Plot for X1 vs X3
+plot_data3 <- data.frame(
+  X1 = synthetic_data$X1,
+  Y = synthetic_data$X3,
+  missing = ifelse(is.na(data.MAR.multi$X1), "Missing", "Present")
+)
+
+scatter_plot3 <- ggplot(plot_data3, aes(x = X1, y = Y, color = missing)) +
+  geom_point() +
+  scale_color_manual(values = c("Missing" = red_nord, "Present" = "black")) +
+  scale_x_continuous(limits = c(x_range[1] - x_pad, x_range[2] + x_pad)) +
+  scale_y_continuous(limits = c(y_range[1] - y_pad, y_range[2] + y_pad)) +
+  theme_minimal() +
+  labs(color = "Data Status", x = "X1", y = "X3") +
+  theme(legend.position = "none") +
+  coord_fixed()
+
+final_plot3 <- ggMarginal(scatter_plot3, margins = "y",
+                         groupColour = TRUE, groupFill = TRUE,
+                         type = "boxplot", size = 10, width = 0.15, outlier.size = 1)
+
+# Plot for X1 vs X4
+plot_data4 <- data.frame(
+  X1 = synthetic_data$X1,
+  Y = synthetic_data$X4,
+  missing = ifelse(is.na(data.MAR.multi$X1), "Missing", "Present")
+)
+
+scatter_plot4 <- ggplot(plot_data4, aes(x = X1, y = Y, color = missing)) +
+  geom_point() +
+  scale_color_manual(values = c("Missing" = red_nord, "Present" = "black")) +
+  scale_x_continuous(limits = c(x_range[1] - x_pad, x_range[2] + x_pad)) +
+  scale_y_continuous(limits = c(y_range[1] - y_pad, y_range[2] + y_pad)) +
+  theme_minimal() +
+  labs(color = "Data Status", x = "X1", y = "X4") +
+  theme(legend.position = "none") +
+  coord_fixed()
+
+final_plot4 <- ggMarginal(scatter_plot4, margins = "y",
+                         groupColour = TRUE, groupFill = TRUE,
+                         type = "boxplot", size = 10, width = 0.15, outlier.size = 1)
+
+# Plot for X1 vs X5
+plot_data5 <- data.frame(
+  X1 = synthetic_data$X1,
+  Y = synthetic_data$X5,
+  missing = ifelse(is.na(data.MAR.multi$X1), "Missing", "Present")
+)
+
+scatter_plot5 <- ggplot(plot_data5, aes(x = X1, y = Y, color = missing)) +
+  geom_point() +
+  scale_color_manual(values = c("Missing" = red_nord, "Present" = "black")) +
+  scale_x_continuous(limits = c(x_range[1] - x_pad, x_range[2] + x_pad)) +
+  scale_y_continuous(limits = c(y_range[1] - y_pad, y_range[2] + y_pad)) +
+  theme_minimal() +
+  labs(color = "Data Status", x = "X1", y = "X5") +
+  theme(legend.position = "none") +
+  coord_fixed()
+
+final_plot5 <- ggMarginal(scatter_plot5, margins = "y",
+                         groupColour = TRUE, groupFill = TRUE,
+                         type = "boxplot", size = 10, width = 0.15, outlier.size = 1)
+
+# Arrange the plots in a 2x2 grid
+grid.arrange(final_plot2, final_plot3, final_plot4, final_plot5, ncol = 2)
+
 ```
 
-In the final dataset we will create different datasets using these functions and we will analyse them in order to perform the imputation or delation technique that is more suitable for the type of dataset. 
 
 ## Performance metrics between Datasets
 > Since we possess the **original dataset prior to the introduction of missing values**, we will introduce _two metrics_ to compare _the distributions of two datasets_: the **original dataset** without missing values and the dataset in which missing values have been **imputed** using various techniques
