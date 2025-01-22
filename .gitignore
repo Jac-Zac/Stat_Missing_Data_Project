@@ -6,7 +6,5 @@
 *.docx
 *.zip
 *.pdf
-**/synthetic_data_experiments_cache
-**/synthetic_data_experiments_files
-**/synthetic_data_experiments_ludo_cache
-**/synthetic_data_experiments_ludo_files
+**/final_results_cache
+**/final_results_files

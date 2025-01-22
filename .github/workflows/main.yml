@@ -28,7 +28,4 @@ jobs:
 
       - name: Render R Markdown
         run: |
-          R -e 'rmarkdown::render("notebooks/synthetic_data_experiments.Rmd", output_format = "html_document")'
-      - name: Render R Markdown Imputation
-        run: |
-          R -e 'rmarkdown::render("notebooks/imputation_techniques_visualization.Rmd", output_format = "html_document")'
+          R -e 'rmarkdown::render("notebooks/final_results.Rmd", output_format = "html_document")'

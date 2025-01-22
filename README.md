@@ -63,28 +63,26 @@ After imputation, the datasets generated under different conditions (e.g., 5% an
 ```bash
 .
 ├── notebooks
-│   ├── dataset_analysis
-│   │   └── ...
-│   ├── final_results.Rmd
-│   └── imputation_techniques_visualization.Rmd
+│   ├── partial_analyses
+│   │   ├── part_1.Rmd
+│   │   └── part_2.Rmd
+│   └── final_results.rmd
 ├── src
 │   ├── imputation_methods.R
 │   ├── metrics.R
-│   ├── setup.R
-│   ├── plots.R
 │   ├── missing_data.R
+│   ├── plots.R
+│   ├── setup.R
 │   ├── synthetic_data.R
 │   └── utils.R
 └── README.md
 ```
 
-## Documentation
-
-Detailed documentation is available in the following notebooks:
-
-- [`imputation_techniques_visualization.Rmd`](notebooks/imputation_techniques_visualization.Rmd): First part of the project, Analyzing imputation on synthetic data
-- [`case_study.Rmd`](notebooks/imputation_techniques_visualization.Rmd): This will contain a case study on a real dataset
-- [`final_results.Rmd`](notebooks/final_results.Rmd): Comprehensive results and conclusions
+- [`README.md`](README.md): Project documentation
+- [`part_1.Rmd`](notebooks/imputation_techniqus_visualization.Rmd): Analyzing missing data patterns + imputation on synthetic data
+- [`part_2.Rmd`](notebooks/imputation_techniques_visualization.Rmd): This will contain a case study on a real dataset
+- [`final_results.Rmd`](notebooks/final_results.Rmd): Comprehensive results and conclusions (the file which puts everything together)
+  > Run knit on this file to obtain the final report
 
 #### Utilities
 
@@ -93,29 +91,12 @@ Detailed documentation is available in the following notebooks:
 - [`missing_data.R`](src/missing_data.R): Functions to artificially generate missing data
 - [`metrics.R`](src/metrics.R): Functions to evaluate different strategies to handle missing data
 - [`utils.R`](src/utils.R): Functions that are general utilities
+- [`plots.R`](src/plots.R): Functions to make plots
+- [`setup.R`](src/setup.R): All libraries + setting seed (imported for each notebook)
 
 ### Project Map
 
 To add new version ...
-
-## TODO
-
-> Currently many functions are just template pre-made to test things out
-
-- Explore MAR (just mention the other and explain why we choose mar in the final report)
-
-  > Showcase what happens
-
-- [ ] Perform the study on the real dataset
-- [ ] Continue the exploration of synthetic data
-
-#### Useful resources for mice:
-
-> Possibly note needed
-
-- [mice package](https://cran.r-project.org/web/packages/mice/mice.pdf)
-- [First](https://www.youtube.com/watch?v=MpnxwNXGV-E)
-- [Second](https://www.youtube.com/watch?v=sNNoTd7xI-4)
 
 #### Resources from literature
 

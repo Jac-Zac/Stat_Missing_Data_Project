@@ -1,0 +1,186 @@
+---
+title: "Synthetic Data Analysis"
+author: "Jacopo Zacchigna"
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+output: 
+  html_document:
+    toc: true 
+    toc_depth: 3
+    toc_float: true
+    # toc_float: false
+    code_fold: hide # Hidden by default unless specified otherwise
+    df_print: paged
+    highlight: tango
+    theme: flatly
+    number_sections: true
+    toc_collapsible: true  # Enable collapsible TOC
+---
+
+```{r, echo = T}
+# Load utilities
+suppressMessages(library(here))
+
+# Load utilities
+source(here("src", "setup.R"))
+```
+
+
+# Imputation techiques
+
+This section reviews imputation techniques for handling missing data, from simple deletion methods to advanced machine learning approaches, highlighting their uses and impact on data reliability.
+
+| **Imputation Technique**         | **Description**                                                                                                                                                                                                                                                                                                                                                                           | **Strengths**                                                                                                                                                                     | **Limitations**                                                                                                                                                                                   |
+|-----------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| **List-wise (Case) Deletion**     | Removes any case with missing values from analysis.                                                                                                                                                                                                                                                                                                                                       | Simple and default in many tools; effective for large data if missingness is completely at random (MCAR).                                                                         | Can introduce bias and cause significant data loss if MCAR assumption is violated.                                                                                                                |
+| **Pairwise Deletion**             | Excludes only the necessary data points when assessing missing values.                                                                                                                                                                                                                                                                                                                     | Retains more data compared to list-wise deletion; less bias for MCAR or MAR data.                                                                                                 | May produce inconsistent sample sizes and biased estimates if assumptions are unmet.                                                                                                               |
+| **Simple Imputation**             | Replaces missing values with mean, median, or mode of observed data.                                                                                                                                                                                                                                                                                                                       | Easy to use and computationally efficient.                                                                                                                                        | Can distort data variability and introduce bias, especially in complex or large datasets.                                                                                                         |
+| **Regression Imputation**         | Predicts missing values using a regression model built on complete data.                                                                                                                                                                                                                                                                                                                   | Preserves sample size and captures linear relationships; suitable for MAR data.                                                                                                  | Assumes MAR and linearity; less effective for non-linear patterns or complex dependencies.                                                                                                         |
+| **Hot-deck Imputation**           | Fills missing values using a donor case with similar observed values.                                                                                                                                                                                                                                                                                                                      | Maintains data structure and avoids model assumptions.                                                                                                                            | Lacks strong theoretical support; less reliable for small datasets or complex matching.                                                                                                           |
+| **Expectation-Maximization (EM)** | Iteratively estimates missing values by alternating between expectation and maximization steps to optimize data likelihood.                                                                                                                                                                                                                                                                | Produces accurate imputations by modeling uncertainty; handles MAR data well.                                                                                                    | Computationally intensive with complex matrix calculations; requires convergence.                                                                                                                  |
+| **Multiple Imputation**           | Generates multiple complete datasets to estimate missing values, reflecting uncertainty. Results are combined into a single estimate.                                                                                                                                                                                                                                                       | Reduces bias; reflects uncertainty; provides more robust and reliable results.                                                                                                   | Time-consuming; requires careful model selection and combining results.                                                                                                                            |
+| **GAM Imputation**                | Uses Generalized Additive Models to impute data, allowing non-linear relationships between variables.                                                                                                                                                                                                                                                                                       | Flexible and effective for complex, non-linear relationships.                                                                                                                     | More complex modeling and computational cost compared to simpler methods.                                                                                                                          |
+| **Decision Tree / Random Forest** | Builds predictive models for missing data with decision tree algorithms.                                                                                                                                                                                                                                                                                                                    | Captures complex patterns; handles both numerical and categorical data.                                                                                                           | Computationally intensive for large datasets; prone to overfitting without proper tuning.                                                                                                         |
+| **K-Nearest Neighbors (KNN)**     | Imputes missing values by averaging or taking the mode of "k" nearest neighbors based on a distance metric.                                                                                                                                                                                                                                                                                 | Captures intricate patterns and relationships; flexible for different types of data.                                                                                              | High computational cost for large datasets due to distance calculations.                                                                                                                           |
+
+
+## Visualization of the different techiques
+
+The following paragraph presents visualizations of various imputation techniques applied to different types of datasets to observe their impact. The reconstructed datasets are then evaluated and compared using two distribution-based metrics.
+
+```{r,  class.source = 'fold-show'}
+# Define methods with their display names and corresponding functions
+imputation_methods <- list(
+  "Mean Imputation" = function(data) { simple_imputation(data, "mean") },
+  # Return only necessary collums
+  "KNN Imputation" = function(data) {
+  # Perform the kNN imputation
+  imputed_data <- kNN(data, variable = "x2")
+  
+  # Remove the column with the '_imp' suffix (e.g., x2_imp)
+  imputed_data <- imputed_data[, !grepl("_imp$", colnames(imputed_data))]
+  
+  # Return the imputed dataset without the '_imp' column
+  return(imputed_data)
+  },
+  "Regression" = function(data) { regression_imputation(data) },
+  "Regression with Noise" = function(data) { regression_imputation(data, noise = TRUE) },
+  "Hot Deck" = function(data) { hot_deck_imputation(data) },
+  "EM" = function(data) { impute_EM(data) },
+  "GAM" = function(data) { gam_based_imputation(data) },
+  "GAM with Noise" = function(data) { gam_based_imputation(data, noise = TRUE) },
+  "Random Forest" = function(data) { tree_based_imputation(data) },
+  "Random Forest with Noise" = function(data) { tree_based_imputation(data, noise=TRUE) }
+)
+```
+
+
+### Linear Relationship
+
+We begin by testing the imputation techniques on data characterized by a linear relationship and heteroscedasticity. Methods such as regression imputation are expected to perform well in this scenario, as they are designed to capture and model linear patterns within the data.
+
+```{r, fig.width=18, fig.height=14}
+# Generate and create missing data
+n <- 200
+p <- 0.3
+linear_data <- generate_data(n, "linear",x_range = c(0, 1),  noise_sd = 0.5, 
+                             homoscedasticity = F, min_sd_noise = 0.1)
+linear_missing <- delete_MAR_1_to_x(linear_data, p, cols_mis = "x2", cols_ctrl = "x1", x = 10)
+
+# Use the new combined analysis function
+linear_result <- plot_imputations_and_metrics(original_data = linear_data, missing_data = linear_missing, imputation_methods = imputation_methods)
+
+# Access the list of individual plots
+imputation_plots <- linear_result$imputation_plots
+
+# Arrange and display them as needed
+grid.arrange(grobs = imputation_plots, ncol = 2)
+```
+
+```{r}
+# Access the metrics plot
+metrics_plot <- linear_result$metrics_plot
+print(metrics_plot)
+```
+
+
+### Quadratic Relationship
+
+The second dataset is constructed with a quadratic relationship and an unbalanced number of data points. In cases involving quadratic relationships, we anticipate that more flexible imputation methods, such as Generalized Additive Models (GAM) and Random Forest, will outperform simple linear regression due to their ability to capture complex, non-linear patterns in the data.
+
+```{r, fig.width=18, fig.height=14}
+# Generate and create missing data
+quad_data <- generate_data(n, "quadratic",x_range = c(-2, 2), noise_sd = 1, balanced = F, alpha = 1, beta = 2)
+quad_missing <- delete_MAR_1_to_x(quad_data, p, cols_mis = "x2", cols_ctrl = "x1", x = 10)
+
+quad_result <- plot_imputations_and_metrics(quad_data, quad_missing, imputation_methods)
+
+# Access the list of individual plots
+imputation_plots <- quad_result$imputation_plots
+
+# Arrange and display them as needed
+grid.arrange(grobs = imputation_plots, ncol = 2)
+```
+
+```{r}
+# Access the metrics plot
+metrics_plot <- quad_result$metrics_plot
+print(metrics_plot)
+```
+
+### Piecewise
+
+The third dataset is designed with a piecewise relationship, where distinct segments of the data follow different patterns. For this type of distribution, we expect imputation methods capable of handling discontinuities and local variations, such as Random Forest and k-Nearest Neighbors, to perform better than global modeling approaches like linear regression, which may struggle to accurately capture the segmented structure of the data.
+
+```{r, fig.width=18, fig.height=14}
+# Generate and create missing data
+piecewise_data <- generate_data(n, "piecewise", noise_sd = 2)
+piecewise_missing <- delete_MAR_1_to_x(piecewise_data, p, cols_mis = "x2", cols_ctrl = "x1", x = 10)
+
+piecewise_result <- plot_imputations_and_metrics(piecewise_data, piecewise_missing, imputation_methods)
+
+# Access the list of individual plots
+imputation_plots <- piecewise_result$imputation_plots
+
+# Arrange and display them as needed
+grid.arrange(grobs = imputation_plots, ncol = 2)
+```
+
+```{r}
+# Access the metrics plot
+metrics_plot <- piecewise_result$metrics_plot
+print(metrics_plot)
+```
+
+### Logarithmic Relationship
+
+The final dataset follows a logarithmic relationship, providing insight into how different imputation methods handle non-linear but monotonic patterns.
+
+```{r, fig.width=18, fig.height=14}
+# Generate and create missing data
+log_data <- generate_data(n, "log", x_range = c(1, 100), noise_sd = 1)
+log_missing <- delete_MAR_1_to_x(log_data, p, cols_mis = "x2", cols_ctrl = "x1", x = 10)
+
+log_result <- plot_imputations_and_metrics(log_data, log_missing, imputation_methods)
+
+# Access the list of individual plots
+imputation_plots <- log_result$imputation_plots
+
+# Arrange and display them as needed
+grid.arrange(grobs = imputation_plots, ncol = 2)
+```
+
+```{r}
+# Access the metrics plot
+metrics_plot <- log_result$metrics_plot
+print(metrics_plot)
+```
+
+### Conclusions
+
+The visualizations demonstrate that:
+
+1. Simple mean imputation tends to perform poorly as it ignores the relationship between variables
+2. kNN and hot deck methods can work well when there are similar cases nearby
+3. Regression imputation works best for linear relationships
+4. GAM and Random Forest methods are more flexible and can handle non-linear relationships better
+5. The choice of imputation method should depend on the underlying relationship between variables

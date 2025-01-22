@@ -53,5 +53,15 @@ source(here("src", "metrics.R"))
 source(here("src", "plots.R"))
 source(here("src", "utils.R"))
 
+# Select Nord palettes
+frost_palette <- nord("frost", 4)
+aurora_palette <- nord("aurora", 4)
+
+# Define some basic nord theme colors to use across the document 
+blue_nord <- frost_palette[[length(frost_palette)]]
+red_nord <- aurora_palette[[1]]
+green_nord <- aurora_palette[[3]]
+nord_contrast = c(blue_nord, red_nord)
+
 # Fixes the seed for reproducibility
 set.seed(42)
