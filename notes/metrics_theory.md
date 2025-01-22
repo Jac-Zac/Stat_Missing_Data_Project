@@ -48,7 +48,7 @@ Assuming \(X = Y\) and letting \(d\) be a distance on \(X\), the Wasserstein dis
 
 $$
 W_p(P, Q) := K_{d^p}(P, Q)^{1/p}
-= \biggl(\inf_{\pi \in \Pi(P, Q)} \int_{X^2} d^p(x, y)\,\pi(dx\,dy)\biggr)^{\!\!1/p}.
+= \left(\inf_{\pi \in \Pi(P, Q)} \int_{X^2} d^p(x, y)\,\pi(dx\,dy)\right)^{\!\!1/p}.
 $$
 
 The difference between the Kantorovich and Wasserstein definitions lies in the cost function, \(d(x,y)^p\), where \(d(\cdot,\cdot)\) is a distance on \(X\). This cost function ensures, via the following proposition, that \(W_p\) is indeed a distance.
@@ -122,12 +122,12 @@ $$
 where \(\mathrm{KL}\) is the Kullback-Leibler divergence:
 
 $$
-\mathrm{KL}(P \,\|\, Q) = \sum_{x \in \Omega} P(x) \,\log\!\biggl(\frac{P(x)}{Q(x)}\biggr).
+\mathrm{KL}(P \,\|\, Q) = \sum_{x \in \Omega} P(x) \,\log\!\left(\frac{P(x)}{Q(x)}\right).
 $$
 
 **Properties:**
 
-1. **Symmetry**: \(\mathrm{JSD}(P \,\|\, Q) = \mathrm{JSD}(Q \,\|\, P)\).
-2. **Non-negativity**: \(\mathrm{JSD}(P \,\|\, Q) \geq 0\), with equality if \(P = Q\).
-3. **Boundedness**: \(0 \leq \mathrm{JSD}(P \,\|\, Q) \leq \log(2)\).
-4. **Metric Property**: \(\sqrt{\mathrm{JSD}(P \,\|\, Q)}\) satisfies the triangle inequality.
+1. **Symmetry**: $(\mathrm{JSD}(P \,\|\, Q) = \mathrm{JSD}(Q \,\|\, P)\)$.
+2. **Non-negativity**: $\(\mathrm{JSD}(P \,\|\, Q) \geq 0\), with equality if \(P = Q\)$.
+3. **Boundedness**: $\(0 \leq \mathrm{JSD}(P \,\|\, Q) \leq \log(2)\)$.
+4. **Metric Property**: $\(\sqrt{\mathrm{JSD}(P \,\|\, Q)}\)$ satisfies the triangle inequality.
