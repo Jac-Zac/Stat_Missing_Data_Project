@@ -121,8 +121,12 @@ custom_regression_impute <- function(y, ry, x, noise = FALSE, ...) {
 #' @return Data frame with missing values imputed using hot-deck imputation
 # Hot-deck Imputation using mice
 hot_deck_imputation <- function(data) {
-  imputed_data <- mice(data, method = "pmm", m = 1, maxit = 1, printFlag = FALSE)
+  # Perform hot deck imputation
+  imputed_data <- mice(data, method = "sample", m = 1, maxit = 1, printFlag = FALSE)
+  
+  # Extract the completed dataset
   complete_data <- complete(imputed_data)
+  
   return(complete_data)
 }
 
