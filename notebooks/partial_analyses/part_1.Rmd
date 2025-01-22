@@ -63,6 +63,7 @@ imputation_methods <- list(
   },
   "Regression" = function(data) { regression_imputation(data) },
   "Regression with Noise" = function(data) { regression_imputation(data, noise = TRUE) },
+  "Regression with Empirical Noise" = function(data) { regression_imputation_emp(data, noise = TRUE) },
   "Hot Deck" = function(data) { hot_deck_imputation(data) },
   "EM" = function(data) { impute_EM(data) },
   "GAM" = function(data) { gam_based_imputation(data) },
@@ -77,12 +78,13 @@ imputation_methods <- list(
 
 We begin by testing the imputation techniques on data characterized by a linear relationship and heteroscedasticity. Methods such as regression imputation are expected to perform well in this scenario, as they are designed to capture and model linear patterns within the data.
 
-```{r, fig.width=18, fig.height=14}
+```{r, fig.width=18, fig.height=20}
 # Generate and create missing data
 n <- 200
 p <- 0.3
 linear_data <- generate_data(n, "linear",x_range = c(0, 1),  noise_sd = 0.5, 
-                             homoscedasticity = F, min_sd_noise = 0.1)
+                             homoscedasticity = F, min_sd_noise = 0.05)
+
 linear_missing <- delete_MAR_1_to_x(linear_data, p, cols_mis = "x2", cols_ctrl = "x1", x = 10)
 
 # Use the new combined analysis function
@@ -95,7 +97,7 @@ imputation_plots <- linear_result$imputation_plots
 grid.arrange(grobs = imputation_plots, ncol = 2)
 ```
 
-```{r}
+```{r, fig.width=18, fig.height=12}
 # Access the metrics plot
 metrics_plot <- linear_result$metrics_plot
 print(metrics_plot)
@@ -106,7 +108,7 @@ print(metrics_plot)
 
 The second dataset is constructed with a quadratic relationship and an unbalanced number of data points. In cases involving quadratic relationships, we anticipate that more flexible imputation methods, such as Generalized Additive Models (GAM) and Random Forest, will outperform simple linear regression due to their ability to capture complex, non-linear patterns in the data.
 
-```{r, fig.width=18, fig.height=14}
+```{r, fig.width=18, fig.height=20}
 # Generate and create missing data
 quad_data <- generate_data(n, "quadratic",x_range = c(-2, 2), noise_sd = 1, balanced = F, alpha = 1, beta = 2)
 quad_missing <- delete_MAR_1_to_x(quad_data, p, cols_mis = "x2", cols_ctrl = "x1", x = 10)
@@ -120,7 +122,7 @@ imputation_plots <- quad_result$imputation_plots
 grid.arrange(grobs = imputation_plots, ncol = 2)
 ```
 
-```{r}
+```{r, fig.width=18, fig.height=12}
 # Access the metrics plot
 metrics_plot <- quad_result$metrics_plot
 print(metrics_plot)
@@ -130,7 +132,7 @@ print(metrics_plot)
 
 The third dataset is designed with a piecewise relationship, where distinct segments of the data follow different patterns. For this type of distribution, we expect imputation methods capable of handling discontinuities and local variations, such as Random Forest and k-Nearest Neighbors, to perform better than global modeling approaches like linear regression, which may struggle to accurately capture the segmented structure of the data.
 
-```{r, fig.width=18, fig.height=14}
+```{r, fig.width=18, fig.height=20}
 # Generate and create missing data
 piecewise_data <- generate_data(n, "piecewise", noise_sd = 2)
 piecewise_missing <- delete_MAR_1_to_x(piecewise_data, p, cols_mis = "x2", cols_ctrl = "x1", x = 10)
@@ -144,7 +146,7 @@ imputation_plots <- piecewise_result$imputation_plots
 grid.arrange(grobs = imputation_plots, ncol = 2)
 ```
 
-```{r}
+```{r, fig.width=18, fig.height=12}
 # Access the metrics plot
 metrics_plot <- piecewise_result$metrics_plot
 print(metrics_plot)
@@ -154,7 +156,7 @@ print(metrics_plot)
 
 The final dataset follows a logarithmic relationship, providing insight into how different imputation methods handle non-linear but monotonic patterns.
 
-```{r, fig.width=18, fig.height=14}
+```{r, fig.width=18, fig.height=20}
 # Generate and create missing data
 log_data <- generate_data(n, "log", x_range = c(1, 100), noise_sd = 1)
 log_missing <- delete_MAR_1_to_x(log_data, p, cols_mis = "x2", cols_ctrl = "x1", x = 10)
@@ -168,7 +170,7 @@ imputation_plots <- log_result$imputation_plots
 grid.arrange(grobs = imputation_plots, ncol = 2)
 ```
 
-```{r}
+```{r, fig.width=18, fig.height=12}
 # Access the metrics plot
 metrics_plot <- log_result$metrics_plot
 print(metrics_plot)

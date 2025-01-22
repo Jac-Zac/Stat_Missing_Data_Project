@@ -72,10 +72,10 @@ create_imputation_plot <- function(data, imputed_data, title) {
              color = "Data Type") +
         theme_minimal() +
         theme(
-            plot.title = element_text(hjust = 0.5, size = 18),  # Increased title size
-            axis.title = element_text(size = 14),  # Increased axis title size
-            axis.text = element_text(size = 12),   # Increased axis text size
-            legend.text = element_text(size = 14)  # Increased legend text size
+            plot.title = element_text(hjust = 0.5, size = 20),  # Increased title size
+            axis.title = element_text(size = 18),  # Increased axis title size
+            axis.text = element_text(size = 16),   # Increased axis text size
+            legend.text = element_text(size = 16)  # Increased legend text size
         )
 }
 
@@ -104,14 +104,18 @@ create_distribution_metrics_plot <- function(original_data, imputed_datasets) {
   # Create the plot
   ggplot(metrics_df, aes(x = reorder(Method, Value), y = Value)) +
     geom_bar(stat = "identity", fill = "#5E81AC") +
-    geom_text(aes(label = round(Value, 3)), vjust = -0.5, size = 3) +
+    geom_text(aes(label = round(Value, 3)), vjust = -0.5, size = 6) +  # Increased size for text labels
     facet_wrap(~Metric_Type, scales = "free_y", ncol = 2) +
     labs(title = "Distribution Metrics Comparison", x = "Method", y = "Metric Value") +
     theme_minimal() +
     theme(
-      axis.text.x = element_text(angle = 45, hjust = 1),
-      plot.title = element_text(hjust = 0.5),
-      strip.text = element_text(size = 12, face = "bold"),
+      axis.text.x = element_text(angle = 45, hjust = 1, size = 16),   # Increased size for x-axis text
+      # axis.text.x = element_text(angle = 90, hjust = 1, size = 16),   # Increased size for x-axis text
+      axis.text.y = element_text(size = 14),                          # Increased size for y-axis text
+      axis.title.x = element_text(size = 18),                         # Increased size for x-axis title
+      axis.title.y = element_text(size = 18),                         # Increased size for y-axis title
+      plot.title = element_text(size = 24, hjust = 0.5),              # Increased size for plot title
+      strip.text = element_text(size = 18, face = "bold"),            # Increased size for facet labels
       strip.background = element_rect(fill = "#E5E9F0", color = NA),
       panel.spacing = unit(2, "lines")
     )

@@ -70,66 +70,49 @@ regression_imputation <- function(data, noise = FALSE) {
 #' @param data Data frame with missing values
 #' @param noise Logical; if TRUE, adds noise to the imputed values based on residuals (default = FALSE)
 #' @return Data frame with missing values imputed using regression
-# regression_imputation <- function(data, noise = FALSE) {
-#   for (col in names(data)) {
-#     if (any(is.na(data[[col]])) && is.numeric(data[[col]])) {
-#       complete_data <- data[complete.cases(data), ]
-#       incomplete_rows <- which(is.na(data[[col]]))
-#       predictors <- setdiff(names(data), col)
-#       model <- lm(as.formula(paste(col, "~ .")), data = complete_data)
-#       predictions <- predict(model, newdata = data[incomplete_rows, predictors, drop = FALSE])
-#       
-#       if (noise) {
-#         # Use residuals as a proxy for noise
-#         residuals <- model$residuals
-#         
-#         # Sample noise from the residuals to preserve their empirical distribution
-#         noise_values <- sample(residuals, size = length(predictions), replace = TRUE)
-#         
-#         # Add the sampled noise to the predictions
-#         predictions <- predictions + noise_values
-#       }
-#       
-#       data[[col]][incomplete_rows] <- predictions
-#     }
-#   }
-#   return(data)
-# }
-
-#' Hot-deck Imputation
-#' @param data Data frame with missing values
-#' @return Data frame with missing values imputed using hot-deck imputation
-hot_deck_imputation <- function(data) {
+regression_imputation_emp <- function(data, noise = FALSE) {
   for (col in names(data)) {
-    if (any(is.na(data[[col]]))) {
-      non_missing_values <- data[[col]][!is.na(data[[col]])]
-      data[[col]][is.na(data[[col]])] <- sample(non_missing_values, sum(is.na(data[[col]])), replace = TRUE)
+    if (any(is.na(data[[col]])) && is.numeric(data[[col]])) {
+      complete_data <- data[complete.cases(data), ]
+      incomplete_rows <- which(is.na(data[[col]]))
+      predictors <- setdiff(names(data), col)
+      model <- lm(as.formula(paste(col, "~ .")), data = complete_data)
+      predictions <- predict(model, newdata = data[incomplete_rows, predictors, drop = FALSE])
+      
+      if (noise) {
+        # Use residuals as a proxy for noise
+        residuals <- model$residuals
+        
+        # Sample noise from the residuals to preserve their empirical distribution
+        noise_values <- sample(residuals, size = length(predictions), replace = TRUE)
+        
+        # Add the sampled noise to the predictions
+        predictions <- predictions + noise_values
+      }
+      
+      data[[col]][incomplete_rows] <- predictions
     }
   }
   return(data)
+}
+
+#' Hot-deck Imputation
+#' @pram data Data frame with missing values
+#' @return Data frame with missing values imputed using hot-deck imputation
+# Hot-deck Imputation using mice
+hot_deck_imputation <- function(data) {
+  imputed_data <- mice(data, method = "pmm", m = 1, maxit = 1, printFlag = FALSE)
+  complete_data <- complete(imputed_data)
+  return(complete_data)
 }
 
 #' Expectation-Maximization Imputation
 #' @param data Data frame with missing values
 #' @return Data frame with missing values imputed using a simple EM-like approach
 em_imputation <- function(data) {
-  tol <- 1e-6
-  max_iter <- 100
-  iter <- 0
-  prev_data <- data
-  while (iter < max_iter) {
-    iter <- iter + 1
-    for (col in names(data)) {
-      if (is.numeric(data[[col]]) && any(is.na(data[[col]]))) {
-        data[[col]][is.na(data[[col]])] <- mean(data[[col]], na.rm = TRUE)
-      }
-    }
-    if (max(abs(as.matrix(data) - as.matrix(prev_data)), na.rm = TRUE) < tol) {
-      break
-    }
-    prev_data <- data
-  }
-  return(data)
+  imputed_data <- mice(data, method = "norm", m = 1, maxit = 10, printFlag = FALSE)
+  complete_data <- complete(imputed_data)
+  return(complete_data)
 }
 
 #' Multiple Imputation
