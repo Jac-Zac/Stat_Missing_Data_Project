@@ -1,6 +1,6 @@
 ---
 title: "Synthetic Data Analysis"
-author: "Jacopo Zacchigna"
+author: "Jacopo Zacchigna, Devid Rosa, Cristiano Baldassi, Ludovica Bianchi"
 date: "`r format(Sys.time(), '%d %B, %Y')`"
 output: 
   html_document:

@@ -46,6 +46,11 @@ suppressMessages(library(transport))
 suppressMessages(library(gridExtra))
 suppressMessages(library(MASS))  # For stepAIC
 suppressMessages(library(plotly))
+suppressMessages(library(dplyr))
+suppressMessages(library(caret))
+suppressMessages(library(stringr))
+suppressMessages(library(cowplot))
+
 
 
 # suppressMessages(library(caret))
