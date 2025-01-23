@@ -65,66 +65,58 @@ regression_imputation <- function(data, noise = FALSE) {
   return(data)
 }
 
-# ALTERNATIVE APPROACH TO DISCUSS
-#' Regression Imputation with Weighted Residual Sampling
-#' @param data Data frame with missing values
-#' @param noise Logical; if TRUE, adds noise to the imputed values based on weighted residual sampling (default = FALSE)
-#' @return Data frame with missing values imputed using regression
-regression_imputation_emp <- function(data, noise = FALSE) {
+regression_imputation_emp <- function(data, noise = FALSE, min_bin_size = 10) {
   for (col in names(data)) {
     if (any(is.na(data[[col]])) && is.numeric(data[[col]])) {
+      # Separate complete cases and rows with missing values
       complete_data <- data[complete.cases(data), ]
       incomplete_rows <- which(is.na(data[[col]]))
       predictors <- setdiff(names(data), col)
+      
+      # Fit the primary regression model
       model <- lm(as.formula(paste(col, "~ .")), data = complete_data)
       predictions <- predict(model, newdata = data[incomplete_rows, predictors, drop = FALSE])
       
       if (noise) {
-        # Use residuals as a proxy for noise
+        # Step 1: Calculate residuals
         residuals <- model$residuals
-
-
-        # Calculate residuals and their standard deviation
-        residuals <- model$residuals
-        residual_sd <- sd(residuals, na.rm = TRUE)
-
-        # Calculate weights based on the magnitude of the predictors (example: absolute predictor values)
-        weights <- abs(complete_data[[col]]) / sum(abs(complete_data[[col]]))
         
-        # Add random noise to the predictions (scaled by residual_sd)
-        noise_values <- rnorm(length(predictions), mean = 0, sd = residual_sd)
-        predictions <- predictions + noise_values
+        # Step 2: Choose the number of bins adaptively
+        bin_var <- complete_data[[predictors[1]]]  # Use the first predictor as an example
+        n_complete <- length(bin_var)
+        num_bins <- max(1, floor(n_complete / min_bin_size))  # Ensure at least min_bin_size per bin
+        num_bins <- min(num_bins, 20)  # Optional cap on the maximum number of bins
         
+        # Step 3: Bin data based on quantiles
+        bins <- cut(bin_var, breaks = quantile(bin_var, probs = seq(0, 1, length.out = num_bins + 1)), include.lowest = TRUE)
         
-        # Add the sampled noise to the predictions
-        predictions <- predictions + noise_values
+        # Step 4: Map residuals to bins
+        residual_bins <- split(residuals, bins)
+        
+        # Step 5: Assign each missing row to the appropriate bin based on its predictor value
+        incomplete_bin_var <- data[incomplete_rows, predictors[1], drop = TRUE]
+        incomplete_bins <- cut(incomplete_bin_var, breaks = quantile(bin_var, probs = seq(0, 1, length.out = num_bins + 1)), include.lowest = TRUE)
+        
+        # Step 6: Sample noise from the residuals of the respective bin
+        sampled_noise <- sapply(incomplete_bins, function(bin) {
+          if (!is.na(bin) && bin %in% names(residual_bins) && length(residual_bins[[bin]]) > 0) {
+            sample(residual_bins[[bin]], size = 1, replace = TRUE)
+          } else {
+            0  # Default to 0 noise if binning fails
+          }
+        })
+        
+        # Add noise to predictions
+        predictions <- predictions + sampled_noise
       }
       
+      # Impute missing values with predictions
       data[[col]][incomplete_rows] <- predictions
     }
   }
   return(data)
 }
 
-#' Custom regression imputation which can work with mice
-custom_regression_impute <- function(y, ry, x, noise = FALSE, ...) {
-# custom_regression_impute <- function(y, ry, x, noise = TRUE, ...) {
-  # Ensure `x` is a data frame
-  x <- as.data.frame(x)
-  
-  # Fit a linear model using observed data
-  model <- lm(y ~ ., data = data.frame(y = y[ry], x = x[ry, , drop = FALSE]))
-  predictions <- predict(model, newdata = x[!ry, , drop = FALSE])
-  
-  if (noise) {
-    # Use residuals as noise
-    residuals <- model$residuals
-    noise_values <- sample(residuals, size = length(predictions), replace = TRUE)
-    predictions <- predictions + noise_values
-  }
-  
-  return(predictions)
-}
 
 #' Hot-deck Imputation
 #' @pram data Data frame with missing values
@@ -280,40 +272,56 @@ gam_based_imputation <- function(data,noise = FALSE, max_predictors = 3) {
   return(imputed_data)
 }
 
-# GAM-based custom imputation function for mice with empirical residual noise
-mice_impute_gam <- function(y, ry, x, noise = TRUE, max_predictors = 3, ...) {
-  # Ensure x is a data frame
-  x <- as.data.frame(x)
+#' Forest-Based Imputation Method for MICE
+#'
+#' @param y Vector of values to impute
+#' @param ry Logical vector indicating which values are observed (TRUE) or missing (FALSE)
+#' @param x Matrix or data frame of predictors
+#' @param noise Logical; if TRUE, adds noise to imputed values (default = TRUE)
+#' @param ... Additional parameters to pass to randomForest
+#' @return Vector of imputed values
+mice_impute_forest <- function(y, ry, x, noise = TRUE, ...) {
+  library(randomForest)
   
-  # Limit the number of predictors
-  if (ncol(x) > max_predictors) {
-    # Select predictors based on correlation with y
-    corrs <- sapply(x, function(col) {
-      if (is.numeric(col)) cor(y[ry], col[ry], use = "complete.obs") else NA
-    })
-    top_predictors <- names(sort(abs(corrs), decreasing = TRUE, na.last = TRUE))[1:max_predictors]
-    x <- x[, top_predictors, drop = FALSE]
-  }
-  
-  # Create formula for the GAM model
-  formula_terms <- paste("s(", names(x), ")", collapse = " + ")
-  formula_str <- paste("y ~", formula_terms)
-  
-  # Fit GAM model on observed data
+  # Prepare training data
   train_data <- data.frame(y = y[ry], x[ry, , drop = FALSE])
-  tryCatch({
-    gam_model <- gam(as.formula(formula_str), data = train_data)
-  }, error = function(e) {
-    stop("Failed to fit GAM model: ", e$message)
-  })
+  
+  # Fit Random Forest model with additional parameters
+  rf_model <- randomForest(y ~ ., data = train_data, ...)
   
   # Predict missing values
   pred_data <- x[!ry, , drop = FALSE]
-  predictions <- predict(gam_model, newdata = pred_data)
+  imputed_values <- predict(rf_model, newdata = pred_data)
   
-  # Optionally add noise from the empirical residual distribution
+  # Add noise if requested
   if (noise) {
-    residuals <- residuals(gam_model)
+    # Calculate residuals
+    residuals <- train_data$y - predict(rf_model, newdata = train_data)
+    
+    # Standard deviation of residuals
+    residual_sd <- sd(residuals, na.rm = TRUE)
+    
+    # Add noise sampled from a normal distribution with mean 0 and sd of residuals
+    noise_values <- rnorm(length(imputed_values), mean = 0, sd = residual_sd)
+    imputed_values <- imputed_values + noise_values
+  }
+  
+  return(imputed_values)
+}
+
+#' Custom regression imputation which can work with mice
+custom_regression_impute <- function(y, ry, x, noise = FALSE, ...) {
+# custom_regression_impute <- function(y, ry, x, noise = TRUE, ...) {
+  # Ensure `x` is a data frame
+  x <- as.data.frame(x)
+  
+  # Fit a linear model using observed data
+  model <- lm(y ~ ., data = data.frame(y = y[ry], x = x[ry, , drop = FALSE]))
+  predictions <- predict(model, newdata = x[!ry, , drop = FALSE])
+  
+  if (noise) {
+    # Use residuals as noise
+    residuals <- model$residuals
     noise_values <- sample(residuals, size = length(predictions), replace = TRUE)
     predictions <- predictions + noise_values
   }

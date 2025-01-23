@@ -47,10 +47,10 @@ generate_data <- function(n,
   x2 <- switch(relationship,
                "linear" = x1 + eps,
                "quadratic" = x1^2 + eps,
-               "cubic" = x1^3 + eps,
+               "cubic" =  5 * x1^3 + 3 * x1^2 + eps,
                "log" = {
                  if (x_range[1] <= 0) stop("X range must be positive for log relationship")
-                 log(x1) + eps
+                 3 * log(x1) + eps
                },
                "piecewise" = {
                  pivot <- (x_range[2] + x_range[1]) / 2

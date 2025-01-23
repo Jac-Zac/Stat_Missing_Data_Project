@@ -18,6 +18,7 @@
 # install.packages("gridExtra")
 # install.packages("ggExtra")
 # install.packages("plotly")
+# install.packages(" ks")
 # install.packages("VIM") # (Visualization and Imputation of Missing Values) 
 
 # Inputation methods
@@ -50,8 +51,7 @@ suppressMessages(library(dplyr))
 suppressMessages(library(caret))
 suppressMessages(library(stringr))
 suppressMessages(library(cowplot))
-
-
+# suppressMessages(library(ks))
 
 # suppressMessages(library(caret))
 

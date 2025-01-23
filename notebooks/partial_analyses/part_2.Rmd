@@ -586,8 +586,6 @@ coef_df <- do.call(rbind, lapply(names(fit_models), function(model_name) {
 # View the coefficient data frame
 print(coef_df)
 
-library(ggplot2)
-
 # Plotting
 ggplot(coef_df, aes(x = Term, y = Estimate, color = Model)) +
   geom_point(position = position_dodge(width = 0.5)) +

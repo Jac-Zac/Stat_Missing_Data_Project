@@ -10,6 +10,7 @@ jobs:
   render_document:
     runs-on: ubuntu-latest
 
+    # libssl-dev libcurl4-openssl-dev
     steps:
       - name: Checkout code
         uses: actions/checkout@v2

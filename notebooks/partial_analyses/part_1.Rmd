@@ -56,7 +56,7 @@ imputation_methods <- list(
   "KNN Imputation" = function(data) { imputed_data <- kNN(data, imp_var = FALSE)},
   "Regression" = function(data) { regression_imputation(data) },
   "Regression with Noise" = function(data) { regression_imputation(data, noise = TRUE) },
-  "Regression with Noise Emp" = function(data) { regression_imputation_emp(data, noise = TRUE) },
+  # "Regression with Noise Emp" = function(data) { regression_imputation_emp(data, noise = TRUE) },
   "GAM" = function(data) { gam_based_imputation(data) },
   "GAM with Noise" = function(data) { gam_based_imputation(data, noise = TRUE) },
   "Random Forest" = function(data) { tree_based_imputation(data) },
@@ -98,36 +98,6 @@ noise_plots <- noise_result$imputation_plots
 
 # Arrange and display them as needed
 grid.arrange(grobs = noise_plots, ncol = 2)
-```
-
-```{r}
-# Custom method registration
-# Ensure the custom function is correctly named
-mice.impute.custom_regression <- custom_regression_impute
-# Register the custom imputation function
-mice.impute.gam <- mice_impute_gam
-
-# norm.predict: Deterministic regression imputation
-# norm: Deterministic regression imputation
-
-# Perform multiple imputation
-# imputed_data <- mice(linear_missing, method ="custom_regression", m = 5)
-imputed_data <- mice(linear_missing, method ="gam", m = 5)
-
-# Extract completed data (first imputed dataset)
-completed_data <- complete(imputed_data, action = 1)
-
-# Identify observed and imputed values for x2
-is_imputed <- is.na(linear_missing$x2)
-observed_values <- completed_data[!is_imputed, ]
-imputed_values <- completed_data[is_imputed, ]
-
-# Custom plot
-plot(completed_data$x1, completed_data$x2, col = ifelse(is_imputed, red_nord, "black"),
-     pch = 19, xlab = "x1", ylab = "x2",
-     main = "Imputed Values (Red) vs Observed Values (Black)")
-legend("topright", legend = c("Observed", "Imputed"), col = c("black", red_nord), pch = 19)
-
 ```
 
 #### Comparison of the different techniques for the simple dataset
@@ -181,7 +151,7 @@ The third dataset is designed with a piecewise relationship, where distinct segm
 ```{r, fig.width=18, fig.height=20}
 # Generate and create missing data
 piecewise_data <- generate_data(n, "piecewise", noise_sd = 2)
-piecewise_missing <- delete_MAR_1_to_x(piecewise_data, p, cols_mis = "x2", cols_ctrl = "x1", x = 10)
+piecewise_missing <- delete_MAR_1_to_x(piecewise_data, p, cols_mis = "x2", cols_ctrl = "x1", x = 3)
 
 piecewise_result <- plot_imputations_and_metrics(piecewise_data, piecewise_missing, imputation_methods)
 
@@ -224,6 +194,7 @@ print(metrics_plot)
 
 ### Conclusions
 
+
 The visualizations demonstrate that:
 
 1. Simple mean imputation tends to perform poorly as it ignores the relationship between variables
@@ -231,3 +202,34 @@ The visualizations demonstrate that:
 3. Regression imputation works best for linear relationships
 4. GAM and Random Forest methods are more flexible and can handle non-linear relationships better
 5. The choice of imputation method should depend on the underlying relationship between variables
+
+### Appendix
+
+```{r}
+# Custom method registration
+# Ensure the custom function is correctly named
+# mice.impute.custom_regression <- custom_regression_impute
+# Register the custom imputation function
+mice.impute.forest.noise  <- mice_impute_forest 
+
+# norm.predict: Deterministic regression imputation
+# norm: Deterministic regression imputation
+
+# Perform multiple imputation
+# imputed_data <- mice(linear_missing, method ="custom_regression", m = 5)
+imputed_data <- mice(piecewise_missing, method ="forest.noise", m = 5)
+
+# Extract completed data (first imputed dataset)
+completed_data <- complete(imputed_data, action = 1)
+
+# Identify observed and imputed values for x2
+is_imputed <- is.na(piecewise_missing$x2)
+observed_values <- completed_data[!is_imputed, ]
+imputed_values <- completed_data[is_imputed, ]
+
+# Custom plot
+plot(completed_data$x1, completed_data$x2, col = ifelse(is_imputed, red_nord, "black"),
+     pch = 19, xlab = "x1", ylab = "x2",
+     main = "Imputed Values (Red) vs Observed Values (Black)")
+legend("topright", legend = c("Observed", "Imputed"), col = c("black", red_nord), pch = 19)
+```
