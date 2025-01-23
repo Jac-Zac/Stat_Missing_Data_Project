@@ -82,12 +82,19 @@ regression_imputation_emp <- function(data, noise = FALSE) {
       if (noise) {
         # Use residuals as a proxy for noise
         residuals <- model$residuals
-        
+
+
+        # Calculate residuals and their standard deviation
+        residuals <- model$residuals
+        residual_sd <- sd(residuals, na.rm = TRUE)
+
         # Calculate weights based on the magnitude of the predictors (example: absolute predictor values)
         weights <- abs(complete_data[[col]]) / sum(abs(complete_data[[col]]))
         
-        # Sample noise from residuals with weights
-        noise_values <- sample(residuals, size = length(predictions), replace = TRUE, prob = weights)
+        # Add random noise to the predictions (scaled by residual_sd)
+        noise_values <- rnorm(length(predictions), mean = 0, sd = residual_sd)
+        predictions <- predictions + noise_values
+        
         
         # Add the sampled noise to the predictions
         predictions <- predictions + noise_values

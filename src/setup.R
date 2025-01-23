@@ -17,6 +17,7 @@
 # install.package("transport")
 # install.packages("gridExtra")
 # install.packages("ggExtra")
+# install.packages("plotly")
 # install.packages("VIM") # (Visualization and Imputation of Missing Values) 
 
 # Inputation methods
@@ -44,6 +45,8 @@ suppressMessages(library(philentropy))
 suppressMessages(library(transport))
 suppressMessages(library(gridExtra))
 suppressMessages(library(MASS))  # For stepAIC
+suppressMessages(library(plotly))
+
 
 # suppressMessages(library(caret))
 
