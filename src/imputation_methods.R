@@ -66,9 +66,9 @@ regression_imputation <- function(data, noise = FALSE) {
 }
 
 # ALTERNATIVE APPROACH TO DISCUSS
-#' Regression Imputation with Empirical Noise
+#' Regression Imputation with Weighted Residual Sampling
 #' @param data Data frame with missing values
-#' @param noise Logical; if TRUE, adds noise to the imputed values based on residuals (default = FALSE)
+#' @param noise Logical; if TRUE, adds noise to the imputed values based on weighted residual sampling (default = FALSE)
 #' @return Data frame with missing values imputed using regression
 regression_imputation_emp <- function(data, noise = FALSE) {
   for (col in names(data)) {
@@ -83,8 +83,11 @@ regression_imputation_emp <- function(data, noise = FALSE) {
         # Use residuals as a proxy for noise
         residuals <- model$residuals
         
-        # Sample noise from the residuals to preserve their empirical distribution
-        noise_values <- sample(residuals, size = length(predictions), replace = TRUE)
+        # Calculate weights based on the magnitude of the predictors (example: absolute predictor values)
+        weights <- abs(complete_data[[col]]) / sum(abs(complete_data[[col]]))
+        
+        # Sample noise from residuals with weights
+        noise_values <- sample(residuals, size = length(predictions), replace = TRUE, prob = weights)
         
         # Add the sampled noise to the predictions
         predictions <- predictions + noise_values
