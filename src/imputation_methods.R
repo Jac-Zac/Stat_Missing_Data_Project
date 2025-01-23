@@ -143,38 +143,41 @@ em_imputation <- function(data) {
 #' @param data Data frame with missing values
 #' @param noise Logical; if TRUE, adds noise to the imputed values based on residuals (default = FALSE)
 #' @return Data frame with missing values imputed using Random Forest
-tree_based_imputation <- function(data, noise = FALSE) { 
+tree_based_imputation <- function(data, noise = FALSE) {
+  library(randomForest)
+
   # Loop through each column with missing values
   for (col in names(data)) {
     if (any(is.na(data[[col]]))) {
-      # Create a model to predict the missing values in the column
+      # Identify missing and complete cases
       missing_indices <- which(is.na(data[[col]]))
       complete_data <- data[!is.na(data[[col]]), ]
-      
+
       # Fit the Random Forest model
       rf_model <- randomForest(as.formula(paste(col, "~ .")), data = complete_data)
-      
+
       # Predict missing values
       imputed_values <- predict(rf_model, newdata = data[missing_indices, ])
-      
+
       if (noise) {
         # Calculate residuals
         residuals <- complete_data[[col]] - predict(rf_model, newdata = complete_data)
-        
-        # Sample noise from residuals
-        noise_values <- sample(residuals, size = length(imputed_values), replace = TRUE)
-        
-        # Add noise to imputed values
+
+        # Standard deviation of residuals
+        residual_sd <- sd(residuals, na.rm = TRUE)
+
+        # Add noise sampled from a normal distribution with mean 0 and sd of residuals
+        noise_values <- rnorm(length(imputed_values), mean = 0, sd = residual_sd)
         imputed_values <- imputed_values + noise_values
       }
-      
+
       # Replace missing values with imputed values
       data[[col]][missing_indices] <- imputed_values
     }
   }
+
   return(data)
 }
-
 
 #' Generalized Additive Model (GAM) Based Imputation
 #' 
