@@ -797,12 +797,12 @@ cat("true (RMSE):", rmse_value, "\n")
 # -------------------------------------------
 
 ```{r}
-missingMar<-delete_MAR_1_to_x(data_original, p = c(0.3,0.3, 0.3), cols_mis = c("weight", "horsepower", "mpg"), cols_ctrl =c("displacement", "acceleration", "displacement"), x =10)
+missingMar<-delete_MAR_1_to_x(data_original, p = c(0.2,0.2, 0.2), cols_mis = c("weight", "horsepower", "mpg"), cols_ctrl =c("displacement", "acceleration", "displacement"), x =10)
 
 idx_miss <- which(!complete.cases(missingMar))
 df_no_miss <- missingMar[complete.cases(missingMar), ]
 
-tmp<-delete_MAR_1_to_x(df_no_miss, p = c(0.1,0.3), cols_mis = c("displacement", "cut_model_year"), cols_ctrl =c("horsepower", "weight"), x =100)
+tmp<-delete_MAR_1_to_x(df_no_miss, p = c(0.2), cols_mis = c("displacement"), cols_ctrl =c("horsepower"), x =100)
 
 missingComplex <- missingMar
 missingComplex[complete.cases(missingMar), ] <- tmp
@@ -857,13 +857,262 @@ rmse_value <- RMSE(pred_origin, test_data$mpg)
 cat("true (RMSE):", rmse_value, "\n")
 ```
 
+## Coefficient analysis
+
+```{r}
+# Extract coefficients and confidence intervals
+fit_models <- list(mean = fit_complex_mean, list = fit_complex_del, or = fit_multi1)
+
+# Create a data frame to store coefficients and their intervals
+coef_df <- do.call(rbind, lapply(names(fit_models), function(model_name) {
+  coefs <- summary(fit_models[[model_name]])$coefficients
+  ci <- confint(fit_models[[model_name]])
+  data.frame(
+    Model = model_name,
+    Term = rownames(coefs),
+    Estimate = coefs[, "Estimate"],
+    Lower_CI = ci[, 1],
+    Upper_CI = ci[, 2]
+  )
+}))
+
+# View the coefficient data frame
+#print(coef_df)
+
+# Plotting
+#ggplot(coef_df, aes(x = Term, y = Estimate, color = Model)) +
+#  geom_point(position = position_dodge(width = 0.5)) +
+#  geom_errorbar(aes(ymin = Lower_CI, ymax = Upper_CI), width = 0.2, position = position_dodge(width = 0.5)) +
+#  labs(title = "Comparison of Coefficients with Confidence Intervals",
+#       x = "Terms",
+#       y = "Coefficient Estimate") +
+#  theme_minimal() +
+#  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+```
 
 
+### Intercept
+```{r}
+# Extract specific coefficients and their confidence intervals
+coef_names <-"(Intercept)" # Specify the coefficients you want to compare
+
+# Create a data frame to store selected coefficients and their intervals
+selected_coef_df <- do.call(rbind, lapply(names(fit_models), function(model_name) {
+  coefs <- summary(fit_models[[model_name]])$coefficients
+  ci <- confint(fit_models[[model_name]])
+  
+  # Filter for selected coefficients
+  selected_coefs <- coefs[coef_names, , drop = FALSE]
+  selected_ci <- ci[coef_names, , drop = FALSE]
+  
+  data.frame(
+    Model = model_name,
+    Term = rownames(selected_coefs),
+    Estimate = selected_coefs[, "Estimate"],
+    Lower_CI = selected_ci[, 1],
+    Upper_CI = selected_ci[, 2]
+  )
+}))
+
+# View the selected coefficient data frame
+print(selected_coef_df)
+
+
+# Plotting selected coefficients with specified y-axis limits
+ggplot(selected_coef_df, aes(x = Term, y = Estimate, color = Model)) +
+  geom_point(position = position_dodge(width = 0.5), size = 3) +
+  geom_errorbar(aes(ymin = Lower_CI, ymax = Upper_CI), width = 0.2, position = position_dodge(width = 0.5)) +
+  labs(title = "Comparison of Selected Coefficients with Confidence Intervals",
+       x = "Coefficient Terms",
+       y = "Coefficient Estimate") +
+  #scale_y_continuous(limits = c(3.65, 4.05)) +  # Set y-axis limits
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+```
+
+
+### Weight
+
+```{r}
+# Extract specific coefficients and their confidence intervals
+coef_names <-"weight" # Specify the coefficients you want to compare
+
+# Create a data frame to store selected coefficients and their intervals
+selected_coef_df <- do.call(rbind, lapply(names(fit_models), function(model_name) {
+  coefs <- summary(fit_models[[model_name]])$coefficients
+  ci <- confint(fit_models[[model_name]])
+  
+  # Filter for selected coefficients
+  selected_coefs <- coefs[coef_names, , drop = FALSE]
+  selected_ci <- ci[coef_names, , drop = FALSE]
+  
+  data.frame(
+    Model = model_name,
+    Term = rownames(selected_coefs),
+    Estimate = selected_coefs[, "Estimate"],
+    Lower_CI = selected_ci[, 1],
+    Upper_CI = selected_ci[, 2]
+  )
+}))
+
+# View the selected coefficient data frame
+print(selected_coef_df)
+
+
+# Plotting selected coefficients with specified y-axis limits
+ggplot(selected_coef_df, aes(x = Term, y = Estimate, color = Model)) +
+  geom_point(position = position_dodge(width = 0.5), size = 3) +
+  geom_errorbar(aes(ymin = Lower_CI, ymax = Upper_CI), width = 0.2, position = position_dodge(width = 0.5)) +
+  labs(title = "Comparison of Selected Coefficients with Confidence Intervals",
+       x = "Coefficient Terms",
+       y = "Coefficient Estimate") +
+  #scale_y_continuous(limits = c(3.65, 4.05)) +  # Set y-axis limits
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+```
+
+### Horsepower
+
+```{r}
+# Extract specific coefficients and their confidence intervals
+coef_names <-"horsepower" # Specify the coefficients you want to compare
+
+# Create a data frame to store selected coefficients and their intervals
+selected_coef_df <- do.call(rbind, lapply(names(fit_models), function(model_name) {
+  coefs <- summary(fit_models[[model_name]])$coefficients
+  ci <- confint(fit_models[[model_name]])
+  
+  # Filter for selected coefficients
+  selected_coefs <- coefs[coef_names, , drop = FALSE]
+  selected_ci <- ci[coef_names, , drop = FALSE]
+  
+  data.frame(
+    Model = model_name,
+    Term = rownames(selected_coefs),
+    Estimate = selected_coefs[, "Estimate"],
+    Lower_CI = selected_ci[, 1],
+    Upper_CI = selected_ci[, 2]
+  )
+}))
+
+# View the selected coefficient data frame
+print(selected_coef_df)
+
+
+# Plotting selected coefficients with specified y-axis limits
+ggplot(selected_coef_df, aes(x = Term, y = Estimate, color = Model)) +
+  geom_point(position = position_dodge(width = 0.5), size = 3) +
+  geom_errorbar(aes(ymin = Lower_CI, ymax = Upper_CI), width = 0.2, position = position_dodge(width = 0.5)) +
+  labs(title = "Comparison of Selected Coefficients with Confidence Intervals",
+       x = "Coefficient Terms",
+       y = "Coefficient Estimate") +
+  #scale_y_continuous(limits = c(0.9*Lower_CI, 1.1*Upper_CI)) +  # Set y-axis limits
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+```
+
+### Cut_model_year
+
+```{r}
+# Extract specific coefficients and their confidence intervals
+coef_names <-c("cut_model_year74-76","cut_model_year77-79","cut_model_year80-82") # Specify the coefficients you want to compare
+
+# Create a data frame to store selected coefficients and their intervals
+selected_coef_df <- do.call(rbind, lapply(names(fit_models), function(model_name) {
+  coefs <- summary(fit_models[[model_name]])$coefficients
+  ci <- confint(fit_models[[model_name]])
+  
+  # Filter for selected coefficients
+  selected_coefs <- coefs[coef_names, , drop = FALSE]
+  selected_ci <- ci[coef_names, , drop = FALSE]
+  
+  data.frame(
+    Model = model_name,
+    Term = rownames(selected_coefs),
+    Estimate = selected_coefs[, "Estimate"],
+    Lower_CI = selected_ci[, 1],
+    Upper_CI = selected_ci[, 2]
+  )
+}))
+
+# View the selected coefficient data frame
+#print(selected_coef_df)
+
+
+# Plotting selected coefficients with specified y-axis limits
+ggplot(selected_coef_df, aes(x = Term, y = Estimate, color = Model)) +
+  geom_point(position = position_dodge(width = 0.5), size = 3) +
+  geom_errorbar(aes(ymin = Lower_CI, ymax = Upper_CI), width = 0.2, position = position_dodge(width = 0.5)) +
+  labs(title = "Comparison of Selected Coefficients with Confidence Intervals",
+       x = "Coefficient Terms",
+       y = "Coefficient Estimate") +
+  #scale_y_continuous(limits = c(3.65, 4.05)) +  # Set y-axis limits
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+```
+```{r, echo = F, warning=FALSE}
+
+df <- data.frame(predicted = predict(fit_complex_mean))
+
+# Creazione del grafico a dispersione
+ggplot(df, aes(x = predicted, y = resid(fit_complex_mean))) +
+    geom_point(color = nord_colors[3]) +
+    geom_smooth(method = "lm", se = FALSE, color = nord_colors[2], formula = y ~ x, linewidth = 0.75, linetype = 2) +
+    geom_smooth(method = "loess", se = FALSE, color = nord_colors[1], formula = y ~ x) +
+    xlab("Valori fittati di mpg") +
+    ylab("Residui") +
+    ggtitle("Residui Vs Valori fittati")+
+    theme_bw()
+
+# Creazione del data frame dei residui standardizzati
+fitted_values <- predict(fit_complex_mean)
+standardized_residuals <- rstandard(fit_complex_mean)
+
+# Creazione del data frame dei residui standardizzati
+residuals_df <- data.frame(Standardized_Residuals = standardized_residuals)
+
+# Have to merge this needs fixk 
+scale_location_df <- data.frame(
+  Fitted_Values = fitted_values,
+  Standardized_Residuals = sqrt(abs(standardized_residuals))
+)
+
+ggplot(scale_location_df, aes(x = Fitted_Values, y = Standardized_Residuals)) +
+    geom_point(color = nord_colors[3]) +
+    geom_smooth(method = "lm", se = FALSE, color = nord_colors[2], formula = y ~ x, linewidth = 0.75, linetype = 2) + 
+    geom_smooth(method = "loess", se = FALSE, color = nord_colors[1], formula = y ~ x) +
+    xlab("Fitted Values") +
+    ylab("Square Root of Standardized Residuals") +
+    ggtitle("Scale-Location Plot") +
+    theme_bw()
+
+
+# Creazione del QQ plot dei residui standardizzati
+ggplot(residuals_df, aes(sample = Standardized_Residuals)) +
+    stat_qq(color = nord_colors[3]) +
+    stat_qq_line() +
+    labs(title = "QQ Plot ", x="Quantili teorici", y="Residui standardizzati") +
+    theme_bw()
+
+# Grafico dei residui standardizzati
+
+# Grafico dei residui
+ggplot(complex_ds_mean, aes(x = mpg, y = resid(fit_complex_mean))) +
+    geom_point(color = nord_colors[3]) +
+    geom_smooth(method = "lm", se = FALSE, color = nord_colors[2], formula = y ~ x, linewidth = 0.75, linetype = 2) +
+    geom_smooth(method = "loess", se = FALSE, color = nord_colors[1], formula = y ~ x) +
+    labs(title="Residui Vs variabile esplicativa", x = "mpg", y = "Residui") +
+    theme_bw()
+```
 
 ## *fare kcross-val*
 
-## Cannone
 ## plot fit
 
-## guardare dens var ricostruite?
-## scatterplot con var ricostruite?
+## guardare dens var ricostruite? prob no
+## scatterplot con var ricostruite? prob no
