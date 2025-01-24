@@ -22,16 +22,17 @@ Description of project structure.
 
 > 10 Minutes
 
-Missing value generation mechanisms.
+Missing value generation mechanisms. Exploration via plots of different mechanisms.
+
 **Imputation strategies:**
+
+- Added noise to to imputation
 
 - Linear with heteroscedasticity
 
 - Polynomial imbalanced
 
-- Categorical
-
-- Non-polynomial
+- Non-polynomial (Piecewise)
 
 Explanation of different Metrics for differences between distributional, and why we choose to use them.
 To measure the divergence between the original and imputed datasets, two key metrics are utilized: Wasserstein Distance to quantify distributional differences and sqrt of Jensen-Shannon Divergence to measure the similarity between probability distributions.
@@ -54,9 +55,7 @@ This part will be a case study on a real dataset with missing data. In this sect
 
 - Model fitting
 
-- Results comparison using distance-based metrics
-
-After imputation, the datasets generated under different conditions (e.g., 5% and 15% missing data) are analyzed, and models are fitted to assess the quality of reconstruction. Finally, using standard prediction metrics, the performance of models trained on the imputed datasets is compared to those trained on the original dataset. This comparison allows for a comprehensive evaluation of the effectiveness of different imputation techniques.
+- Results comparison
 
 ## Project Structure
 
