@@ -264,17 +264,8 @@ gam_based_imputation <- function(data,noise = FALSE, max_predictors = 3) {
   return(imputed_data)
 }
 
-#' Forest-Based Imputation Method for MICE
-#'
-#' @param y Vector of values to impute
-#' @param ry Logical vector indicating which values are observed (TRUE) or missing (FALSE)
-#' @param x Matrix or data frame of predictors
-#' @param noise Logical; if TRUE, adds noise to imputed values (default = TRUE)
-#' @param ... Additional parameters to pass to randomForest
-#' @return Vector of imputed values
+# Custom imputation function for MICE
 mice_impute_forest <- function(y, ry, x, noise = TRUE, ...) {
-  library(randomForest)
-  
   # Prepare training data
   train_data <- data.frame(y = y[ry], x[ry, , drop = FALSE])
   
@@ -300,6 +291,48 @@ mice_impute_forest <- function(y, ry, x, noise = TRUE, ...) {
   
   return(imputed_values)
 }
+
+# GAM-based custom imputation function for mice with empirical residual noise
+mice_impute_gam <- function(y, ry, x, noise = TRUE, max_predictors = 5, ...) {
+  # Ensure x is a data frame
+  x <- as.data.frame(x)
+  
+  # Limit the number of predictors
+  if (ncol(x) > max_predictors) {
+    # Select predictors based on correlation with y
+    corrs <- sapply(x, function(col) {
+      if (is.numeric(col)) cor(y[ry], col[ry], use = "complete.obs") else NA
+    })
+    top_predictors <- names(sort(abs(corrs), decreasing = TRUE, na.last = TRUE))[1:max_predictors]
+    x <- x[, top_predictors, drop = FALSE]
+  }
+  
+  # Create formula for the GAM model
+  formula_terms <- paste("s(", names(x), ")", collapse = " + ")
+  formula_str <- paste("y ~", formula_terms)
+  
+  # Fit GAM model on observed data
+  train_data <- data.frame(y = y[ry], x[ry, , drop = FALSE])
+  tryCatch({
+    gam_model <- gam(as.formula(formula_str), data = train_data)
+  }, error = function(e) {
+    stop("Failed to fit GAM model: ", e$message)
+  })
+  
+  # Predict missing values
+  pred_data <- x[!ry, , drop = FALSE]
+  predictions <- predict(gam_model, newdata = pred_data)
+  
+  # Optionally add noise from the empirical residual distribution
+  if (noise) {
+    residuals <- residuals(gam_model)
+    noise_values <- sample(residuals, size = length(predictions), replace = TRUE)
+    predictions <- predictions + noise_values
+  }
+  
+  return(predictions)
+}
+
 
 #' Custom regression imputation which can work with mice
 custom_regression_impute <- function(y, ry, x, noise = FALSE, ...) {
