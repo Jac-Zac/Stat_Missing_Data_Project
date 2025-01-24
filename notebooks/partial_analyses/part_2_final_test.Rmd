@@ -36,8 +36,22 @@ colnames(auto_mpg) <- c("mpg", "cylinders", "displacement", "horsepower", "weigh
 nord_colors= c("#5e81ac", "#bf616a", "#a3be8c", "#d08770", "#ebcb8b", "#b48ead")
 ```
 
-# Introduction
-In this analysis, we aim to construct a linear regression model for the "auto-mpg" dataset, which tracks various technical information about car models manufactured in the 1970s and 1980s. The response variable will be mpg (miles per gallon).
+# Second part
+##Introduction
+
+In this second part of our project, we address the challenge of missing data in real-world datasets. Unlike the previous section, our approach here begins with a complete dataset —specifically, a refined version of the well-known Auto MPG dataset. 
+We will systematically introduce missing values into one variable, conditioned on two other variables, to simulate a Missing at Random mechanism. This will be done using functions from the VIM package in R.
+
+Following the introduction of missing data, we will apply the various imputation techniques, previously discussed, to generate complete datasets. However, instead of simply comparing the distributions of these imputed datasets, our focus will shift to evaluating their performance in the context of linear regression models. Specifically, we will assess the impact of different imputation methods by comparing the estimated coefficients and Mean Squared Errors of the fitted models.
+
+In the final segment of this section, we will extend our analysis by introducing missing values across multiple covariates, conditioned on the remaining variables, resulting in a dataset with a substantial proportion of missing data. To address this, we will employ multiple imputation techniques, particularly those implemented in the MICE package, which utilizes chained equations for imputing multiple variables. Subsequently, we will compare the performance of linear models fitted on these newly imputed datasets.
+
+We have selected the Auto MPG dataset for this analysis due to its simplicity and recognition in the field. Our objective is to fit regression models starting from this dataset and systematically evaluate the effects of various imputation strategies on model performance.
+
+Let's start by analyzing the data, exploring its features, and examining their relationships.
+
+##Dataset exploration
+The "auto-mpg" dataset tracks various technical information about car models manufactured in the 1970s and 1980s. The response variable will be mpg (miles per gallon).
 
 First, we examine the variables and observations in the dataset:
 
@@ -58,7 +72,7 @@ There are 9 variables with a total of 398 observations.
 - origin: A categorical variable indicating the continent of the car manufacturer (1: America, 2: Europe, 3: Asia).
 - car_name: A qualitative variable indicating the manufacturer and model name of the car.
 
-## Data Processing
+### Data Pre-Processing
 Before building our model, we need to make the data usable. We observe anomalies in the dataset variables, so we clean the data when possible. We also assign the correct data types to variables and create two new variables: cut_model_year and car_brand.
 
 - cut_model_year: A categorical variable dividing production years into the classes 70-73, 74-76, 77-79, and 80-82.
@@ -127,7 +141,7 @@ str(auto_mpg)
 summary(auto_mpg)
 ```
 
-After these steps, the dataset now contains 9 variables and 391 observations:
+After these steps, we obtain a new dataset that contains 9 variables and 391 observations:
 
 - mpg: Continuous, indicating fuel consumption per mile.
 - cylinders: Discrete, indicating the number of cylinders, categorized into 5 levels: 3, 4, 5, 6, 8.
@@ -141,11 +155,11 @@ After these steps, the dataset now contains 9 variables and 391 observations:
 
 Some variables have differences in the summary statistics due to the removal of elements with null values.
 
-## Exploratory Data Analysis
+### Exploratory Data Analysis
 
-### Continuous Variables
+#### Continuous Variables
 
-First, we visualize the correlation matrix of the continuous variables:
+Let's start by visualizing the correlation matrix of the continuous variables:
 
 ```{r correlation matrix, echo=FALSE}
 
@@ -165,11 +179,9 @@ corrplot.mixed(cor_matrix,
 )
 ```
 
-We observe significant positive and negative correlations. Specifically, acceleration has the weakest correlation with other variables, ranging from -0.69 to 0.42. Variables like weight, horsepower, and displacement are strongly correlated with each other, which is logical since higher displacement often implies more horsepower, and heavier cars require more powerful engines.
+Our analysis reveals both significant positive and negative correlations among the variables. Notably, 'acceleration' exhibits the weakest correlations with other variables, with coefficients ranging from -0.69 to 0.42. In contrast, variables such as 'weight', 'horsepower', and 'displacement' demonstrate strong positive intercorrelations. This observation aligns with expectations, as higher displacement typically results in increased horsepower, and heavier vehicles necessitate more powerful engines. Consequently, these more powerful engines tend to consume more fuel, which is consistent with anticipated outcomes.
 
-More powerful engines also tend to consume more fuel, which aligns with expectations.
-
-#### Scatterplots with mpg as the Response Variable
+##### Scatterplots with mpg as the Response Variable
 
 ```{r, echo = FALSE}
 create_plot <- function(data, x_var, x_label, title, color) {
@@ -196,7 +208,7 @@ plot_grid(plotlist = plots)
 
 Scatterplots show clear patterns for the first three variables. The positive correlation between acceleration and mpg is less obvious because it has a lower absolute value.
 
-#### Distribution of Continuous Variables
+##### Distribution of Continuous Variables
 
 
 ```{r histograms continues, echo=FALSE}
@@ -230,7 +242,7 @@ create_histogram(auto_mpg, "mpg", "Mpg", "Istogramma Miglia per Gallone", nord_c
 
 The histogram shows that mpg has a positively skewed distribution with a long right tail. This is more evident when a kernel density curve is added to the histogram, suggesting that transformations may be necessary.
 
-### Categorical Variables
+#### Categorical Variables
 
 We analyze categorical variables in relation to mpg using boxplots. For the high number of categories in car_brand, we use a bar plot instead.
 
@@ -305,7 +317,7 @@ The graphs show unimodal curves with differing frequency peaks and averages base
 
 This confirms that American cars generally consume more fuel, followed by European cars, with Asian cars being the most fuel-efficient.
 
-#### Histogram of mpg by Number of Cylinders
+##### Histogram of mpg by Number of Cylinders
 
 ```{r historgrams cylinders, echo=FALSE}
 ## Histogram
@@ -324,7 +336,7 @@ ggplot(auto_mpg, aes(x = mpg, fill=cylinders )) +
 
 The distributions are similar across categories, with high peaks followed by heavier right tails. This suggests that the number of cylinders is not a major factor in explaining mpg. However, cars with more cylinders tend to achieve fewer miles per gallon. Data on 5-cylinder cars is limited, making conclusions difficult.
 
-#### Histogram of mpg by Production Year
+##### Histogram of mpg by Production Year
 
 ```{r historgrams model year, echo=FALSE}
 ## Histogram
@@ -345,8 +357,9 @@ ggplot(auto_mpg, aes(x = mpg, fill=cut_model_year )) +
 Production year initially appears to have little influence, but there is a marked change in distribution patterns for cars from the 1980s, particularly compared to those from the early 1970s.
 
 
+### Development and Evaluation of a Linear Regression Model on the Complete Auto MPG Dataset
 
-# Split TT
+In this subsection, we consider the construction and assessment of a linear regression model utilizing the complete Auto MPG dataset. Initially, we partition the dataset into training and testing subsets, employing an 80-20 split to ensure robust model validation. Subsequently, we fit multiple linear regression models to identify the optimal combination of predictor variables. Our primary model focuses on predicting the natural logarithm of mpg based on variables such as weight, horsepower, and categorized model year. We then evaluate the performance of this model, comparing it against alternative models with different predictor combinations, to determine the most effective predictors for fuel efficiency.
 
 ```{r}
 #Train-test split
@@ -362,7 +375,7 @@ test_data$mpg<-log(test_data$mpg)
 data_original<-train_data
 ```
 
-# Best fitted lmodel
+Best fitted lmodel
 
 ```{r}
 fit_multi1 <- lm(I(log(mpg))~weight+horsepower + cut_model_year,data = auto_mpg)#ottimo
@@ -377,10 +390,11 @@ fit_multi1 <- lm(I(log(mpg))~weight+horsepower + cut_model_year,data = auto_mpg)
 
 # plot(compare_performance(fit_multi1, fit_multi2, fit_multi3, fit_multi4))
 ```
+From the assessment of the models we obtain that the model that uses as predictors weight, horsepower and cut_model_year is the best in fitting data.
 
+### Generation and visualization of missing values using MAR 
 
-
-## Generate MAR and visualization of mv in the dataset
+As anticipated, we generate missing values in the dataset with MAR mechanism. We underline that we decided to remove values on the predictor weight with respect to acceleration and displacement, since its high correlation with other variables and importance role in predicting the target. 
 
 ```{r create mv}
 missingMar<-delete_MAR_1_to_x(data_original, p = 0.2, cols_mis = "weight", cols_ctrl ="displacement", x =100)
@@ -487,7 +501,8 @@ final_plot2 <- ggMarginal(scatter_plot2,
 grid.arrange(final_plot1, final_plot2, ncol=1)
 ```
 
-### 3D Plot to showcase the relation better
+#### 3D Plot to showcase the relation better
+In this section, we employ a 3D scatter plot to elucidate the relationships among 'displacement', 'acceleration', and 'weight' within our dataset. This visualization not only highlights the interplay between these variables but also distinctly marks the data points where 'weight' values are missing.
 
 ```{r, fig.width=9, fig.height=9}
 
@@ -496,6 +511,7 @@ plotMar_data <- data_original %>%
   mutate(missing = ifelse(is.na(missingMar$weight), "Missing", "Present"))  # Flag missing/present
 
 # Create the 3D plot based on `plotMar_data`
+
 plot_ly(data = plotMar_data, 
         x = ~displacement, 
         y = ~acceleration, 
@@ -516,7 +532,9 @@ plot_ly(data = plotMar_data,
 
 ```
 
-# Imputations
+### Imputation Techniques and Linear Model Fitting
+
+In this section, we address the challenge of missing data within our dataset by applying various imputation methods. The goal is to assess how different imputation strategies influence the performance and outcomes of linear regression models.
 
 ## mean, median, listwise deletion, regression, random forest, gam
 
@@ -534,7 +552,10 @@ imp_ds_gam <- cbind(imp_ds_gam, missingMar[, c("car_brand", "origin", "cylinders
 
 ```
 
-# Fitting model
+Post-imputation, we fit a linear regression model to each imputed dataset. The models predict the logarithm of miles per gallon (log(mpg)) using predictors such as weight, horsepower, and cut_model_year. This approach enables us to evaluate and compare the impact of each imputation method on the regression coefficients and overall model performance.
+
+By systematically applying these imputation techniques and fitting corresponding linear models, we aim to identify the most effective strategies for handling missing data in our analysis.
+
 
 ```{r imp statistic model}
 fit_mean<-lm(I(log(mpg))~weight+horsepower + cut_model_year, data = imp_ds_mean)
@@ -545,9 +566,15 @@ fit_rf<-lm(I(log(mpg))~weight+horsepower + cut_model_year, data = imp_ds_rf)
 fit_gam<-lm(I(log(mpg))~weight+horsepower + cut_model_year, data = imp_ds_gam)
 ```
 
-# Summary and Analysis of coefficients
+#### Summary and Analysis of coefficients
 
-## Summary
+In this section, we present a comprehensive summary and analysis of the coefficients derived from linear models fitted to datasets subjected to various imputation techniques. The imputation methods employed include mean imputation, median imputation, listwise deletion, regression imputation, random forest imputation, and GAM based imputation. For each imputed dataset, a linear model was fitted with the logarithm of miles per gallon as the response variable and weight, horsepower, and cat_model_year as predictor variables.
+
+We begin by summarizing the fitted models, highlighting key statistics such as coefficient estimates, standard errors, and significance levels. Subsequently, we conduct a detailed coefficient analysis, focusing on the estimates and their confidence intervals for each predictor across the different imputation methods. This analysis is further visualized through plots that compare the coefficients and their confidence intervals, providing insights into the variability and stability of the estimates resulting from the different imputation strategies.
+
+By examining these comparisons, we aim to assess the impact of various imputation methods on the model coefficients and to identify which methods yield the most reliable and consistent estimates.
+
+Summary
 
 ```{r imp summary fit}
 summary(fit_mean)
@@ -558,7 +585,7 @@ summary(fit_rf)
 summary(fit_gam)
 ```
 
-## Coefficient analysis
+Coefficient analysis
 
 ```{r}
 # Extract coefficients and confidence intervals
@@ -592,7 +619,7 @@ coef_df <- do.call(rbind, lapply(names(fit_models), function(model_name) {
 
 ```
 
-### Intercept
+##### Intercept
 ```{r}
 # Extract specific coefficients and their confidence intervals
 coef_names <-"(Intercept)" # Specify the coefficients you want to compare
@@ -633,7 +660,7 @@ ggplot(selected_coef_df, aes(x = Term, y = Estimate, color = Model)) +
 ```
 
 
-### Weight
+##### Weight
 
 ```{r}
 # Extract specific coefficients and their confidence intervals
@@ -674,7 +701,7 @@ ggplot(selected_coef_df, aes(x = Term, y = Estimate, color = Model)) +
 
 ```
 
-### Horsepower
+##### Horsepower
 
 ```{r}
 # Extract specific coefficients and their confidence intervals
@@ -715,7 +742,7 @@ ggplot(selected_coef_df, aes(x = Term, y = Estimate, color = Model)) +
 
 ```
 
-### Cut_model_year
+##### Cut_model_year
 
 ```{r}
 # Extract specific coefficients and their confidence intervals
@@ -757,7 +784,7 @@ ggplot(selected_coef_df, aes(x = Term, y = Estimate, color = Model)) +
 ```
 
 
-# Predictions based on RMSE
+#### Predictions based on RMSE
 
 ```{r}
 #Predict on test data
@@ -788,7 +815,7 @@ cat("gam (RMSE):", rmse_value, "\n")
 rmse_value <- RMSE(pred_origin, test_data$mpg)
 cat("true (RMSE):", rmse_value, "\n")
 ```
-
+The analysis revealed that advanced imputation methods, particularly random forest and GAM, yielded superior model performance, as evidenced by more accurate coefficient estimates and narrower confidence intervals. These methods were followed by regression imputation, while simpler approaches like mean imputation and listwise deletion demonstrated comparatively lower performance. This outcome aligns with expectations, as sophisticated imputation techniques are better equipped to capture complex data patterns, leading to more reliable and robust predictive models.
 
 
 
