@@ -56,7 +56,7 @@ imputation_methods <- list(
   "KNN Imputation" = function(data) { imputed_data <- kNN(data, imp_var = FALSE)},
   "Regression" = function(data) { regression_imputation(data) },
   "Regression with Noise" = function(data) { regression_imputation(data, noise = TRUE) },
-  # "Regression with Noise Emp" = function(data) { regression_imputation_emp(data, noise = TRUE) },
+  "Regression with Noise Emp" = function(data) { regression_imputation_emp(data, noise = TRUE) },
   "GAM" = function(data) { gam_based_imputation(data) },
   "GAM with Noise" = function(data) { gam_based_imputation(data, noise = TRUE) },
   "Random Forest" = function(data) { tree_based_imputation(data) },

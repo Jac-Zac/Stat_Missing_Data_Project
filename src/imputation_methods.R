@@ -65,7 +65,7 @@ regression_imputation <- function(data, noise = FALSE) {
   return(data)
 }
 
-regression_imputation_emp <- function(data, noise = FALSE, min_bin_size = 10) {
+regression_imputation_emp <- function(data, noise = FALSE, bandwidth = 1) {
   for (col in names(data)) {
     if (any(is.na(data[[col]])) && is.numeric(data[[col]])) {
       # Separate complete cases and rows with missing values
@@ -81,29 +81,21 @@ regression_imputation_emp <- function(data, noise = FALSE, min_bin_size = 10) {
         # Step 1: Calculate residuals
         residuals <- model$residuals
         
-        # Step 2: Choose the number of bins adaptively
-        bin_var <- complete_data[[predictors[1]]]  # Use the first predictor as an example
-        n_complete <- length(bin_var)
-        num_bins <- max(1, floor(n_complete / min_bin_size))  # Ensure at least min_bin_size per bin
-        num_bins <- min(num_bins, 20)  # Optional cap on the maximum number of bins
+        # Step 2: Estimate local variance using a kernel approach
+        predictor_matrix <- as.matrix(complete_data[, predictors, drop = FALSE])
+        incomplete_predictor_matrix <- as.matrix(data[incomplete_rows, predictors, drop = FALSE])
         
-        # Step 3: Bin data based on quantiles
-        bins <- cut(bin_var, breaks = quantile(bin_var, probs = seq(0, 1, length.out = num_bins + 1)), include.lowest = TRUE)
+        # Kernel function to compute weights
+        kernel <- function(distances, bandwidth) {
+          exp(-0.5 * (distances / bandwidth)^2) / (sqrt(2 * pi) * bandwidth)
+        }
         
-        # Step 4: Map residuals to bins
-        residual_bins <- split(residuals, bins)
-        
-        # Step 5: Assign each missing row to the appropriate bin based on its predictor value
-        incomplete_bin_var <- data[incomplete_rows, predictors[1], drop = TRUE]
-        incomplete_bins <- cut(incomplete_bin_var, breaks = quantile(bin_var, probs = seq(0, 1, length.out = num_bins + 1)), include.lowest = TRUE)
-        
-        # Step 6: Sample noise from the residuals of the respective bin
-        sampled_noise <- sapply(incomplete_bins, function(bin) {
-          if (!is.na(bin) && bin %in% names(residual_bins) && length(residual_bins[[bin]]) > 0) {
-            sample(residual_bins[[bin]], size = 1, replace = TRUE)
-          } else {
-            0  # Default to 0 noise if binning fails
-          }
+        sampled_noise <- sapply(1:nrow(incomplete_predictor_matrix), function(i) {
+          distances <- apply(predictor_matrix, 1, function(row) sqrt(sum((row - incomplete_predictor_matrix[i, ])^2)))
+          weights <- kernel(distances, bandwidth)
+          weights <- weights / sum(weights)  # Normalize weights
+          weighted_variance <- sum(weights * residuals^2)  # Weighted variance
+          rnorm(1, mean = 0, sd = sqrt(weighted_variance))  # Generate noise
         })
         
         # Add noise to predictions

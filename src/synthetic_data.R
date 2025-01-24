@@ -52,13 +52,22 @@ generate_data <- function(n,
                  if (x_range[1] <= 0) stop("X range must be positive for log relationship")
                  3 * log(x1) + eps
                },
+               # "piecewise" = {
+               #   pivot <- (x_range[2] + x_range[1]) / 2
+               #   
+               #   # Create the dependent variable x2 using a piecewise structure
+               #   x2 <- ifelse(x1 < pivot, 
+               #                runif(1, min = -10, max = 10) + runif(1, min = -10, max = 10) * x1,    # For x1 < pivot
+               #                runif(1, min = -10, max = 10) + runif(1, min = -10, max = 10) * x1)    # For x1 >= pivot
+               #   x2 = x2 + eps
+               # })
                "piecewise" = {
                  pivot <- (x_range[2] + x_range[1]) / 2
                  
                  # Create the dependent variable x2 using a piecewise structure
                  x2 <- ifelse(x1 < pivot, 
-                              runif(1, min = -10, max = 10) + runif(1, min = -10, max = 10) * x1,    # For x1 < pivot
-                              runif(1, min = -10, max = 10) + runif(1, min = -10, max = 10) * x1)    # For x1 >= pivot
+                              2 + 2 * x1,    # For x1 < pivot (lower slope, lower intercept)
+                              15 + 5 * x1)   # For x1 >= pivot (steeper slope, higher intercept)
                  x2 = x2 + eps
                })
   
