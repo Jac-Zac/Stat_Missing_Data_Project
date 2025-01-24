@@ -353,13 +353,6 @@ part_1 <- here("notebooks", "partial_analyses", "part_1.Rmd")
 rmarkdown::render(part_1)
 ```
 
-# Temporary stop the knit process here
-# The second part will be integrated here
-
-```{r}
-knitr::knit_exit()
-```
-
 ```{r, echo = FALSE}
 # Define the child RMarkdown file path
 part_2 <- here("notebooks", "partial_analyses", "part_2.Rmd")
