@@ -572,7 +572,7 @@ We begin by summarizing the fitted models, highlighting key statistics such as c
 
 By examining these comparisons, we aim to assess the impact of various imputation methods on the model coefficients and to identify which methods yield the most reliable and consistent estimates.
 
-Summary
+##### Summary
 
 ```{r imp summary fit}
 summary(fit_mean)
@@ -583,7 +583,188 @@ summary(fit_rf)
 summary(fit_gam)
 ```
 
-Coefficient analysis
+##### Plot of the residual
+
+```{r}
+residuals_vs_leverage_plot <- function(model) {
+  
+  # 1) Compute diagnostics used by plot.lm(which = 5)
+  h      <- hatvalues(model)      # leverages
+  rstud  <- rstudent(model)       # studentized residuals
+  p      <- length(coef(model))   # number of parameters
+  n      <- length(rstud)
+  
+  # 2) Build the base data frame for the main scatter
+  df <- data.frame(
+    Leverage   = h,
+    RStudent   = rstud
+  )
+
+  # 3) Build Cook’s distance reference lines at 0.5 and 1.0
+  #    Cook’s D = 0.5 or 1 =>  rstudent^2 = D * p * (1 - h)/h
+  #    => rstudent = ± sqrt(D * p * (1 - h)/h)
+  cooks_vals <- c(0.5, 1.0)
+  
+  # We'll only plot the curve for h > a small cutoff to avoid exploding near h=0
+  h_seq <- seq(min(h[h > 1e-5]), max(h), length.out = 200)
+  
+  make_cooks_curve <- function(Dval) {
+    # Cook’s distance => ± sqrt(...)
+    y <- sqrt(Dval * p * (1 - h_seq)/h_seq)
+    pos <- data.frame(
+      Leverage = h_seq,
+      RStudent =  y,
+      CookDist = Dval
+    )
+    neg <- data.frame(
+      Leverage = h_seq,
+      RStudent = -y,
+      CookDist = Dval
+    )
+    rbind(pos, neg)
+  }
+  
+  cooks_df <- do.call(rbind, lapply(cooks_vals, make_cooks_curve))
+
+  # 4) Plot
+  ggplot(df, aes(x = Leverage, y = RStudent)) +
+    # Base scatter: observation points
+    geom_point(shape = 1, color = nord_colors[6]) +
+    # The red lowess line (like base R)
+    geom_smooth(method = "loess", se = FALSE, color = nord_colors[2]) +
+    
+    
+    
+    # Horizontal reference at 0
+    geom_hline(yintercept = 0, linetype = "dotted") +
+    
+    labs(
+      title = "Residuals vs Leverage",
+      x     = "Leverage",
+      y     = "Studentized Residuals"
+    ) +
+    theme_bw() +
+    theme(legend.position = "bottom")
+}
+
+
+```
+
+
+```{r}
+
+#SE VOGLIAMO METTERE I PUNTI VUOTI SCRIVERE geom_point(shape = 1, color = nord_colors[6]) +
+
+#function to obtain plot.lm() using ggplot2
+my_diagnostic_plots <- function(model, data) {
+  library(ggplot2)
+  library(patchwork)
+  
+  # 1) Prepare data for plotting
+  # ----------------------------
+  fitted_values           <- predict(model)
+  residuals               <- resid(model)
+  standardized_residuals  <- rstandard(model)
+  cooks_d                 <- cooks.distance(model)
+  
+  # Create data frames for each plot
+  df1 <- data.frame(
+    Fitted   = fitted_values,
+    Residual = residuals
+  )
+  
+  df2 <- data.frame(
+    Fitted                 = fitted_values,
+    Sqrt_Abs_Std_Residuals = sqrt(abs(standardized_residuals))
+  )
+  
+  df3 <- data.frame(
+    Standardized_Residuals = standardized_residuals
+  )
+  
+  df4 <- data.frame(
+    Obs_Index     = seq_along(cooks_d),
+    Cooks_Distance = cooks_d
+  )
+  
+  # 2) Build each plot
+  # ------------------
+  
+  # (a) Residuals vs. Fitted
+  p1 <- ggplot(df1, aes(x = Fitted, y = Residual)) +
+    geom_point(shape = 1,color = nord_colors[6]) +
+    geom_smooth(method = "lm", se = FALSE, color = nord_colors[2],
+                formula = y ~ x, linewidth = 0.75, linetype = 2) +
+    geom_smooth(method = "loess", se = FALSE, color = nord_colors[1],
+                formula = y ~ x) +
+    labs(
+      title = "Residuals vs Fitted",
+      x     = "Fitted Values",
+      y     = "Residuals"
+    ) +
+    theme_bw()
+  
+  # (b) Scale-Location plot
+  p2 <- ggplot(df2, aes(x = Fitted, y = Sqrt_Abs_Std_Residuals)) +
+    geom_point(shape = 1,color = nord_colors[6]) +
+    geom_smooth(method = "lm", se = FALSE, color = nord_colors[2],
+                formula = y ~ x, linewidth = 0.75, linetype = 2) +
+    geom_smooth(method = "loess", se = FALSE, color = nord_colors[1],
+                formula = y ~ x) +
+    labs(
+      title = "Scale-Location",
+      x     = "Fitted Values",
+      y     = expression(sqrt("|Standardized Residuals|"))
+    ) +
+    theme_bw()
+  
+  # (c) Normal Q-Q plot of standardized residuals
+  p3 <- ggplot(df3, aes(sample = Standardized_Residuals)) +
+    stat_qq(shape = 1,color = nord_colors[6]) +
+    stat_qq_line(color = nord_colors[2]) +
+    labs(
+      title = "Normal Q-Q",
+      x     = "Theoretical Quantiles",
+      y     = "Std. Residuals"
+    ) +
+    theme_bw()
+  
+  # (d) Cook's distance (4th plot in plot.lm)
+  # Replicates plot(fit, which = 4): 
+  #   - vertical lines ("type = 'h'") in base R
+  #   - x-axis is observation index
+  #   - y-axis is Cook's distance
+  p4 <- residuals_vs_leverage_plot(model)
+  
+  combined_plot <- (p1 | p2) / (p3 | p4)
+  return(combined_plot)
+}
+
+```
+
+
+```{r}
+set_ds  <- list(imp_ds_mean, imp_ds_median, imp_del_list, imp_ds_reg, imp_ds_rf, imp_ds_gam)
+set_fit <- list(fit_mean,    fit_median,    fit_list,      fit_reg,    fit_rf,    fit_gam)
+
+plots_list <- vector("list", length(set_ds))  # pre-allocate
+
+for (i in seq_along(set_ds)) {
+  plots_list[[i]] <- my_diagnostic_plots(set_fit[[i]], set_ds[[i]])
+}
+
+# Now `plots_list` is a list of patchwork objects. You can print them one at a time:
+plots_list[[1]]
+plots_list[[2]]
+plots_list[[3]]
+plots_list[[4]]
+plots_list[[5]]
+plots_list[[6]]
+```
+
+
+
+##### Coefficient analysis
 
 ```{r}
 # Extract coefficients and confidence intervals
@@ -818,17 +999,15 @@ for (method in names(predictions)) {
 The analysis revealed that advanced imputation methods, particularly random forest and GAM, yielded superior model performance, as evidenced by more accurate coefficient estimates and narrower confidence intervals. These methods were followed by regression imputation, while simpler approaches like mean imputation and listwise deletion demonstrated comparatively lower performance. This outcome aligns with expectations, as sophisticated imputation techniques are better equipped to capture complex data patterns, leading to more reliable and robust predictive models.
 
 
-# -------------------------------------------
-# TODO
-# -------------------------------------------
+### Multiple imputation
 
 ```{r}
-missingMar<-delete_MAR_1_to_x(data_original, p = c(0.2,0.2, 0.2), cols_mis = c("weight", "horsepower", "mpg"), cols_ctrl =c("displacement", "acceleration", "displacement"), x =10)
+missingMar<-delete_MAR_1_to_x(data_original, p = c(0.3,0.3), cols_mis = c("weight", "horsepower"), cols_ctrl =c("displacement", "acceleration"), x =10)
 
 idx_miss <- which(!complete.cases(missingMar))
 df_no_miss <- missingMar[complete.cases(missingMar), ]
 
-tmp<-delete_MAR_1_to_x(df_no_miss, p = c(0.1,0.3), cols_mis = c("displacement", "cut_model_year"), cols_ctrl =c("horsepower", "weight"), x =100)
+tmp<-delete_MAR_1_to_x(df_no_miss, p = c(0.3), cols_mis = c("displacement"), cols_ctrl =c("horsepower"), x =100)
 
 missingComplex <- missingMar
 missingComplex[complete.cases(missingMar), ] <- tmp
@@ -860,8 +1039,6 @@ missingComplex_no_year <- subset(missingComplex, select = -cut_model_year)
 no_categorical_dataset <- Filter(function(x) is.numeric(x), missingComplex)
 ```
 
-### Multiple imputation
-
 ##### In this section we test:
 
 - **Listwise deletion**
@@ -873,6 +1050,15 @@ no_categorical_dataset <- Filter(function(x) is.numeric(x), missingComplex)
 complex_ds_mean<-impute_mean(missingComplex)
 complex_ds_del<-listwise_deletion(missingComplex)
 
+# Original model
+fit_original_bad <- lm(I(log(mpg))~weight+horsepower,data = auto_mpg)
+# Custom models 
+fit_complex_mean<-lm(I(log(mpg))~weight+horsepower, data = complex_ds_mean)
+fit_complex_del<-lm(I(log(mpg))~weight+horsepower, data = complex_ds_del)
+```
+
+
+```{r}
 # Define custom mice imputation function
 mice.impute.forest.noise  <- mice_impute_forest 
 mice.impute.gam.noise  <- mice_impute_gam
@@ -880,7 +1066,7 @@ mice.impute.gam.noise  <- mice_impute_gam
 # Perform MICE imputation with "forest.noise"
 final_predictions_tree <- impute_and_predict(
   "forest.noise", 
-  missingComplex_no_year, 
+  no_categorical_dataset, 
   I(log(mpg)) ~ weight + horsepower, 
   test_data, 
   "Pooled_Forest"
@@ -889,34 +1075,40 @@ final_predictions_tree <- impute_and_predict(
 # Perform MICE imputation with "gam.noise"
 final_predictions_gam <- impute_and_predict(
   "gam.noise", 
-  missingComplex_no_year, 
+  no_categorical_dataset, 
   I(log(mpg)) ~ weight + horsepower, 
   test_data, 
   "Pooled_GAM"
 )
-```
 
-```{r}
+
 # Perform MICE imputation with "gam.noise"
 final_predictions_reg <- impute_and_predict(
   "norm.predict", 
-  missingComplex_no_year, 
+  no_categorical_dataset, 
   I(log(mpg)) ~ weight + horsepower, 
   test_data, 
   "Pooled_Regression"
 )
 ```
+
 ```{r}
-final_predictions_reg
+set_ds  <- list(complex_ds_del, complex_ds_mean)
+set_fit <- list(fit_complex_del, fit_complex_mean)
+
+plots_list <- vector("list", length(set_ds))  # pre-allocate
+
+for (i in seq_along(set_ds)) {
+  plots_list[[i]] <- my_diagnostic_plots(set_fit[[i]], set_ds[[i]])
+}
+
+# Now `plots_list` is a list of patchwork objects. You can print them one at a time:
+plots_list[[1]]
+plots_list[[2]]
 ```
 
-```{r}
-# Original model
-fit_original_bad <- lm(I(log(mpg))~weight+horsepower,data = auto_mpg)
-# Custom models 
-fit_complex_mean<-lm(I(log(mpg))~weight+horsepower, data = complex_ds_mean)
-fit_complex_del<-lm(I(log(mpg))~weight+horsepower, data = complex_ds_del)
 
+```{r}
 pred_origin <- predict(fit_original_bad, newdata = test_data)
 pred_del <- predict(fit_complex_del, newdata = test_data)
 pred_mean <- predict(fit_complex_mean, newdata = test_data)
@@ -938,10 +1130,165 @@ for (method in names(predictions)) {
 }
 ```
 
+# -------------------------------------------
+# TODO
+# -------------------------------------------
 ## *fare kcross-val*
 
-## Cannone
-## plot fit
 
-## guardare dens var ricostruite?
-## scatterplot con var ricostruite?
+```{r}
+run_imputation_and_modeling <- function(train_data, test_data) {
+  
+  #------------------------------------------------------
+  # 3a. (Optional) Induce Missingness on train_data
+  #     - If you already have a "missing creation" step
+  #       like delete_MAR_1_to_x, you apply it here.
+  #------------------------------------------------------
+  missingMar <- delete_MAR_1_to_x(
+    train_data, 
+    p = c(0.2,0.2,0.2),
+    cols_mis = c("weight", "horsepower", "mpg"),
+    cols_ctrl = c("displacement","acceleration","displacement"),
+    x = 10
+  )
+
+  # Let's replicate your second stage of missing data creation:
+  idx_miss   <- which(!complete.cases(missingMar))
+  df_no_miss <- missingMar[complete.cases(missingMar),]
+  
+  tmp <- delete_MAR_1_to_x(
+    df_no_miss,
+    p = c(0.2),
+    cols_mis = c("displacement"),
+    cols_ctrl = c("horsepower"),
+    x = 100
+  )
+  
+  missingComplex <- missingMar
+  missingComplex[complete.cases(missingMar), ] <- tmp
+  
+  # (Optional) If you have a categorical variable:
+  # missingComplex$cut_model_year <- as.factor(missingComplex$cut_model_year)
+
+  #------------------------------------------------------
+  # 3b. Imputation approaches
+  #------------------------------------------------------
+  # Listwise deletion
+  complex_ds_del  <- listwise_deletion(missingComplex)
+  # Mean imputation
+  complex_ds_mean <- impute_mean(missingComplex)
+  
+  # For MICE approaches, let's remove categorical columns or keep them as needed
+  no_categorical_dataset <- Filter(is.numeric, missingComplex)
+  
+  # If you want multiple MICE methods, define them similarly:
+  # final_predictions_tree, final_predictions_gam, final_predictions_reg
+  # But for cross-validation, you'd typically run MICE on the training data
+  # and then also apply the same transformations to test_data.
+  # For demonstration, let's just illustrate one approach:
+
+  # Example: "forest.noise"
+  final_predictions_tree <- impute_and_predict(
+    "forest.noise", 
+    no_categorical_dataset, 
+    formula = I(log(mpg)) ~ weight + horsepower, 
+    test_data,
+    "Pooled_Forest"
+  )
+
+  # Similarly for "gam.noise", "norm.predict", etc.
+  final_predictions_gam <- impute_and_predict(
+    "gam.noise", 
+    no_categorical_dataset, 
+    I(log(mpg)) ~ weight + horsepower, 
+    test_data,
+    "Pooled_GAM"
+  )
+
+  final_predictions_reg <- impute_and_predict(
+    "norm.predict", 
+    no_categorical_dataset, 
+    I(log(mpg)) ~ weight + horsepower, 
+    test_data,
+    "Pooled_Regression"
+  )
+
+  #------------------------------------------------------
+  # 3c. Fit your "simple" models directly on imputed data
+  #     (Listwise Deletion, Mean Imputation)
+  #------------------------------------------------------
+  fit_complex_del  <- lm(I(log(mpg)) ~ weight + horsepower, data = complex_ds_del)
+  fit_complex_mean <- lm(I(log(mpg)) ~ weight + horsepower, data = complex_ds_mean)
+
+  # We assume you already have a test_data with real mpg values
+  pred_del  <- predict(fit_complex_del,  newdata = test_data)
+  pred_mean <- predict(fit_complex_mean, newdata = test_data)
+
+  # If you also want the "original" model on the train set:
+  fit_original_bad <- lm(I(log(mpg)) ~ weight + horsepower, data = train_data)
+  pred_origin <- predict(fit_original_bad, newdata = test_data)
+
+  #------------------------------------------------------
+  # 3d. Organize predictions
+  #------------------------------------------------------
+  predictions <- list(
+    "Listwise deletion"           = pred_del,
+    "Mean Imputation"             = pred_mean,
+    "Linear regression (noise)"   = final_predictions_reg,
+    "GAM Imputation"              = final_predictions_gam,
+    "Random Forest"               = final_predictions_tree,
+    "Original Dataset (Train Fit)"= pred_origin
+  )
+  
+  return(predictions)
+}
+
+```
+
+```{r}
+library(caret)
+
+set.seed(123)
+K <- 5
+folds <- createFolds(1:nrow(data_original), k = K, list = TRUE)
+
+methods <- c("Listwise deletion", 
+             "Mean Imputation",
+             "Linear regression (noise)",
+             "GAM Imputation",
+             "Random Forest",
+             "Original Dataset (Train Fit)")
+
+rmse_results <- matrix(NA, nrow = K, ncol = length(methods),
+                       dimnames = list(paste0("Fold", 1:K), methods))
+
+for(i in seq_along(folds)) {
+  test_idx  <- folds[[i]]
+  train_idx <- setdiff(seq_len(nrow(data_original)), test_idx)
+  
+  train_data <- data_original[train_idx, ]
+  test_data  <- data_original[test_idx, ]
+  
+  # -- Induce missingness in train_data --
+  missingMar <- delete_MAR_1_to_x(train_data, p = c(0.2,0.2,0.2),
+                                  cols_mis = c("weight","horsepower","mpg"),
+                                  cols_ctrl = c("displacement","acceleration","displacement"),
+                                  x=10)
+
+  # Repeat or wrap the entire missing creation -> imputation -> modeling
+  # as a function for clarity, as shown previously.
+
+  # Suppose you produce 'preds' as a named list of predictions:
+  preds <- run_imputation_and_modeling(train_data, test_data)
+  
+  # Compute RMSE for each method
+  for(m in methods) {
+    rmse_results[i, m] <- rmse(preds[[m]], test_data$mpg)
+  }
+}
+
+# Summarize
+colMeans(rmse_results, na.rm = TRUE)  # average RMSE across folds
+
+```
+
