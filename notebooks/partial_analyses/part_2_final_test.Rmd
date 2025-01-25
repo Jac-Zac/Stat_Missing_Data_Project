@@ -37,7 +37,7 @@ nord_colors= c("#5e81ac", "#bf616a", "#a3be8c", "#d08770", "#ebcb8b", "#b48ead")
 ```
 
 # Second part
-##Introduction
+## Introduction
 
 In this second part of our project, we address the challenge of missing data in real-world datasets. Unlike the previous section, our approach here begins with a complete dataset —specifically, a refined version of the well-known Auto MPG dataset. 
 We will systematically introduce missing values into one variable, conditioned on two other variables, to simulate a Missing at Random mechanism. This will be done using functions from the VIM package in R.
@@ -904,8 +904,6 @@ mice.impute.gam.noise  <- mice_impute_gam
 # Run MICE imputation
 # After running your MICE imputation
 complex_ds_gam <- mice(no_categorical_dataset, method = "gam.noise", m = 5)
-gam_imputed_dataset_pool <- pool(complex_ds_gam, 1)
-
 ```
 
 ```{r}
