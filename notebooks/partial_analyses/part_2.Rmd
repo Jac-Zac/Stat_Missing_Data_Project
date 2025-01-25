@@ -880,7 +880,7 @@ mice.impute.gam.noise  <- mice_impute_gam
 # Perform MICE imputation with "forest.noise"
 final_predictions_tree <- impute_and_predict(
   "forest.noise", 
-  no_categorical_dataset, 
+  missingComplex_no_year, 
   I(log(mpg)) ~ weight + horsepower, 
   test_data, 
   "Pooled_Forest"
@@ -889,23 +889,26 @@ final_predictions_tree <- impute_and_predict(
 # Perform MICE imputation with "gam.noise"
 final_predictions_gam <- impute_and_predict(
   "gam.noise", 
-  no_categorical_dataset, 
+  missingComplex_no_year, 
   I(log(mpg)) ~ weight + horsepower, 
   test_data, 
   "Pooled_GAM"
 )
+```
 
-
+```{r}
 # Perform MICE imputation with "gam.noise"
 final_predictions_reg <- impute_and_predict(
   "norm.predict", 
-  no_categorical_dataset, 
+  missingComplex_no_year, 
   I(log(mpg)) ~ weight + horsepower, 
   test_data, 
   "Pooled_Regression"
 )
 ```
-
+```{r}
+final_predictions_reg
+```
 
 ```{r}
 # Original model

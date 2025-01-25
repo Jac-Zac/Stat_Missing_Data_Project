@@ -292,50 +292,55 @@ mice_impute_forest <- function(y, ry, x, noise = TRUE, ...) {
   return(imputed_values)
 }
 
-# GAM-based custom imputation function for mice with empirical residual noise
-mice_impute_gam <- function(y, ry, x, noise = TRUE, max_predictors = 5, ...) {
-  # Ensure x is a data frame
+mice_impute_gam <- function(y, ry, x, noise = TRUE, ...) {
+  # Convert to data frame and handle factor conversion
   x <- as.data.frame(x)
   
-  # Limit the number of predictors
-  if (ncol(x) > max_predictors) {
-    # Select predictors based on correlation with y
-    corrs <- sapply(x, function(col) {
-      if (is.numeric(col)) cor(y[ry], col[ry], use = "complete.obs") else NA
-    })
-    top_predictors <- names(sort(abs(corrs), decreasing = TRUE, na.last = TRUE))[1:max_predictors]
-    x <- x[, top_predictors, drop = FALSE]
-  }
+  # Convert non-numeric columns to factors
+  x <- as.data.frame(lapply(x, function(col) {
+    if (!is.numeric(col)) factor(col) else col
+  }))
   
-  # Create formula for the GAM model
-  formula_terms <- paste("s(", names(x), ")", collapse = " + ")
-  formula_str <- paste("y ~", formula_terms)
-  
-  # Fit GAM model on observed data
-  train_data <- data.frame(y = y[ry], x[ry, , drop = FALSE])
-  tryCatch({
-    gam_model <- gam(as.formula(formula_str), data = train_data)
-  }, error = function(e) {
-    stop("Failed to fit GAM model: ", e$message)
+  # Create GAM formula with adaptive terms
+  formula_terms <- lapply(names(x), function(name) {
+    if (is.numeric(x[[name]])) {
+      # Use smooth terms for numeric variables with safe k-value
+      unique_vals <- length(unique(x[ry, name]))
+      k_val <- min(10, unique_vals - 1)  # Cap k at 10 for stability
+      if (k_val > 1) paste0("s(", name, ", k=", k_val, ")") else name
+    } else {
+      # Use linear terms for factors
+      name
+    }
   })
   
-  # Predict missing values
+  # Remove any invalid terms and build formula
+  formula_terms <- formula_terms[!sapply(formula_terms, is.null)]
+  formula_str <- if (length(formula_terms) > 0) {
+    paste("y ~", paste(formula_terms, collapse = " + "))
+  } else {
+    "y ~ 1"  # Fallback to intercept-only model
+  }
+  
+  # Fit GAM model
+  train_data <- data.frame(y = y[ry], x[ry, , drop = FALSE])
+  gam_model <- gam(as.formula(formula_str), data = train_data)
+  
+  # Generate predictions
   pred_data <- x[!ry, , drop = FALSE]
   predictions <- predict(gam_model, newdata = pred_data)
   
-  # Optionally add noise from the empirical residual distribution
-  if (noise) {
+  # Add empirical noise if requested
+  if (noise && length(predictions) > 0) {
     residuals <- residuals(gam_model)
-    noise_values <- sample(residuals, size = length(predictions), replace = TRUE)
-    predictions <- predictions + noise_values
+    predictions <- predictions + sample(residuals, size = length(predictions), replace = TRUE)
   }
   
   return(predictions)
 }
 
-
 #' Custom regression imputation which can work with mice
-custom_regression_impute <- function(y, ry, x, noise = FALSE, ...) {
+mice_impute_regression <- function(y, ry, x, noise = FALSE, ...) {
 # custom_regression_impute <- function(y, ry, x, noise = TRUE, ...) {
   # Ensure `x` is a data frame
   x <- as.data.frame(x)
