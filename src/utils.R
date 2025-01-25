@@ -54,3 +54,34 @@ evaluate_model_performance <- function(imputed_data, test_data) {
   # Return both RMSE and MAE as a named list
   return(list(rmse = rmse_value, mae = mae_value))
 }
+
+#' Impute Data and Generate Predictions
+#'
+#' This function performs multiple imputation on a dataset, creates models 
+#' for each imputed dataset, and generates averaged predictions. It also saves 
+#' the final predictions to a file named after the specified method.
+#'
+#' @param imputation_method A string specifying the imputation method to use
+#' @param dataset The original dataset to be imputed
+#' @param formula A formula specifying the model structure
+#' @param test_data The test dataset for making predictions
+#' @param method_label A label to identify the imputation method
+#' @return A vector of final predictions averaged across imputed datasets
+impute_and_predict <- function(imputation_method, dataset, formula, test_data, method_label) {
+  # Impute the dataset using the specified method
+  imputed_obj <- mice(dataset, method = imputation_method, m = 5)
+  
+  # Extract imputed datasets
+  imputed_datasets <- complete(imputed_obj, "all")
+  
+  # Generate predictions for each imputed dataset
+  predictions <- lapply(imputed_datasets, function(data) {
+    model <- lm(formula, data = data)
+    predict(model, newdata = test_data)
+  })
+  
+  # Combine predictions (average across imputations)
+  final_predictions <- Reduce("+", predictions) / length(predictions)
+  
+  return(final_predictions)
+}
