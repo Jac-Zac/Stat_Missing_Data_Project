@@ -33,6 +33,8 @@ suppressMessages(library(here))
 source(here("src", "setup.R"))
 ```
 
+![](images/part1_structure.svg){width="650"}
+
 ## Missing value patterns
 
 In statistical analysis, understanding the patterns of missing data is
@@ -55,7 +57,7 @@ variable does not predict the missingness of other variables. This
 pattern is more complex and requires careful analysis to handle
 appropriately.
 
-![](images/missing_pattern.svg){width="600"}
+![](images/missing_pattern.svg){width="650"}
 
 ## Missing value generation mechanisms
 
