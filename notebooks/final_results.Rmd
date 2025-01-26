@@ -134,7 +134,7 @@ dataset based on a MAR mechanism. Missingness depends on values in a
 -   **Quantile based**: Missing values are based on calculated quantiles
     of the control column, without sorting.
     
-![Censoring by sorting](images/MAR_censoring.svg){width="650"}
+![](images/MAR_censoring.svg){width="650"}
 
 ```{r}
 data.MAR.uni <- delete_MAR_censoring(synthetic_data, p = 0.1, cols_mis = c('X1'), cols_ctrl = c('X2'))
@@ -255,7 +255,7 @@ rows below the cutoff, and group 2 contains rows above. The `x`
 parameter sets the odds ratio of missing data: for `x = 3`, group 2 is
 **3 times** more likely to have missing values than group 1.
 
-![MAR likelihood quantile](images/MAR_1toX.svg){width="650"}
+![](images/MAR_1toX.svg){width="650"}
 
 ```{r}
 data.MAR.multi <- delete_MAR_1_to_x(synthetic_data, 
