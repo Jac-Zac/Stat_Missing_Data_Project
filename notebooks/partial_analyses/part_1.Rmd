@@ -86,7 +86,7 @@ linear_missing <- delete_MAR_1_to_x(linear_data, p, cols_mis = "x2", cols_ctrl =
 
 noise_imputation_methods <- list(
   "Regression" = function(data) { regression_imputation(data) },
-  "Regression with Noise" = function(data) { regression_imputation(data, noise = TRUE) },
+  "Regression with Noise" = function(data) { regression_imputation(data, noise = TRUE) }
   # "Regression with Noise Emp" = function(data) { regression_imputation_emp(data, noise = TRUE) }
 )
 
