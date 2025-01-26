@@ -22,6 +22,7 @@ editor_options:
 # Missing data study
 
 ### Environment Setup
+
 > Everything is defined inside `setup.R`
 
 ```{r, echo = T}
@@ -34,21 +35,37 @@ source(here("src", "setup.R"))
 
 ## Missing value patterns
 
-In statistical analysis, understanding the patterns of missing data is crucial for selecting appropriate handling methods. The primary patterns are:
+In statistical analysis, understanding the patterns of missing data is
+crucial for selecting appropriate handling methods. The primary patterns
+are:
 
-**Univariate Missing Data**: Occurs when only a single variable has missing values. This pattern is uncommon across most disciplines and typically arises in experimental studies. 
+**Univariate Missing Data**: Occurs when only a single variable has
+missing values. This pattern is uncommon across most disciplines and
+typically arises in experimental studies.
 
-**Monotone Missing Data**: Characterized by a situation where the missingness of one variable implies the missingness of all subsequent variables. This pattern is often observed in longitudinal studies where participants drop out and do not return. The monotone pattern is generally easier to manage, as the missingness follows a clear, observable sequence. 
+**Monotone Missing Data**: Characterized by a situation where the
+missingness of one variable implies the missingness of all subsequent
+variables. This pattern is often observed in longitudinal studies where
+participants drop out and do not return. The monotone pattern is
+generally easier to manage, as the missingness follows a clear,
+observable sequence.
 
-**Non-Monotone Missing Data**: Occurs when the missingness of one variable does not predict the missingness of other variables. This pattern is more complex and requires careful analysis to handle appropriately. 
+**Non-Monotone Missing Data**: Occurs when the missingness of one
+variable does not predict the missingness of other variables. This
+pattern is more complex and requires careful analysis to handle
+appropriately.
 
-Recognizing these patterns helps in choosing suitable methods for handling missing data, thereby improving the robustness and validity of statistical analyses.
+![](images/missing_pattern.svg){width="600"}
 
+## Missing value generation mechanisms
 
-##  Missing value generation mechanisms
-Another way to classify missing values is based on their underlying mechanism.
+Another way to classify missing values is based on their underlying
+mechanism.
 
-Rubin's missing data theory introduces a dataset $Y$ that is partitioned into observed values ($Y_o$) and missing values ($Y_m$). The presence or absence of data is tracked by an indicator matrix $R$ defined for each element of $Y$ as:
+Rubin's missing data theory introduces a dataset $Y$ that is partitioned
+into observed values ($Y_o$) and missing values ($Y_m$). The presence or
+absence of data is tracked by an indicator matrix $R$ defined for each
+element of $Y$ as:
 
 $$
 R = \begin{cases}
@@ -57,21 +74,46 @@ R = \begin{cases}
 \end{cases}
 $$
 
-**Missing Completely at Random (MCAR)** defines a mechanism where the probability of missingness $P(R|q)$ has no relationship with any values in the dataset. Implementation can be univariate, where missing values are inserted through random selection or Bernoulli trials with probability $p$, or multivariate, where missing values are distributed either uniformly or randomly across the entire dataset.
+**Missing Completely at Random (MCAR)** defines a mechanism where the
+probability of missingness $P(R|q)$ has no relationship with any values
+in the dataset. Implementation can be univariate, where missing values
+are inserted through random selection or Bernoulli trials with
+probability $p$, or multivariate, where missing values are distributed
+either uniformly or randomly across the entire dataset.
 
-**Missing At Random (MAR/CAR)** occurs when missingness probability $P(R|Y_o, q)$ depends on observed data patterns but not on missing values. For univariate cases, missing values are determined by the patterns of observed data, such as rank-based probabilities or percentile thresholds. In multivariate cases, missingness arises due to relationships or correlations between feature pairs. 
+![](images/MCAR.svg){width="650"}
 
-**Missing Not at Random (MNAR)**: Missingness depends on both the observed and unobserved data $p(R|Y_0,Y_m,q$, making it difficult to model and handle. Identifying and managing MNAR data requires complex assumptions about the relationship between missing and observed values.
+**Missing At Random (MAR/CAR)** occurs when missingness probability
+$P(R|Y_o, q)$ depends on observed data patterns but not on missing
+values. For univariate cases, missing values are determined by the
+patterns of observed data, such as rank-based probabilities or
+percentile thresholds. In multivariate cases, missingness arises due to
+relationships or correlations between feature pairs.
 
-This study focuses on Missing at Random (MAR) data due to its practical relevance and analytical tractability compared to Missing Completely at Random (MCAR) and Missing Not at Random (MNAR).
+![](images/MAR.svg){width="650"}
 
-We exclude Missing Completely at Random (MCAR) data because its randomness preserves the dataset’s underlying distribution, making missingness equivalent to reduced sample size without introducing bias. Handling MNAR (Missing Not at Random) data is beyond this study’s scope because identifying and modeling its dependence on unobserved variables is often ambiguous and requires unverifiable assumptions.
+**Missing Not at Random (MNAR)**: Missingness depends on both the
+observed and unobserved data $p(R|Y_0,Y_m,q)$, making it difficult to
+model and handle. Identifying and managing MNAR data requires complex
+assumptions about the relationship between missing and observed values.
 
-### Syntetich MAR mechanism
+![](images/MNAR.svg){width="650"}
 
-> cite paper
+This study focuses on Missing at Random (MAR) data due to its practical
+relevance and analytic tractability compared to Missing Completely at
+Random (MCAR) and Missing Not at Random (MNAR).
 
-Let's create a simple dataset to demonstrate the different mechanisms of missing values and explore various ways to visualize them.
+We exclude Missing Completely at Random (MCAR) data because its
+randomness preserves the dataset’s underlying distribution, making
+missingness equivalent to reduced sample size without introducing bias.
+Handling MNAR (Missing Not at Random) data is beyond this study’s scope
+because identifying and modeling its dependence on unobserved variables
+is often ambiguous and requires unverifiable assumptions.
+
+### Synthetic MAR mechanism
+
+Let's create a simple dataset to demonstrate the different mechanisms of
+missing values and explore various ways to visualize them.
 
 ```{r, echo=T, class.source = 'fold-show'}
 synthetic_data <- synthetic_dataset_gen(n_samples = 500, 
@@ -83,11 +125,14 @@ synthetic_data <- synthetic_dataset_gen(n_samples = 500,
 
 #### Censoring method
 
-The `delete_MAR_censoring` function introduces missing values in a dataset based on a MAR mechanism. Missingness depends on values in a **control column** (`cols_ctrl`). Censoring mechanism:
+The `delete_MAR_censoring` function introduces missing values in a
+dataset based on a MAR mechanism. Missingness depends on values in a
+**control column** (`cols_ctrl`). Censoring mechanism:
 
-- Sorting: Rows are sorted by the control column, and missing values are added to the smallest, largest, or both extremes.
-- Quantile: Missing values are based on calculated quantiles of the control column, without sorting.
-
+-   **Sorting based**: Rows are sorted by the control column, and
+    missing values are added to the smallest, largest, or both extremes.
+-   **Quantile based**: Missing values are based on calculated quantiles
+    of the control column, without sorting.
 
 ```{r}
 data.MAR.uni <- delete_MAR_censoring(synthetic_data, p = 0.1, cols_mis = c('X1'), cols_ctrl = c('X2'))
@@ -198,10 +243,15 @@ grid.arrange(final_plot2, final_plot3, final_plot4, final_plot5, ncol = 2)
 
 ```
 
-
 #### Likelihood method
 
-The `delete_MAR_1_to_x()` function in R creates MAR values by controlling missingness in one column (`cols_mis`) based on the values of another column (`cols_ctrl`). It splits the data into two groups using a cutoff value (e.g., median) in `cols_ctrl`. Group 1 contains rows below the cutoff, and group 2 contains rows above. The `x` parameter sets the odds ratio of missing data: for `x = 3`, group 2 is **3 times** more likely to have missing values than group 1.
+The `delete_MAR_1_to_x()` function in R creates MAR values by
+controlling missingness in one column (`cols_mis`) based on the values
+of another column (`cols_ctrl`). It splits the data into two groups
+using a cutoff value (e.g., median) in `cols_ctrl`. Group 1 contains
+rows below the cutoff, and group 2 contains rows above. The `x`
+parameter sets the odds ratio of missing data: for `x = 3`, group 2 is
+**3 times** more likely to have missing values than group 1.
 
 ```{r}
 data.MAR.multi <- delete_MAR_1_to_x(synthetic_data, 
@@ -232,7 +282,6 @@ aggr(data.MAR.multi,
 
 plot_missing_data(data.MAR.multi, "MAR multi", c("white", red_nord))
 ```
-
 
 ```{r, fig.width=10, fig.height=10}
 # Calculate global ranges for X1 and all Y variables (X2-X5)
@@ -334,14 +383,30 @@ grid.arrange(final_plot2, final_plot3, final_plot4, final_plot5, ncol = 2)
 
 ## Performance metrics between Datasets
 
-Since we possess the **original dataset prior to the introduction of missing values**, we will introduce _two metrics_ to compare _the distributions of two datasets_: the **original dataset** without missing values and the dataset in which missing values have been **imputed** using various techniques
+Since we possess the **original dataset prior to the introduction of
+missing values**, we will introduce *two metrics* to compare *the
+distributions of two datasets*: the **original dataset** without missing
+values and the dataset in which missing values have been **imputed**
+using various techniques
 
-We indeed care about comparing the distribution of the two datasets more than comparing pointwise the actual reconstruction of the dataset.
+We indeed care about comparing the distribution of the two datasets more
+than comparing pointwise the actual reconstruction of the dataset.
 
-- The **Jensen–Shannon Divergence (JSD)** quantifies the similarity or divergence between two probability distributions \(P\) and \(Q\). It is based on the midpoint distribution \(M = \frac{1}{2}(P + Q)\) and is calculated as the average of the Kullback-Leibler (KL) divergences of \(P\) and \(Q\) relative to \(M\). JSD is symmetric and always non-negative, with values ranging between \(0\) (identical distributions) and \(\log(2)\) (distributions with disjoint supports).
+-   The **Jensen–Shannon Divergence (JSD)** quantifies the similarity or
+    divergence between two probability distributions $P$ and $Q$. It is
+    based on the midpoint distribution $M = \frac{1}{2}(P + Q)$ and is
+    calculated as the average of the Kullback-Leibler (KL) divergences
+    of $P$ and $Q$ relative to $M$. JSD is symmetric and always
+    non-negative, with values ranging between $0$ (identical
+    distributions) and $\log(2)$ (distributions with disjoint supports).
 
-- Thae **Wasserstein distance**, which involves spatial costs, JSD operates on the information-theoretic differences between distributions and can be transformed into a metric by taking its square root, satisfying the triangle inequality. These two metrics serve different purposes: while the Wasserstein distance considers the geometry of the underlying space, JSD focuses on statistical divergence.
-
+-   The **Wasserstein distance**, which involves spatial costs, JSD
+    operates on the information-theoretic differences between
+    distributions and can be transformed into a metric by taking its
+    square root, satisfying the triangle inequality. These two metrics
+    serve different purposes: while the Wasserstein distance considers
+    the geometry of the underlying space, JSD focuses on statistical
+    divergence.
 
 ```{r, echo = FALSE}
 # Define the child RMarkdown file path
@@ -364,30 +429,40 @@ rmarkdown::render(part_2)
 
 # Conclusions and Recommendations
 
-_(Add your conclusions and recommendations based on the analysis results)_
+*(Add your conclusions and recommendations based on the analysis
+results)*
 
-- We tried different methods of adding noise, but this approach appears to be both "simple" (as supported by the literature) and effective. However, the drawback might be that it does not adequately account for the heteroscedasticity of the dataset.
+-   We tried different methods of adding noise, but this approach
+    appears to be both "simple" (as supported by the literature) and
+    effective. However, the drawback might be that it does not
+    adequately account for the heteroscedasticity of the dataset.
 
-- We did not explore the Bayesian approach, but it is currently quite useful and interesting. We believe that delving deeper into this area would be a worthwhile continuation.
+-   We did not explore the Bayesian approach, but it is currently quite
+    useful and interesting. We believe that delving deeper into this
+    area would be a worthwhile continuation.
 
-- We did not investigate categorical variables, as they were somewhat outside the scope of this study. However, we believe that decision trees could perform well in this context.
+-   We did not investigate categorical variables, as they were somewhat
+    outside the scope of this study. However, we believe that decision
+    trees could perform well in this context.
 
-- We did not extensively explore the removal of multiple variables...
+-   We did not extensively explore the removal of multiple variables...
 
 ## Appendix
 
 #### Notes on Missing Data Mechanisms
 
-- MCAR: Missingness is unrelated to data values.
-- MAR: Missingness depends on observed values.
-- MNAR: Missingness depends on unobserved data (not really interesting to deal with)
-> Can pretty much always be reconducted to MAR
+-   MCAR: Missingness is unrelated to data values.
+-   MAR: Missingness depends on observed values.
+-   MNAR: Missingness depends on unobserved data (not really interesting
+    to deal with) \> Can pretty much always be reconducted to MAR
 
 #### References
+
 > Need to add references
 
 ```{r}
 citation("pROC")
 ```
 
-- ...
+-   ...
+-   
