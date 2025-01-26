@@ -79,6 +79,126 @@ create_imputation_plot <- function(data, imputed_data, title) {
         )
 }
 
+#' Create Residuals vs Leverage Plot
+#'
+#' This function creates a residuals vs leverage plot with Cook's distance curves.
+#' It visualizes leverage, studentized residuals, and diagnostic curves for model assessment.
+#'
+#' @param model A linear model object
+#' @param custom_line_color A custom color for the line 
+#' @return A ggplot object showing the residuals vs leverage plot
+residuals_vs_leverage_plot <- function(model, custom_line_color) {
+  
+  # Compute diagnostics used by plot.lm(which = 5)
+  h      <- hatvalues(model)      # Leverages
+  rstud  <- rstudent(model)       # Studentized residuals
+  p      <- length(coef(model))   # Number of parameters in the model
+  n      <- length(rstud)         # Number of observations
+  
+  # Build the base data frame for scatter plot
+  df <- data.frame(
+    Leverage   = h,
+    RStudent   = rstud
+  )
+
+  # Generate Cook’s distance reference curves
+  cooks_vals <- c(0.5, 1.0)
+  h_seq <- seq(min(h[h > 1e-5]), max(h), length.out = 200)  # Avoid division by zero
+  
+  # Helper function to create Cook's distance curves
+  make_cooks_curve <- function(Dval) {
+    y <- sqrt(Dval * p * (1 - h_seq)/h_seq)
+    pos <- data.frame(Leverage = h_seq, RStudent =  y, CookDist = Dval)
+    neg <- data.frame(Leverage = h_seq, RStudent = -y, CookDist = Dval)
+    rbind(pos, neg)
+  }
+  
+  cooks_df <- do.call(rbind, lapply(cooks_vals, make_cooks_curve))
+
+  # Create the residuals vs leverage plot
+  ggplot(df, aes(x = Leverage, y = RStudent)) +
+      geom_point(shape = 1, color = "black") +                      
+      geom_smooth(method = "loess", formula = y ~ x, se = FALSE, color = custom_line_color) +
+      geom_hline(yintercept = 0, linetype = "dotted") +             
+      labs(
+          title = "Residuals vs Leverage",
+          x     = "Leverage",
+          y     = "Studentized Residuals"
+      ) +
+      theme_bw()
+}
+
+#' Create Diagnostic Plots for a Linear Model
+#'
+#' This function creates four diagnostic plots to evaluate a linear model's fit:
+#' Residuals vs Fitted, Scale-Location, Normal Q-Q, and Residuals vs Leverage.
+#'
+#' @param model A linear model object
+#' @param custom_line_color A custom color for the line
+#' @return A patchwork object combining four diagnostic plots
+my_diagnostic_plots <- function(model, data, custom_line_color = "blue") {
+ suppressMessages(library(patchwork))
+  # Prepare data for each diagnostic plot
+  fitted_values           <- predict(model)
+  residuals               <- resid(model)
+  standardized_residuals  <- rstandard(model)
+  cooks_d                 <- cooks.distance(model)
+  
+  # Create data frames for each plot
+  df1 <- data.frame(Fitted = fitted_values, Residual = residuals)
+  df2 <- data.frame(Fitted = fitted_values, Sqrt_Abs_Std_Residuals = sqrt(abs(standardized_residuals)))
+  df3 <- data.frame(Standardized_Residuals = standardized_residuals)
+  
+  # Residuals vs Fitted plot
+  p1 <- ggplot(df1, aes(x = Fitted, y = Residual)) +
+    geom_point(shape = 1, color = "black") +
+    geom_smooth(method = "loess", formula = y ~ x, se = FALSE, color = custom_line_color) +
+    labs(title = "Residuals vs Fitted", x = "Fitted Values", y = "Residuals") +
+    theme_bw()
+  
+  # Scale-Location plot
+  p2 <- ggplot(df2, aes(x = Fitted, y = Sqrt_Abs_Std_Residuals)) +
+    geom_point(shape = 1, color = "black") +
+    geom_smooth(method = "loess", formula = y ~ x, se = FALSE, color = custom_line_color) +
+    labs(title = "Scale-Location", x = "Fitted Values", y = expression(sqrt("|Standardized Residuals|"))) +
+    theme_bw()
+ 
+  # Normal Q-Q plot
+  p3 <- ggplot(df3, aes(sample = Standardized_Residuals)) +
+    stat_qq(shape = 1, color = "black") +
+    stat_qq_line(color = custom_line_color) +
+    labs(title = "Normal Q-Q", x = "Theoretical Quantiles", y = "Std. Residuals") +
+    theme_bw()
+  
+  # Residuals vs Leverage plot
+  p4 <- residuals_vs_leverage_plot(model, custom_line_color)
+  
+  # Combine and return the diagnostic plots
+  combined_plot <- (p1 | p2) / (p3 | p4)
+  return(combined_plot)
+}
+
+#' Utility Function to Plot Coefficients
+#'
+#' @param data A data frame containing the coefficient estimates and confidence intervals. 
+#'             It should have columns: `Term`, `Estimate`, `Lower_CI`, `Upper_CI`, and `Model`.
+#' @param title A string representing the title of the plot.
+#' @param y_limits Optional numeric vector of length 2 specifying the limits for the y-axis.
+#' @param palette A string indicating the color palette to use for the plot. Default is "aurora".
+#' @return A ggplot object visualizing the coefficient estimates with error bars.
+plot_coefficients <- function(data, title, y_limits = NULL, palette = "aurora") {
+  ggplot(data, aes(x = Term, y = Estimate, color = Model)) +
+    geom_point(position = position_dodge(width = 0.5), size = 3) +
+    geom_errorbar(aes(ymin = Lower_CI, ymax = Upper_CI), width = 0.2, position = position_dodge(width = 0.5)) +
+    labs(title = title,
+         x = "Coefficient Terms",
+         y = "Coefficient Estimate") +
+    scale_color_nord(palette) +  # Use the specified color palette
+    theme_minimal() +
+    theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+    (if (!is.null(y_limits)) scale_y_continuous(limits = y_limits) else NULL)
+}
+
 #' Create Distribution Metrics Comparison Plot
 #'
 #' @param metrics_list A named list where each name corresponds to a method, and each value is a list containing `wasserstein` and `jsd` metrics

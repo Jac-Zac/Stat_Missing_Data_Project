@@ -85,3 +85,44 @@ impute_and_predict <- function(imputation_method, dataset, formula, test_data, m
   
   return(final_predictions)
 }
+
+#' Extract Coefficients and Confidence Intervals
+#'
+#' This utility function extracts coefficients and their corresponding 
+#' confidence intervals from a list of linear models. It allows for 
+#' filtering of specific coefficients based on provided names.
+#'
+#' @param models A list of linear model objects (e.g., created with lm()) 
+#'               from which coefficients will be extracted.
+#' @param coef_names An optional vector of coefficient names to filter the 
+#'                   results. If NULL, all coefficients will be returned.
+#' @return A data frame containing the model name, coefficient term, 
+#'         estimated value, and lower and upper confidence intervals for each 
+#'         coefficient extracted from the models.
+#'
+#' @examples
+#' # Assuming 'models_list' is a list of fitted lm() models:
+#' results <- extract_coefficients(models_list)
+#'
+#' # To extract only specific coefficients:
+#' specific_results <- extract_coefficients(models_list, coef_names = c("Intercept", "Age"))
+extract_coefficients <- function(models, coef_names = NULL) {
+  do.call(rbind, lapply(names(models), function(model_name) {
+    coefs <- summary(models[[model_name]])$coefficients
+    ci <- confint(models[[model_name]])
+    
+    # If specific coefficients are provided, filter them
+    if (!is.null(coef_names)) {
+      coefs <- coefs[coef_names, , drop = FALSE]
+      ci <- ci[coef_names, , drop = FALSE]
+    }
+    
+    data.frame(
+      Model = model_name,
+      Term = rownames(coefs),
+      Estimate = coefs[, "Estimate"],
+      Lower_CI = ci[, 1],
+      Upper_CI = ci[, 2]
+    )
+  }))
+}

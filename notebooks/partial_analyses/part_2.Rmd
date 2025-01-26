@@ -586,171 +586,13 @@ summary(fit_gam)
 ##### Plot of the residual
 
 ```{r}
-residuals_vs_leverage_plot <- function(model) {
-  
-  # 1) Compute diagnostics used by plot.lm(which = 5)
-  h      <- hatvalues(model)      # leverages
-  rstud  <- rstudent(model)       # studentized residuals
-  p      <- length(coef(model))   # number of parameters
-  n      <- length(rstud)
-  
-  # 2) Build the base data frame for the main scatter
-  df <- data.frame(
-    Leverage   = h,
-    RStudent   = rstud
-  )
-
-  # 3) Build Cook’s distance reference lines at 0.5 and 1.0
-  #    Cook’s D = 0.5 or 1 =>  rstudent^2 = D * p * (1 - h)/h
-  #    => rstudent = ± sqrt(D * p * (1 - h)/h)
-  cooks_vals <- c(0.5, 1.0)
-  
-  # We'll only plot the curve for h > a small cutoff to avoid exploding near h=0
-  h_seq <- seq(min(h[h > 1e-5]), max(h), length.out = 200)
-  
-  make_cooks_curve <- function(Dval) {
-    # Cook’s distance => ± sqrt(...)
-    y <- sqrt(Dval * p * (1 - h_seq)/h_seq)
-    pos <- data.frame(
-      Leverage = h_seq,
-      RStudent =  y,
-      CookDist = Dval
-    )
-    neg <- data.frame(
-      Leverage = h_seq,
-      RStudent = -y,
-      CookDist = Dval
-    )
-    rbind(pos, neg)
-  }
-  
-  cooks_df <- do.call(rbind, lapply(cooks_vals, make_cooks_curve))
-
-  # 4) Plot
-  ggplot(df, aes(x = Leverage, y = RStudent)) +
-    # Base scatter: observation points
-    geom_point(shape = 1, color = nord_colors[6]) +
-    # The red lowess line (like base R)
-    geom_smooth(method = "loess", se = FALSE, color = nord_colors[2]) +
-    
-    
-    
-    # Horizontal reference at 0
-    geom_hline(yintercept = 0, linetype = "dotted") +
-    
-    labs(
-      title = "Residuals vs Leverage",
-      x     = "Leverage",
-      y     = "Studentized Residuals"
-    ) +
-    theme_bw() +
-    theme(legend.position = "bottom")
-}
-
-
-```
-
-
-```{r}
-
-#SE VOGLIAMO METTERE I PUNTI VUOTI SCRIVERE geom_point(shape = 1, color = nord_colors[6]) +
-
-#function to obtain plot.lm() using ggplot2
-my_diagnostic_plots <- function(model, data) {
-  library(ggplot2)
-  library(patchwork)
-  
-  # 1) Prepare data for plotting
-  # ----------------------------
-  fitted_values           <- predict(model)
-  residuals               <- resid(model)
-  standardized_residuals  <- rstandard(model)
-  cooks_d                 <- cooks.distance(model)
-  
-  # Create data frames for each plot
-  df1 <- data.frame(
-    Fitted   = fitted_values,
-    Residual = residuals
-  )
-  
-  df2 <- data.frame(
-    Fitted                 = fitted_values,
-    Sqrt_Abs_Std_Residuals = sqrt(abs(standardized_residuals))
-  )
-  
-  df3 <- data.frame(
-    Standardized_Residuals = standardized_residuals
-  )
-  
-  df4 <- data.frame(
-    Obs_Index     = seq_along(cooks_d),
-    Cooks_Distance = cooks_d
-  )
-  
-  # 2) Build each plot
-  # ------------------
-  
-  # (a) Residuals vs. Fitted
-  p1 <- ggplot(df1, aes(x = Fitted, y = Residual)) +
-    geom_point(shape = 1,color = nord_colors[6]) +
-    geom_smooth(method = "lm", se = FALSE, color = nord_colors[2],
-                formula = y ~ x, linewidth = 0.75, linetype = 2) +
-    geom_smooth(method = "loess", se = FALSE, color = nord_colors[1],
-                formula = y ~ x) +
-    labs(
-      title = "Residuals vs Fitted",
-      x     = "Fitted Values",
-      y     = "Residuals"
-    ) +
-    theme_bw()
-  
-  # (b) Scale-Location plot
-  p2 <- ggplot(df2, aes(x = Fitted, y = Sqrt_Abs_Std_Residuals)) +
-    geom_point(shape = 1,color = nord_colors[6]) +
-    geom_smooth(method = "lm", se = FALSE, color = nord_colors[2],
-                formula = y ~ x, linewidth = 0.75, linetype = 2) +
-    geom_smooth(method = "loess", se = FALSE, color = nord_colors[1],
-                formula = y ~ x) +
-    labs(
-      title = "Scale-Location",
-      x     = "Fitted Values",
-      y     = expression(sqrt("|Standardized Residuals|"))
-    ) +
-    theme_bw()
-  
-  # (c) Normal Q-Q plot of standardized residuals
-  p3 <- ggplot(df3, aes(sample = Standardized_Residuals)) +
-    stat_qq(shape = 1,color = nord_colors[6]) +
-    stat_qq_line(color = nord_colors[2]) +
-    labs(
-      title = "Normal Q-Q",
-      x     = "Theoretical Quantiles",
-      y     = "Std. Residuals"
-    ) +
-    theme_bw()
-  
-  # (d) Cook's distance (4th plot in plot.lm)
-  # Replicates plot(fit, which = 4): 
-  #   - vertical lines ("type = 'h'") in base R
-  #   - x-axis is observation index
-  #   - y-axis is Cook's distance
-  p4 <- residuals_vs_leverage_plot(model)
-  
-  combined_plot <- (p1 | p2) / (p3 | p4)
-  return(combined_plot)
-}
-
-```
-
-
-```{r}
 set_ds  <- list(imp_ds_mean, imp_ds_median, imp_del_list, imp_ds_reg, imp_ds_rf, imp_ds_gam)
 set_fit <- list(fit_mean,    fit_median,    fit_list,      fit_reg,    fit_rf,    fit_gam)
 
 plots_list <- vector("list", length(set_ds))  # pre-allocate
 
 for (i in seq_along(set_ds)) {
-  plots_list[[i]] <- my_diagnostic_plots(set_fit[[i]], set_ds[[i]])
+  plots_list[[i]] <- my_diagnostic_plots(set_fit[[i]], set_ds[[i]], blue_nord)
 }
 
 # Now `plots_list` is a list of patchwork objects. You can print them one at a time:
@@ -762,123 +604,40 @@ plots_list[[5]]
 plots_list[[6]]
 ```
 
-
-
 ##### Coefficient analysis
 
 ```{r}
-# Extract coefficients and confidence intervals
-fit_models <- list(mean = fit_mean, median = fit_median, list = fit_list, reg = fit_reg, rf = fit_rf, gam = fit_gam, or = fit_original)
+# Define models
+fit_models <- list(
+  mean = fit_mean, median = fit_median, list = fit_list,
+  reg = fit_reg, rf = fit_rf, gam = fit_gam, or = fit_original
+)
 
-# Create a data frame to store coefficients and their intervals
-coef_df <- do.call(rbind, lapply(names(fit_models), function(model_name) {
-  coefs <- summary(fit_models[[model_name]])$coefficients
-  ci <- confint(fit_models[[model_name]])
-  data.frame(
-    Model = model_name,
-    Term = rownames(coefs),
-    Estimate = coefs[, "Estimate"],
-    Lower_CI = ci[, 1],
-    Upper_CI = ci[, 2]
-  )
-}))
-
-# View the coefficient data frame
-#print(coef_df)
-
-# Plotting
-#ggplot(coef_df, aes(x = Term, y = Estimate, color = Model)) +
-#  geom_point(position = position_dodge(width = 0.5)) +
-#  geom_errorbar(aes(ymin = Lower_CI, ymax = Upper_CI), width = 0.2, position = position_dodge(width = 0.5)) +
-#  labs(title = "Comparison of Coefficients with Confidence Intervals",
-#       x = "Terms",
-#       y = "Coefficient Estimate") +
-#  theme_minimal() +
-#  theme(axis.text.x = element_text(angle = 45, hjust = 1))
-
+# Full coefficient extraction and data frame creation
+coef_df <- extract_coefficients(fit_models)
 ```
 
 ##### Intercept
+
 ```{r}
-# Extract specific coefficients and their confidence intervals
-coef_names <-"(Intercept)" # Specify the coefficients you want to compare
+# Selected coefficient example: Intercept
+intercept_df <- extract_coefficients(fit_models, coef_names = "(Intercept)")
+print(intercept_df)
 
-# Create a data frame to store selected coefficients and their intervals
-selected_coef_df <- do.call(rbind, lapply(names(fit_models), function(model_name) {
-  coefs <- summary(fit_models[[model_name]])$coefficients
-  ci <- confint(fit_models[[model_name]])
-  
-  # Filter for selected coefficients
-  selected_coefs <- coefs[coef_names, , drop = FALSE]
-  selected_ci <- ci[coef_names, , drop = FALSE]
-  
-  data.frame(
-    Model = model_name,
-    Term = rownames(selected_coefs),
-    Estimate = selected_coefs[, "Estimate"],
-    Lower_CI = selected_ci[, 1],
-    Upper_CI = selected_ci[, 2]
-  )
-}))
-
-# View the selected coefficient data frame
-print(selected_coef_df)
-
-
-# Plotting selected coefficients with specified y-axis limits and using the aurora palette
-ggplot(selected_coef_df, aes(x = Term, y = Estimate, color = Model)) +
-  geom_point(position = position_dodge(width = 0.5), size = 3) +
-  geom_errorbar(aes(ymin = Lower_CI, ymax = Upper_CI), width = 0.2, position = position_dodge(width = 0.5)) +
-  labs(title = "Comparison of Selected Coefficients with Confidence Intervals",
-       x = "Coefficient Terms",
-       y = "Coefficient Estimate") +
-  scale_y_continuous(limits = c(3.65, 4.05)) +  # Set y-axis limits
-  scale_color_nord("aurora") +  # Use the aurora color palette
-  theme_minimal() +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+# Plotting Intercept
+plot_coefficients(intercept_df, "Comparison of Intercept Coefficients with Confidence Intervals", y_limits = c(3.65, 4.05))
 ```
 
 
 ##### Weight
 
 ```{r}
-# Extract specific coefficients and their confidence intervals
-coef_names <-"weight" # Specify the coefficients you want to compare
+# Selected coefficient example: Weight
+weight_df <- extract_coefficients(fit_models, coef_names = "weight")
+print(weight_df)
 
-# Create a data frame to store selected coefficients and their intervals
-selected_coef_df <- do.call(rbind, lapply(names(fit_models), function(model_name) {
-  coefs <- summary(fit_models[[model_name]])$coefficients
-  ci <- confint(fit_models[[model_name]])
-  
-  # Filter for selected coefficients
-  selected_coefs <- coefs[coef_names, , drop = FALSE]
-  selected_ci <- ci[coef_names, , drop = FALSE]
-  
-  data.frame(
-    Model = model_name,
-    Term = rownames(selected_coefs),
-    Estimate = selected_coefs[, "Estimate"],
-    Lower_CI = selected_ci[, 1],
-    Upper_CI = selected_ci[, 2]
-  )
-}))
-
-# View the selected coefficient data frame
-print(selected_coef_df)
-
-
-# Plotting selected coefficients with specified y-axis limits
-ggplot(selected_coef_df, aes(x = Term, y = Estimate, color = Model)) +
-  geom_point(position = position_dodge(width = 0.5), size = 3) +
-  geom_errorbar(aes(ymin = Lower_CI, ymax = Upper_CI), width = 0.2, position = position_dodge(width = 0.5)) +
-  labs(title = "Comparison of Selected Coefficients with Confidence Intervals",
-       x = "Coefficient Terms",
-       y = "Coefficient Estimate") +
-  #scale_y_continuous(limits = c(3.65, 4.05)) +  # Set y-axis limits
-  theme_minimal() +
-  scale_color_nord("aurora") +  # Use the aurora color palette
-  theme(axis.text.x = element_text(angle = 45, hjust = 1))
-
+# Plotting Weight
+plot_coefficients(weight_df, "Comparison of Weight Coefficients with Confidence Intervals")
 ```
 
 ##### Horsepower
@@ -886,115 +645,57 @@ ggplot(selected_coef_df, aes(x = Term, y = Estimate, color = Model)) +
 ```{r}
 # Extract specific coefficients and their confidence intervals
 coef_names <-"horsepower" # Specify the coefficients you want to compare
+# Selected coefficient example: Horsepower
+horsepower_df <- extract_coefficients(fit_models, coef_names = "horsepower")
+print(horsepower_df)
 
-# Create a data frame to store selected coefficients and their intervals
-selected_coef_df <- do.call(rbind, lapply(names(fit_models), function(model_name) {
-  coefs <- summary(fit_models[[model_name]])$coefficients
-  ci <- confint(fit_models[[model_name]])
-  
-  # Filter for selected coefficients
-  selected_coefs <- coefs[coef_names, , drop = FALSE]
-  selected_ci <- ci[coef_names, , drop = FALSE]
-  
-  data.frame(
-    Model = model_name,
-    Term = rownames(selected_coefs),
-    Estimate = selected_coefs[, "Estimate"],
-    Lower_CI = selected_ci[, 1],
-    Upper_CI = selected_ci[, 2]
-  )
-}))
-
-# View the selected coefficient data frame
-print(selected_coef_df)
-
-
-# Plotting selected coefficients with specified y-axis limits
-ggplot(selected_coef_df, aes(x = Term, y = Estimate, color = Model)) +
-  geom_point(position = position_dodge(width = 0.5), size = 3) +
-  geom_errorbar(aes(ymin = Lower_CI, ymax = Upper_CI), width = 0.2, position = position_dodge(width = 0.5)) +
-  labs(title = "Comparison of Selected Coefficients with Confidence Intervals",
-       x = "Coefficient Terms",
-       y = "Coefficient Estimate") +
-  #scale_y_continuous(limits = c(0.9*Lower_CI, 1.1*Upper_CI)) +  # Set y-axis limits
-  scale_color_nord("aurora") +  # Use the aurora color palette
-  theme_minimal() +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1))
-
+# Plotting Horsepower
+plot_coefficients(horsepower_df, "Comparison of Horsepower Coefficients with Confidence Intervals")
 ```
 
 ##### Cut_model_year
 
 ```{r}
-# Extract specific coefficients and their confidence intervals
-coef_names <-c("cut_model_year74-76","cut_model_year77-79","cut_model_year80-82") # Specify the coefficients you want to compare
+# Selected coefficients: Multiple terms (e.g., cut_model_year)
+cut_model_year_df <- extract_coefficients(fit_models, coef_names = c("cut_model_year74-76", "cut_model_year77-79", "cut_model_year80-82"))
+print(cut_model_year_df)
 
-# Create a data frame to store selected coefficients and their intervals
-selected_coef_df <- do.call(rbind, lapply(names(fit_models), function(model_name) {
-  coefs <- summary(fit_models[[model_name]])$coefficients
-  ci <- confint(fit_models[[model_name]])
-  
-  # Filter for selected coefficients
-  selected_coefs <- coefs[coef_names, , drop = FALSE]
-  selected_ci <- ci[coef_names, , drop = FALSE]
-  
-  data.frame(
-    Model = model_name,
-    Term = rownames(selected_coefs),
-    Estimate = selected_coefs[, "Estimate"],
-    Lower_CI = selected_ci[, 1],
-    Upper_CI = selected_ci[, 2]
-  )
-}))
-
-# View the selected coefficient data frame
-#print(selected_coef_df)
-
-
-# Plotting selected coefficients with specified y-axis limits
-ggplot(selected_coef_df, aes(x = Term, y = Estimate, color = Model)) +
-  geom_point(position = position_dodge(width = 0.5), size = 3) +
-  geom_errorbar(aes(ymin = Lower_CI, ymax = Upper_CI), width = 0.2, position = position_dodge(width = 0.5)) +
-  labs(title = "Comparison of Selected Coefficients with Confidence Intervals",
-       x = "Coefficient Terms",
-       y = "Coefficient Estimate") +
-  #scale_y_continuous(limits = c(3.65, 4.05)) +  # Set y-axis limits
-  scale_color_nord("aurora") +  # Use the aurora color palette
-  theme_minimal() +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1))
-
+# Plotting Multiple Terms
+plot_coefficients(cut_model_year_df, "Comparison of Cut Model Year Coefficients with Confidence Intervals")
 ```
 
 
 #### Predictions based on RMSE
 
 ```{r}
-#Predict on test data
-pred_mean <- predict(fit_mean, newdata = test_data)
-pred_median <- predict(fit_median, newdata = test_data)
-pred_list <- predict(fit_list, newdata = test_data)
-pred_reg <- predict(fit_reg, newdata = test_data)
-pred_rf <- predict(fit_rf, newdata = test_data)
-pred_gam <- predict(fit_gam, newdata = test_data)
-
-pred_origin <- predict(fit_original, newdata = test_data)
-
-# Define a list of prediction methods and their corresponding names
-predictions <- list(
-  "Listwise deletion" = pred_list,
-  "Mean Imputation" = pred_mean,
-  "Median Imputation" = pred_median,
-  "Linear regression (with noise)" = pred_reg,
-  "Random Forest" = pred_rf,
-  "GAM Imputation" = pred_gam,
-  "Original Dataset" = pred_origin
+# Define models and their names
+models <- list(
+  "Listwise deletion" = fit_list,
+  "Mean Imputation" = fit_mean,
+  "Median Imputation" = fit_median,
+  "Linear regression (with noise)" = fit_reg,
+  "Random Forest" = fit_rf,
+  "GAM Imputation" = fit_gam,
+  "Original Dataset" = fit_original
 )
 
-# Calculate RMSE for each method and print the results
-for (method in names(predictions)) {
-  rmse_value <- rmse(predictions[[method]], test_data$mpg)
-  cat(method, "(RMSE):", rmse_value, "\n")
+# Function to predict and calculate RMSE
+calculate_rmse <- function(model, new_data, true_values) {
+  predictions <- predict(model, newdata = new_data)
+  rmse(predictions, true_values)
 }
+
+# Apply RMSE calculation to all models
+results <- lapply(names(models), function(method) {
+  rmse_value <- calculate_rmse(models[[method]], test_data, test_data$mpg)
+  data.frame(Method = method, RMSE = rmse_value)
+})
+
+# Combine results into a single data frame
+results_df <- do.call(rbind, results)
+
+# Optional: View results in a more structured format
+print(results_df)
 ```
 The analysis revealed that advanced imputation methods, particularly random forest and GAM, yielded superior model performance, as evidenced by more accurate coefficient estimates and narrower confidence intervals. These methods were followed by regression imputation, while simpler approaches like mean imputation and listwise deletion demonstrated comparatively lower performance. This outcome aligns with expectations, as sophisticated imputation techniques are better equipped to capture complex data patterns, leading to more reliable and robust predictive models.
 
@@ -1099,7 +800,7 @@ set_fit <- list(fit_complex_del, fit_complex_mean)
 plots_list <- vector("list", length(set_ds))  # pre-allocate
 
 for (i in seq_along(set_ds)) {
-  plots_list[[i]] <- my_diagnostic_plots(set_fit[[i]], set_ds[[i]])
+  plots_list[[i]] <- my_diagnostic_plots(set_fit[[i]], set_ds[[i]], blue_nord)
 }
 
 # Now `plots_list` is a list of patchwork objects. You can print them one at a time:
@@ -1109,25 +810,47 @@ plots_list[[2]]
 
 
 ```{r}
-pred_origin <- predict(fit_original_bad, newdata = test_data)
-pred_del <- predict(fit_complex_del, newdata = test_data)
-pred_mean <- predict(fit_complex_mean, newdata = test_data)
-
-# Define a list of prediction methods and their corresponding names
-predictions <- list(
-  "Listwise deletion" = pred_del,
-  "Mean Imputation" = pred_mean,
+# Define models and corresponding prediction variables
+models <- list(
+  "Listwise deletion" = fit_complex_del,
+  "Mean Imputation" = fit_complex_mean,
   "Linear regression (with noise)" = final_predictions_reg,
   "GAM Imputation" = final_predictions_gam,
   "Random Forest" = final_predictions_tree,
-  "Original Dataset" = pred_origin
+  "Original Dataset" = fit_original_bad
 )
 
-# Calculate RMSE for each method and print the results
-for (method in names(predictions)) {
-  rmse_value <- rmse(predictions[[method]], test_data$mpg)
-  cat(method, "(RMSE):", rmse_value, "\n")
+# Function to predict and calculate RMSE
+calculate_rmse <- function(model, new_data, true_values, is_final = FALSE) {
+  # Handle models that already contain final predictions
+  predictions <- if (is_final) model else predict(model, newdata = new_data)
+  rmse(predictions, true_values)
 }
+
+# Flag for final predictions
+final_methods <- c("Linear regression (with noise)", "GAM Imputation", "Random Forest")
+
+# Calculate RMSE for each model
+results <- lapply(names(models), function(method) {
+  rmse_value <- calculate_rmse(
+    models[[method]],
+    test_data,
+    test_data$mpg,
+    is_final = method %in% final_methods
+  )
+  data.frame(Method = method, RMSE = rmse_value)
+})
+
+# Combine results into a single data frame
+results_df <- do.call(rbind, results)
+
+# Optional: View results in a structured format
+print(results_df)
+```
+
+```{r}
+# Stop knit here
+knitr::knit_exit()
 ```
 
 # -------------------------------------------
@@ -1246,8 +969,6 @@ run_imputation_and_modeling <- function(train_data, test_data) {
 ```
 
 ```{r}
-library(caret)
-
 set.seed(123)
 K <- 5
 folds <- createFolds(1:nrow(data_original), k = K, list = TRUE)
