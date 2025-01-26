@@ -56,7 +56,7 @@ imputation_methods <- list(
   "KNN Imputation" = function(data) { imputed_data <- kNN(data, imp_var = FALSE)},
   "Regression" = function(data) { regression_imputation(data) },
   "Regression with Noise" = function(data) { regression_imputation(data, noise = TRUE) },
-  "Regression with Noise Emp" = function(data) { regression_imputation_emp(data, noise = TRUE) },
+  # "Regression with Noise Emp" = function(data) { regression_imputation_emp(data, noise = TRUE) },
   "GAM" = function(data) { gam_based_imputation(data) },
   "GAM with Noise" = function(data) { gam_based_imputation(data, noise = TRUE) },
   "Random Forest" = function(data) { tree_based_imputation(data) },
@@ -85,9 +85,9 @@ linear_data <- generate_data(n, "linear",x_range = c(0, 1),  noise_sd = 0.5,
 linear_missing <- delete_MAR_1_to_x(linear_data, p, cols_mis = "x2", cols_ctrl = "x1", x = 10)
 
 noise_imputation_methods <- list(
-  # "Regression" = function(data) { regression_imputation(data) },
+  "Regression" = function(data) { regression_imputation(data) },
   "Regression with Noise" = function(data) { regression_imputation(data, noise = TRUE) },
-  "Regression with Noise Emp" = function(data) { regression_imputation_emp(data, noise = TRUE) }
+  # "Regression with Noise Emp" = function(data) { regression_imputation_emp(data, noise = TRUE) }
 )
 
 # Use the new combined analysis function

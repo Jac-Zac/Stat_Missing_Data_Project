@@ -462,11 +462,8 @@ results)*
 
 #### References
 
-> Need to add references
+- Emmanuel, T., Maupong, T., Mpoeleng, D. et al. A survey on missing data in machine learning. J Big Data 8, 140 (2021). https://doi.org/10.1186/s40537-021-00516-9
 
 ```{r}
 citation("pROC")
 ```
-
--   ...
--   
