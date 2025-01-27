@@ -959,3 +959,6 @@ Based on our observations, we can draw the following conclusions:
 2.  **Bayesian Approaches**: This project utilized classical statistical methods with a frequentist approach. Incorporating Bayesian methods, as demonstrated by the MICE (Multivariate Imputation by Chained Equations) algorithm, could provide an interesting avenue for future work. Many studies suggest that Bayesian approaches may offer optimal solutions for imputing missing values, and integrating these methods into our analysis could enhance the results.
 
 3.  **Missing Not at Random (MNAR)**: We did not address the scenario of missing data that is Missing Not at Random (MNAR), which is often the most challenging case. In such cases, missingness depends on unobserved data, rendering common imputation techniques insufficient. This is an important topic to explore, and we propose future developments in this area to improve the handling of MNAR data.
+
+4. **Noise**:  We tried different methods of adding noise, but this approach appears to be both "simple" (as supported by the literature) and effective. However, the drawback might be that it does not adequately account for the heteroscedasticity of the dataset.
+
