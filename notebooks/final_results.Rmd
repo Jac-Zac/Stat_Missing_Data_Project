@@ -402,26 +402,6 @@ part_2 <- here("notebooks", "partial_analyses", "part_2.Rmd")
 rmarkdown::render(part_2)
 ```
 
-# Conclusions and Recommendations
-
-*(Add your conclusions and recommendations based on the analysis
-results)*
-
--   We tried different methods of adding noise, but this approach
-    appears to be both "simple" (as supported by the literature) and
-    effective. However, the drawback might be that it does not
-    adequately account for the heteroscedasticity of the dataset.
-
--   We did not explore the Bayesian approach, but it is currently quite
-    useful and interesting. We believe that delving deeper into this
-    area would be a worthwhile continuation.
-
--   We did not investigate categorical variables, as they were somewhat
-    outside the scope of this study. However, we believe that decision
-    trees could perform well in this context.
-
--   We did not extensively explore the removal of multiple variables...
-
 ## Appendix
 
 #### Notes on Missing Data Mechanisms
