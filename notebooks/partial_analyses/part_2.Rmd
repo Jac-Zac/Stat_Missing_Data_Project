@@ -677,34 +677,129 @@ plot_coefficients(cut_model_year_df, "Comparison of Cut Model Year Coefficients 
 #### Predictions based on RMSE
 
 ```{r}
-# Define models and their names
-models <- list(
-  "Listwise deletion" = fit_list,
-  "Mean Imputation" = fit_mean,
-  "Median Imputation" = fit_median,
-  "Linear regression (with noise)" = fit_reg,
-  "Random Forest" = fit_rf,
-  "GAM Imputation" = fit_gam,
-  "Original Dataset" = fit_original
-)
+run_imputation_and_modeling <- function(train_data, test_data, missingMar) {
+  
+  missingComplex <- missingMar
+  
+  # ----------------------------------------------------------------
+  # 2. Imputation strategies on missingComplex (or missingMar) 
+  #    (Choose which you actually want to use. Below is an example.)
+  # ----------------------------------------------------------------
+  imp_ds_mean   <- impute_mean(missingComplex)
+  imp_ds_median <- impute_median(missingComplex)
+  imp_del_list  <- listwise_deletion(missingComplex)
+  
+  imp_ds_reg <- regression_imputation(
+    missingComplex[, -which(names(missingComplex) == "car_brand")],
+    noise = TRUE
+  )
+  imp_ds_rf  <- tree_based_imputation(
+    missingComplex[, -which(names(missingComplex) == "car_brand")],
+    noise = TRUE
+  )
+  
+  # For GAM imputation, remove non-numeric or unneeded columns:
+  prova       <- missingComplex[, !names(missingComplex) %in% c("car_brand","origin","cylinders","cut_model_year")]
+  imp_ds_gam  <- gam_based_imputation(prova, noise = TRUE, max_predictors = 4)
+  # Add back the dropped columns, if needed
+  imp_ds_gam  <- cbind(imp_ds_gam, missingComplex[, c("car_brand","origin","cylinders","cut_model_year")])
+  
+  # ----------------------------------------------------------------
+  # 3. Fit models on each imputed dataset
+  # ----------------------------------------------------------------
+  fit_mean   <- lm(I(log(mpg)) ~ weight + horsepower + cut_model_year, data = imp_ds_mean)
+  fit_median <- lm(I(log(mpg)) ~ weight + horsepower + cut_model_year, data = imp_ds_median)
+  fit_list   <- lm(I(log(mpg)) ~ weight + horsepower + cut_model_year, data = imp_del_list)
+  fit_reg    <- lm(I(log(mpg)) ~ weight + horsepower + cut_model_year, data = imp_ds_reg)
+  fit_rf     <- lm(I(log(mpg)) ~ weight + horsepower + cut_model_year, data = imp_ds_rf)
+  fit_gam    <- lm(I(log(mpg)) ~ weight + horsepower + cut_model_year, data = imp_ds_gam)
 
-# Function to predict and calculate RMSE
-calculate_rmse <- function(model, new_data, true_values) {
-  predictions <- predict(model, newdata = new_data)
-  rmse(predictions, true_values)
+  # (Optional) Fit an "original" model on the *training* data itself 
+  fit_original <- lm(I(log(mpg)) ~ weight + horsepower + cut_model_year, data = train_data)
+
+  # ----------------------------------------------------------------
+  # 4. Organize models for easy iteration
+  # ----------------------------------------------------------------
+  models <- list(
+    "Listwise deletion"               = fit_list,
+    "Mean Imputation"                 = fit_mean,
+    "Median Imputation"               = fit_median,
+    "Linear regression (with noise)"  = fit_reg,
+    "Random Forest"                   = fit_rf,
+    "GAM Imputation"                  = fit_gam,
+    "Original Dataset (Train Fit)"    = fit_original
+  )
+  
+  # ----------------------------------------------------------------
+  # 5. Predict & calculate RMSE on the *test set*
+  # ----------------------------------------------------------------
+  calculate_rmse <- function(model, new_data, true_values) {
+    preds <- predict(model, newdata = new_data)
+    rmse(preds, true_values)
+  }
+  
+  results <- lapply(names(models), function(method) {
+    data.frame(
+      Method = method,
+      RMSE   = calculate_rmse(models[[method]], test_data, test_data$mpg)
+    )
+  })
+  
+  # Return a single data frame with columns: Method, RMSE
+  do.call(rbind, results)
+}
+```
+
+```{r kcross}
+set.seed(42)
+data_original<-auto_mpg
+K <- 5
+folds <- createFolds(1:nrow(data_original), k = K, list = TRUE)
+
+methods <- c("Listwise deletion", 
+             "Mean Imputation",
+             "Median Imputation",
+             "Linear regression (with noise)",
+             "Random Forest",
+             "GAM Imputation",
+             "Original Dataset (Train Fit)")
+
+# store RMSE for each fold in a matrix
+rmse_results <- matrix(NA, nrow = K, ncol = length(methods),
+                       dimnames = list(paste0("Fold", 1:K), methods))
+
+# We can also store the entire data-frame style results if you prefer
+all_results <- vector("list", K)
+
+for (i in seq_along(folds)) {
+  test_idx  <- folds[[i]]
+  train_idx <- setdiff(seq_len(nrow(data_original)), test_idx)
+  
+  train_data <- data_original[train_idx, ]
+  test_data  <- data_original[test_idx, ]
+  test_data$mpg<-log(test_data$mpg)
+
+  # 2a. Induce missingness on train_data 
+  missingMar<-delete_MAR_1_to_x(data_original, p = 0.2, cols_mis = "weight", cols_ctrl ="displacement", x =100)
+  missingMar<-delete_MAR_censoring(missingMar, p = 0.1, cols_mis = "weight", cols_ctrl = "acceleration")
+
+  fold_results <- run_imputation_and_modeling(train_data, test_data, missingMar)
+  
+  # fold_results is a data frame with columns: Method, RMSE
+  all_results[[i]] <- data.frame(Fold = i, fold_results)
+  
+  # Also fill into the rmse_results matrix
+  for (m in methods) {
+    rmse_results[i, m] <- fold_results$RMSE[fold_results$Method == m]
+  }
 }
 
-# Apply RMSE calculation to all models
-results <- lapply(names(models), function(method) {
-  rmse_value <- calculate_rmse(models[[method]], test_data, test_data$mpg)
-  data.frame(Method = method, RMSE = rmse_value)
-})
 
-# Combine results into a single data frame
-results_df <- do.call(rbind, results)
+# Create a single data frame of all folds 
+combined_results <- do.call(rbind, all_results)
 
-# Optional: View results in a more structured format
-print(results_df)
+# avg per method
+aggregate(RMSE ~ Method, data = combined_results, FUN = mean)
 ```
 
 The analysis revealed that advanced imputation methods, particularly random forest and GAM, yielded superior model performance, as evidenced by more accurate coefficient estimates and narrower confidence intervals. These methods were followed by regression imputation, while simpler approaches like mean imputation and listwise deletion demonstrated comparatively lower performance. This outcome aligns with expectations, as sophisticated imputation techniques are better equipped to capture complex data patterns, leading to more reliable and robust predictive models.
