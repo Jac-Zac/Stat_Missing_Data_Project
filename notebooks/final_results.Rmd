@@ -140,7 +140,6 @@ dataset based on a MAR mechanism. Missingness depends on values in a
 
 ```{r}
 data.MAR.uni <- delete_MAR_censoring(synthetic_data, p = 0.1, cols_mis = c('X1'), cols_ctrl = c('X2'))
-aggr(data.MAR.uni, sortVars=TRUE, plot = TRUE, numbers = TRUE , labels=names(synthetic_data), col = nord_contrast)
 
 # Create a new dataset indicating missing status
 intersection_dataset <- synthetic_data
@@ -243,7 +242,9 @@ final_plot5 <- ggMarginal(scatter_plot5, margins = "y",
                          type = "boxplot", size = 10, width = 0.15, outlier.size = 1)
 
 # Arrange the plots in a 2x2 grid
-grid.arrange(final_plot2, final_plot3, final_plot4, final_plot5, ncol = 2)
+grid.arrange(final_plot2, final_plot3, final_plot4, final_plot5, 
+            ncol = 2,
+            top = textGrob("MAR censoring method visualisation", gp = gpar(fontsize = 16, font = 2)))
 
 ```
 
@@ -278,13 +279,6 @@ data.MAR.multi <- delete_MAR_1_to_x(data.MAR.multi,
                                     cols_ctrl = c('X5'), 
                                     x = 50)
 
-par(mfcol=c(2, 2))
-aggr(data.MAR.multi, 
-     sortVars=TRUE, 
-     plot = TRUE, 
-     numbers = TRUE , 
-     labels=names(synthetic_data), 
-     col = nord_contrast)
 
 plot_missing_data(data.MAR.multi, "MAR multi", c("white", red_nord))
 ```
@@ -383,7 +377,9 @@ final_plot5 <- ggMarginal(scatter_plot5, margins = "y",
                          type = "boxplot", size = 10, width = 0.15, outlier.size = 1)
 
 # Arrange the plots in a 2x2 grid
-grid.arrange(final_plot2, final_plot3, final_plot4, final_plot5, ncol = 2)
+grid.arrange(final_plot2, final_plot3, final_plot4, final_plot5, 
+            ncol = 2,
+            top = textGrob("MAR likelihood method visualisation", gp = gpar(fontsize = 16, font = 2)))
 
 ```
 

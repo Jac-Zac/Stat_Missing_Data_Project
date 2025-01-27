@@ -115,7 +115,7 @@ To add new version ...
 _This project is part of the Statistical Methods Examination._
 
 
-- [ ] Titolo grafici prima parte
+- [x] Titolo grafici prima parte
 - [ ] Performance metrica cambiare e spostare dopo imputations
 - [ ] Cambiare il nome di imputations e mettere techniques to deal with missing data
 - [ ] Cambiare grafici imputazione prima parte
