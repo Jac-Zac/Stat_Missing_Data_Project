@@ -113,21 +113,3 @@ To add new version ...
 ---
 
 _This project is part of the Statistical Methods Examination._
-
-
-- [x] Titolo grafici prima parte
-- [x] Performance metrica cambiare e spostare dopo imputations
-- [x] Cambiare il nome di imputations e mettere techniques to deal with missing data
-- [ ] Cambiare grafici imputazione prima parte
-- [x] Togliere conclusioni prima parte e appendice
-- [x] Cambiare densità 
-- [x] Cancellare best fitted model
-- [ ] Cancellare roba a caso
-- [ ] Cambiamo percentuale in frequency missing data10. 
-- [x] Aggiustare boxplot Cristiano seconda parte
-- [x] Aprire i codici nei summary
-- [x] Aggiungere i titoli nei residui
-- [ ] Cambiare le leggende nei grafici mettendo originale
-- [ ] Aprire codice intervalli di confidenza
-- [ ] Togliere print da coefficient cut model year
-- [ ] Togliere seed in k cross
