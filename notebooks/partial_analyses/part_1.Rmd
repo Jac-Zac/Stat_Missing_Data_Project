@@ -202,4 +202,8 @@ imputation_plots <- log_result$imputation_plots
 grid.arrange(grobs = imputation_plots, ncol = 2)
 ```
 
-\`\`\`{r, fig.width=18, fig.height=12} \# Access the metrics plot metrics_plot \<- log_result\$metrics_plot print(metrics_plot)
+```{r, fig.width=18, fig.height=12}
+# Access the metrics plot
+metrics_plot <- log_result$metrics_plot
+print(metrics_plot)
+```
