@@ -400,14 +400,13 @@ aggr_plot <- aggr(missingMar, numbers = TRUE,labels=names(data_original), prop =
 
 #plot 2
 missing.rows = dim(missingMar)[1] -  dim(na.omit(missingMar))[1]
-#sprintf("Dim dataset: [%s]", toString(dim(missingMar)))
 sprintf("Missing rows: %s (%s%%)", missing.rows, round((missing.rows*100)/dim(missingMar)[1], 2))
 
 missings_df <- data.frame(type=c("missing", "non-missing") ,count = c(missing.rows,  dim(na.omit(missingMar))[1]))
 
 ggplot(missings_df, aes(fill=type, y="", x=count)) + 
     geom_bar(position="stack", stat="identity")+
-    ggtitle("%missing data") +
+    ggtitle("Missing data frequency") +
     xlab("Obs") + ylab("") +
     theme(text = element_text(size = 18))+
     scale_fill_manual(values = c(nord_colors[2], nord_colors[3]))+
@@ -821,7 +820,7 @@ missings_df <- data.frame(type=c("missing", "non-missing") ,count = c(missing.ro
 
 ggplot(missings_df, aes(fill=type, y="", x=count)) + 
     geom_bar(position="stack", stat="identity")+
-    ggtitle("%missing data") +
+    ggtitle("Missing data frequency") +
     xlab("Obs") + ylab("") +
     theme(text = element_text(size = 18))+
     scale_fill_manual(values = c(nord_colors[2], nord_colors[3]))+
