@@ -428,26 +428,15 @@ weight_pad <- diff(weight_range) * 0.05
 accel_pad <- diff(accel_range) * 0.05
 
 # First plot: DIS vs. Weight
-plot_data1 <- rbind(
-  data.frame(
-    X = data_original$displacement,
-    Y = data_original$weight,
-    missing = "Present"
-  ),
-  data.frame(
-    X = missingMar$displacement,
-    Y = missingMar$weight,
-    missing = "Missing"
-  )
-)
-
-scatter_plot1 <- ggplot(plot_data1, aes(x = X, y = Y, color = missing)) +
+plot_data1 <- data_original[, c("weight", "displacement")]
+plot_data1$missing <- ifelse(is.na(missingMar$weight), "Missing", "Present")
+scatter_plot1 <- ggplot(plot_data1, aes(x = weight, y = displacement, color = missing)) +
   geom_point(size = 2) +  # Increased point size
-  scale_color_manual(values = c("Missing" = "black", "Present" = red_nord)) +  # Corrected color mapping
-  scale_x_continuous(limits = c(dis_range[1] - dis_pad, dis_range[2] + dis_pad)) +
-  scale_y_continuous(limits = c(weight_range[1] - weight_pad, weight_range[2] + weight_pad)) +
+  scale_color_manual(values = c("Missing" = red_nord, "Present" = "black")) +  # Corrected color mapping
+  scale_y_continuous(limits = c(dis_range[1] - dis_pad, dis_range[2] + dis_pad)) +
+  scale_x_continuous(limits = c(weight_range[1] - weight_pad, weight_range[2] + weight_pad)) +
   theme_minimal(base_size = 12) +  # Increased base font size
-  labs(color = "Data Status", x = "Displacement", y = "Weight") +
+  labs(color = "Data Status", x = "Weight", y = "Displacement") +
   theme(legend.position = "none")
 
 final_plot1 <- ggMarginal(scatter_plot1, 
@@ -460,26 +449,16 @@ final_plot1 <- ggMarginal(scatter_plot1,
                           outlier.size = 1)
 
 # Second plot: Acceleration vs. Weight
-plot_data2 <- rbind(
-  data.frame(
-    X = data_original$acceleration,
-    Y = data_original$weight,
-    missing = "Present"
-  ),
-  data.frame(
-    X = missingMar$acceleration,
-    Y = missingMar$weight,
-    missing = "Missing"
-  )
-)
+plot_data2 <- data_original[, c("weight", "acceleration")]
+plot_data2$missing <- ifelse(is.na(missingMar$weight), "Missing", "Present")
 
-scatter_plot2 <- ggplot(plot_data2, aes(x = X, y = Y, color = missing)) +
+scatter_plot2 <- ggplot(plot_data2, aes(x = weight, y = acceleration, color = missing)) +
   geom_point(size = 2) +  
-  scale_color_manual(values = c("Missing" = "black", "Present" = red_nord)) +  
-  scale_x_continuous(limits = c(accel_range[1] - accel_pad, accel_range[2] + accel_pad)) +
-  scale_y_continuous(limits = c(weight_range[1] - weight_pad, weight_range[2] + weight_pad)) +
+  scale_color_manual(values = c("Missing" = red_nord, "Present" = "black" )) +  
+  scale_y_continuous(limits = c(accel_range[1] - accel_pad, accel_range[2] + accel_pad)) +
+  scale_x_continuous(limits = c(weight_range[1] - weight_pad, weight_range[2] + weight_pad)) +
   theme_minimal(base_size = 12) +  
-  labs(color = "Data Status", x = "Acceleration", y = "Weight") +
+  labs(color = "Data Status", x = "Weight", y = "Acceleration") +
   theme(legend.position = "none")
 
 final_plot2 <- ggMarginal(scatter_plot2, 
@@ -1100,23 +1079,22 @@ colMeans(rmse_results, na.rm = TRUE)  # average RMSE across folds
 
 ```
 
-
 ## Conclusions
 
 In this project, we analyzed the problem of missing data, focusing on the Missing at Random (MAR) missingness mechanism. We studied several imputation techniques, as discussed in the literature, and assessed their performance through two main approaches. First, we evaluated how well the distribution of the imputed dataset approximated the original one. Second, we examined the impact of different imputation methods on model fitting, specifically how the estimates of coefficients and the Root Mean Square Error (RMSE) were affected by imputation.
 
 Based on our observations, we can draw the following conclusions:
 
-- **Advanced Imputation Techniques**: More sophisticated imputation methods, such as those based on GAM and Random Forests RF, proved to be highly accurate. When the percentage of missing data is relatively small, these methods produce reliable results.
-  
-- **Listwise Deletion with Simple Models**: When applying listwise deletion to impute missing values, the results remained relatively robust, particularly when fitting less flexible models, such as linear regression. These simple models did not perform poorly even under listwise deletion.
+-   **Advanced Imputation Techniques**: More sophisticated imputation methods, such as those based on GAM and Random Forests RF, proved to be highly accurate. When the percentage of missing data is relatively small, these methods produce reliable results.
 
-- **Simple imputation and by regression**: Simple imputation usually resulted in the worst results, thus proving to be a weak technique. Imputation by regression, especially in the case study, worked enough well, and if the data were linearly related it performed as well as GAM.
+-   **Listwise Deletion with Simple Models**: When applying listwise deletion to impute missing values, the results remained relatively robust, particularly when fitting less flexible models, such as linear regression. These simple models did not perform poorly even under listwise deletion.
+
+-   **Simple imputation and by regression**: Simple imputation usually resulted in the worst results, thus proving to be a weak technique. Imputation by regression, especially in the case study, worked enough well, and if the data were linearly related it performed as well as GAM.
 
 ### Suggestions for Future Work:
 
-1. **Categorical Variables**: Our analysis focused on continuous variables. Future work could extend this analysis to categorical variables, exploring the impact of removing values from different factors or the interaction between categorical variables and missing data in imputation.
+1.  **Categorical Variables**: Our analysis focused on continuous variables. Future work could extend this analysis to categorical variables, exploring the impact of removing values from different factors or the interaction between categorical variables and missing data in imputation.
 
-2. **Bayesian Approaches**: This project utilized classical statistical methods with a frequentist approach. Incorporating Bayesian methods, as demonstrated by the MICE (Multivariate Imputation by Chained Equations) algorithm, could provide an interesting avenue for future work. Many studies suggest that Bayesian approaches may offer optimal solutions for imputing missing values, and integrating these methods into our analysis could enhance the results.
+2.  **Bayesian Approaches**: This project utilized classical statistical methods with a frequentist approach. Incorporating Bayesian methods, as demonstrated by the MICE (Multivariate Imputation by Chained Equations) algorithm, could provide an interesting avenue for future work. Many studies suggest that Bayesian approaches may offer optimal solutions for imputing missing values, and integrating these methods into our analysis could enhance the results.
 
-3. **Missing Not at Random (MNAR)**: We did not address the scenario of missing data that is Missing Not at Random (MNAR), which is often the most challenging case. In such cases, missingness depends on unobserved data, rendering common imputation techniques insufficient. This is an important topic to explore, and we propose future developments in this area to improve the handling of MNAR data.
+3.  **Missing Not at Random (MNAR)**: We did not address the scenario of missing data that is Missing Not at Random (MNAR), which is often the most challenging case. In such cases, missingness depends on unobserved data, rendering common imputation techniques insufficient. This is an important topic to explore, and we propose future developments in this area to improve the handling of MNAR data.

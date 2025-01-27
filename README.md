@@ -123,7 +123,8 @@ _This project is part of the Statistical Methods Examination._
 - [x] Cambiare densità 
 - [ ] Cancellare best fitted model
 - [ ] Cancellare roba a caso
-- [ ] Cambiamo percentuale in frequency missing data10.  Aggiustare boxplot Cristiano seconda parte
+- [ ] Cambiamo percentuale in frequency missing data10. 
+- [x] Aggiustare boxplot Cristiano seconda parte
 - [ ] Aprire i codici nei summary
 - [ ] Aggiungere i titoli nei residui
 - [ ] Cambiare le leggende nei grafici mettendo originale
