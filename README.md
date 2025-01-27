@@ -72,8 +72,9 @@ This part will be a case study on a real dataset with missing data. In this sect
 ```
 
 - [`README.md`](README.md): Project documentation
-- [`part_1.Rmd`](notebooks/imputation_techniqus_visualization.Rmd): Analyzing missing data patterns + imputation on synthetic data
-- [`part_2.Rmd`](notebooks/imputation_techniques_visualization.Rmd): This will contain a case study on a real dataset
+- [`final_results.html`](notebooks/final_results.html): Project html file containing everything we will present
+- [`part_1.Rmd`](notebooks/partial_analyses/part_1.Rmd): Analyzing missing data patterns + imputation on synthetic data
+- [`part_2.Rmd`](notebooks/partial_analyses/part_2.Rmd): This will contain a case study on a real dataset
 - [`final_results.Rmd`](notebooks/final_results.Rmd): Comprehensive results and conclusions (the file which puts everything together)
   > Run knit on this file to obtain the final report
 

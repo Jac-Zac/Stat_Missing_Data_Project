@@ -8,3 +8,4 @@
 *.pdf
 **/final_results_cache
 **/final_results_files
+!final_results.html
