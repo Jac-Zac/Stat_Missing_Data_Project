@@ -415,7 +415,7 @@ ggplot(missings_df, aes(fill=type, y="", x=count)) +
 
 #### Plot missingvalues of weight against displacement and acceleration
 
-```{r plot mv, warning=FALSE}
+```{r plot mv, warning=FALSE, fig.height=9}
 # Calculate global ranges for both x and y variables
 dis_range <- range(c(data_original$displacement, missingMar$displacement), na.rm = TRUE)
 weight_range <- range(c(data_original$weight, missingMar$weight), na.rm = TRUE)
@@ -625,7 +625,7 @@ coef_df <- extract_coefficients(fit_models)
 ```{r}
 # Selected coefficient example: Intercept
 intercept_df <- extract_coefficients(fit_models, coef_names = "(Intercept)")
-print(intercept_df)
+intercept_df
 
 # Plotting Intercept
 plot_coefficients(intercept_df, "Comparison of Intercept Coefficients with Confidence Intervals", y_limits = c(3.65, 4.05))
@@ -636,7 +636,7 @@ plot_coefficients(intercept_df, "Comparison of Intercept Coefficients with Confi
 ```{r}
 # Selected coefficient example: Weight
 weight_df <- extract_coefficients(fit_models, coef_names = "weight")
-print(weight_df)
+weight_df
 
 # Plotting Weight
 plot_coefficients(weight_df, "Comparison of Weight Coefficients with Confidence Intervals")
@@ -649,7 +649,7 @@ plot_coefficients(weight_df, "Comparison of Weight Coefficients with Confidence 
 coef_names <-"horsepower" # Specify the coefficients you want to compare
 # Selected coefficient example: Horsepower
 horsepower_df <- extract_coefficients(fit_models, coef_names = "horsepower")
-print(horsepower_df)
+horsepower_df
 
 # Plotting Horsepower
 plot_coefficients(horsepower_df, "Comparison of Horsepower Coefficients with Confidence Intervals")
@@ -660,7 +660,6 @@ plot_coefficients(horsepower_df, "Comparison of Horsepower Coefficients with Con
 ```{r}
 # Selected coefficients: Multiple terms (e.g., cut_model_year)
 cut_model_year_df <- extract_coefficients(fit_models, coef_names = c("cut_model_year74-76", "cut_model_year77-79", "cut_model_year80-82"))
-print(cut_model_year_df)
 
 # Plotting Multiple Terms
 plot_coefficients(cut_model_year_df, "Comparison of Cut Model Year Coefficients with Confidence Intervals")
@@ -938,173 +937,7 @@ results <- lapply(names(models), function(method) {
 results_df <- do.call(rbind, results)
 
 # Optional: View results in a structured format
-print(results_df)
-```
-
-```{r}
-# Stop knit here
-knitr::knit_exit()
-```
-
-# -------------------------------------------
-
-# TODO
-
-# -------------------------------------------
-
-## *fare kcross-val*
-
-```{r}
-run_imputation_and_modeling <- function(train_data, test_data) {
-  
-  #------------------------------------------------------
-  # 3a. (Optional) Induce Missingness on train_data
-  #     - If you already have a "missing creation" step
-  #       like delete_MAR_1_to_x, you apply it here.
-  #------------------------------------------------------
-  missingMar <- delete_MAR_1_to_x(
-    train_data, 
-    p = c(0.2,0.2,0.2),
-    cols_mis = c("weight", "horsepower", "mpg"),
-    cols_ctrl = c("displacement","acceleration","displacement"),
-    x = 10
-  )
-
-  # Let's replicate your second stage of missing data creation:
-  idx_miss   <- which(!complete.cases(missingMar))
-  df_no_miss <- missingMar[complete.cases(missingMar),]
-  
-  tmp <- delete_MAR_1_to_x(
-    df_no_miss,
-    p = c(0.2),
-    cols_mis = c("displacement"),
-    cols_ctrl = c("horsepower"),
-    x = 100
-  )
-  
-  missingComplex <- missingMar
-  missingComplex[complete.cases(missingMar), ] <- tmp
-  
-  # (Optional) If you have a categorical variable:
-  # missingComplex$cut_model_year <- as.factor(missingComplex$cut_model_year)
-
-  #------------------------------------------------------
-  # 3b. Imputation approaches
-  #------------------------------------------------------
-  # Listwise deletion
-  complex_ds_del  <- listwise_deletion(missingComplex)
-  # Mean imputation
-  complex_ds_mean <- impute_mean(missingComplex)
-  
-  # For MICE approaches, let's remove categorical columns or keep them as needed
-  no_categorical_dataset <- Filter(is.numeric, missingComplex)
-  
-  # If you want multiple MICE methods, define them similarly:
-  # final_predictions_tree, final_predictions_gam, final_predictions_reg
-  # But for cross-validation, you'd typically run MICE on the training data
-  # and then also apply the same transformations to test_data.
-  # For demonstration, let's just illustrate one approach:
-
-  # Example: "forest.noise"
-  final_predictions_tree <- impute_and_predict(
-    "forest.noise", 
-    no_categorical_dataset, 
-    formula = I(log(mpg)) ~ weight + horsepower, 
-    test_data,
-    "Pooled_Forest"
-  )
-
-  # Similarly for "gam.noise", "norm.predict", etc.
-  final_predictions_gam <- impute_and_predict(
-    "gam.noise", 
-    no_categorical_dataset, 
-    I(log(mpg)) ~ weight + horsepower, 
-    test_data,
-    "Pooled_GAM"
-  )
-
-  final_predictions_reg <- impute_and_predict(
-    "norm.predict", 
-    no_categorical_dataset, 
-    I(log(mpg)) ~ weight + horsepower, 
-    test_data,
-    "Pooled_Regression"
-  )
-
-  #------------------------------------------------------
-  # 3c. Fit your "simple" models directly on imputed data
-  #     (Listwise Deletion, Mean Imputation)
-  #------------------------------------------------------
-  fit_complex_del  <- lm(I(log(mpg)) ~ weight + horsepower, data = complex_ds_del)
-  fit_complex_mean <- lm(I(log(mpg)) ~ weight + horsepower, data = complex_ds_mean)
-
-  # We assume you already have a test_data with real mpg values
-  pred_del  <- predict(fit_complex_del,  newdata = test_data)
-  pred_mean <- predict(fit_complex_mean, newdata = test_data)
-
-  # If you also want the "original" model on the train set:
-  fit_original_bad <- lm(I(log(mpg)) ~ weight + horsepower, data = train_data)
-  pred_origin <- predict(fit_original_bad, newdata = test_data)
-
-  #------------------------------------------------------
-  # 3d. Organize predictions
-  #------------------------------------------------------
-  predictions <- list(
-    "Listwise deletion"           = pred_del,
-    "Mean Imputation"             = pred_mean,
-    "Linear regression (noise)"   = final_predictions_reg,
-    "GAM Imputation"              = final_predictions_gam,
-    "Random Forest"               = final_predictions_tree,
-    "Original Dataset (Train Fit)"= pred_origin
-  )
-  
-  return(predictions)
-}
-
-```
-
-```{r}
-K <- 5
-folds <- createFolds(1:nrow(data_original), k = K, list = TRUE)
-
-methods <- c("Listwise deletion", 
-             "Mean Imputation",
-             "Linear regression (noise)",
-             "GAM Imputation",
-             "Random Forest",
-             "Original Dataset (Train Fit)")
-
-rmse_results <- matrix(NA, nrow = K, ncol = length(methods),
-                       dimnames = list(paste0("Fold", 1:K), methods))
-
-for(i in seq_along(folds)) {
-  test_idx  <- folds[[i]]
-  train_idx <- setdiff(seq_len(nrow(data_original)), test_idx)
-  
-  train_data <- data_original[train_idx, ]
-  test_data  <- data_original[test_idx, ]
-  
-  # -- Induce missingness in train_data --
-  missingMar <- delete_MAR_1_to_x(train_data, p = c(0.2,0.2,0.2),
-                                  cols_mis = c("weight","horsepower","mpg"),
-                                  cols_ctrl = c("displacement","acceleration","displacement"),
-                                  x=10)
-
-  # Repeat or wrap the entire missing creation -> imputation -> modeling
-  # as a function for clarity, as shown previously.
-
-  # Suppose you produce 'preds' as a named list of predictions:
-  preds <- run_imputation_and_modeling(train_data, test_data)
-  
-  # Compute RMSE for each method
-  for(m in methods) {
-    rmse_results[i, m] <- rmse(preds[[m]], test_data$mpg)
-  }
-}
-
-# Summarize
-colMeans(rmse_results, na.rm = TRUE)  # average RMSE across folds
-
+results_df
 ```
 
 ## Conclusions
