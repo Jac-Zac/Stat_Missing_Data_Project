@@ -121,11 +121,11 @@ _This project is part of the Statistical Methods Examination._
 - [ ] Cambiare grafici imputazione prima parte
 - [x] Togliere conclusioni prima parte e appendice
 - [x] Cambiare densità 
-- [ ] Cancellare best fitted model
+- [x] Cancellare best fitted model
 - [ ] Cancellare roba a caso
 - [ ] Cambiamo percentuale in frequency missing data10. 
 - [x] Aggiustare boxplot Cristiano seconda parte
-- [ ] Aprire i codici nei summary
+- [x] Aprire i codici nei summary
 - [x] Aggiungere i titoli nei residui
 - [ ] Cambiare le leggende nei grafici mettendo originale
 - [ ] Aprire codice intervalli di confidenza
