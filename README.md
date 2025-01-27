@@ -119,7 +119,7 @@ _This project is part of the Statistical Methods Examination._
 - [x] Performance metrica cambiare e spostare dopo imputations
 - [x] Cambiare il nome di imputations e mettere techniques to deal with missing data
 - [ ] Cambiare grafici imputazione prima parte
-- [ ] Togliere conclusioni prima parte e appendice
+- [x] Togliere conclusioni prima parte e appendice
 - [ ] Cambiare densità 
 - [ ] Cancellare best fitted model
 - [ ] Cancellare roba a caso
