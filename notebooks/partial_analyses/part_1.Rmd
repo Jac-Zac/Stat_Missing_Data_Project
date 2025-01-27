@@ -24,44 +24,32 @@ suppressMessages(library(here))
 source(here("src", "setup.R"))
 ```
 
-
-# Imputation techiques
+# Imputation techniques
 
 This section reviews imputation techniques for handling missing data, from simple deletion methods to advanced machine learning approaches, highlighting their uses and impact on data reliability.
 
-| **Imputation Technique**         | **Description**                                 | **Strengths**                               | **Limitations**                                |
-|-----------------------------------|-------------------------------------------------|---------------------------------------------|------------------------------------------------|
-| **List-wise Deletion**            | Removes cases with missing values.              | Simple; works for MCAR data.                | Causes data loss and bias if MCAR is violated. |
-| **Pairwise Deletion**             | Removes data points only when necessary.        | Retains more data; less bias for MCAR/MAR.  | Inconsistent sample sizes; potential bias.     |
-| **Simple Imputation**             | Replaces missing values with mean, median, or mode. | Easy and efficient.                         | Can distort data and introduce bias.           |
-| **Regression Imputation**         | Predicts missing values using regression.      | Preserves sample size; good for MAR.        | Assumes linearity; less effective for non-linear data. |
-| **Hot-deck Imputation**           | Uses similar cases to fill missing values.      | Avoids model assumptions.                  | Less reliable for small datasets.              |
-| **Expectation-Maximization (EM)** | Iteratively estimates missing values.          | Accurate imputations; handles MAR well.     | Computationally intensive.                    |
-| **Multiple Imputation**           | Generates multiple datasets to reflect uncertainty. | Reduces bias; more robust results.          | Time-consuming; complex to combine results.    |
-| **GAM Imputation**                | Uses Generalized Additive Models for non-linear data. | Flexible for non-linear data.              | More complex and computationally expensive.    |
-| **Decision Tree / Random Forest** | Builds models using decision trees.            | Captures complex patterns; handles various data types. | Computationally heavy; prone to overfitting.   |
-| **K-Nearest Neighbors (KNN)**     | Imputes based on nearest neighbors.            | Flexible and captures patterns.             | High computational cost for large datasets.    |                                                                                                                   |
+| **Imputation Technique** | **Description** | **Strengths** | **Limitations** |
+|-----------------|-------------------|------------------|-------------------|
+| **List-wise Deletion** | Removes cases with missing values. | Simple; works for MCAR data. | Causes data loss and bias if MCAR is violated. |
+| **Pairwise Deletion** | Removes data points only when necessary. | Retains more data; less bias for MCAR/MAR. | Inconsistent sample sizes; potential bias. |
+| **Simple Imputation** | Replaces missing values with mean, median, or mode. | Easy and efficient. | Can distort data and introduce bias. |
+| **Regression Imputation** | Predicts missing values using regression. | Preserves sample size; good for MAR. | Assumes linearity; less effective for non-linear data. |
+| **Hot-deck Imputation** | Uses similar cases to fill missing values. | Avoids model assumptions. | Less reliable for small datasets. |
+| **Expectation-Maximization (EM)** | Iteratively estimates missing values. | Accurate imputations; handles MAR well. | Computationally intensive. |
+| **Multiple Imputation** | Generates multiple datasets to reflect uncertainty. | Reduces bias; more robust results. | Time-consuming; complex to combine results. |
+| **GAM Imputation** | Uses Generalized Additive Models for non-linear data. | Flexible for non-linear data. | More complex and computationally expensive. |
+| **Decision Tree / Random Forest** | Builds models using decision trees. | Captures complex patterns; handles various data types. | Computationally heavy; prone to overfitting. |
+| **K-Nearest Neighbors (KNN)** | Imputes based on nearest neighbors. | Flexible and captures patterns. | High computational cost for large datasets. |
 
 ## Performance metrics between Datasets
 
-Since we possess the **original dataset prior to the introduction of
-missing values**, we will introduce *two metrics* to compare *the
-distributions of two datasets*: the **original dataset** without missing
-values and the dataset in which missing values have been **imputed**
-using various techniques
+Since we possess the **original dataset prior to the introduction of missing values**, we will introduce *two metrics* to compare *the distributions of two datasets*: the **original dataset** without missing values and the dataset in which missing values have been **imputed** using various techniques
 
-We indeed care about comparing the distribution of the two datasets more
-than comparing pointwise the actual reconstruction of the dataset.
+We indeed care about comparing the distribution of the two datasets more than comparing pointwise the actual reconstruction of the dataset.
 
--   The **Jensen–Shannon Divergence (JSD)** quantifies the similarity or
-    divergence between two probability distributions $P$ and $Q$. It is
-    based on the midpoint distribution $M = \frac{1}{2}(P + Q)$ and is
-    calculated as the average of the Kullback-Leibler (KL) divergences
-    of $P$ and $Q$ relative to $M$. JSD is symmetric and always
-    non-negative, with values ranging between $0$ (identical
-    distributions) and $\log(2)$ (distributions with disjoint supports).
+-   The **Jensen–Shannon Divergence (JSD)** quantifies the similarity or divergence between two probability distributions $P$ and $Q$. It is based on the midpoint distribution $M = \frac{1}{2}(P + Q)$ and is calculated as the average of the Kullback-Leibler (KL) divergences of $P$ and $Q$ relative to $M$. JSD is symmetric and always non-negative, with values ranging between $0$ (identical distributions) and $\log(2)$ (distributions with disjoint supports).
 
--   The **Wasserstein distance**  provides a way to measure the cost of transforming one probability distribution into another. It can be viewed as the minimum “effort” required to transport all the mass of one distribution to match the other, where the cost depends on both the amount of mass moved and the distance it travels. Unlike divergence-based measures (e.g. KL or JS divergence), Wasserstein distance naturally accounts for the geometry of the sample space, making it particularly useful when the shapes or locations of the distributions differ.
+-   The **Wasserstein distance** provides a way to measure the cost of transforming one probability distribution into another. It can be viewed as the minimum “effort” required to transport all the mass of one distribution to match the other, where the cost depends on both the amount of mass moved and the distance it travels. Unlike divergence-based measures (e.g. KL or JS divergence), Wasserstein distance naturally accounts for the geometry of the sample space, making it particularly useful when the shapes or locations of the distributions differ.
 
 ## Visualization of the different techiques
 
@@ -82,7 +70,6 @@ imputation_methods <- list(
   "Random Forest with Noise" = function(data) { tree_based_imputation(data, noise=TRUE) }
 )
 ```
-
 
 ### Linear Relationship
 
@@ -137,7 +124,6 @@ metrics_plot <- linear_result$metrics_plot
 print(metrics_plot)
 ```
 
-
 ### Quadratic Relationship
 
 The second dataset is constructed with a quadratic relationship and an unbalanced number of data points. In cases involving quadratic relationships, we anticipate that more flexible imputation methods, such as Generalized Additive Models (GAM) and Random Forest, will outperform simple linear regression due to their ability to capture complex, non-linear patterns in the data. The relationship is generated via: $x^2 + \epsilon$.
@@ -166,18 +152,17 @@ print(metrics_plot)
 
 The third dataset is designed with a piecewise relationship, where distinct segments of the data follow different patterns. For this type of distribution, we expect imputation methods capable of handling discontinuities and local variations, such as Random Forest and k-Nearest Neighbors, to perform better than global modeling approaches like linear regression, which may struggle to accurately capture the segmented structure of the data. To avoid missingness in only one of the pieces, we lowered the odds to 3 instead of the usual 10.
 
-The dependent variable \(x_2\) is generated using the following piecewise relationship:
+The dependent variable $x_2$ is generated using the following piecewise relationship:
 
-\[
+$$
 x_2 =
 \begin{cases} 
 2 + 2x_1 + \epsilon, & \text{if } x_1 < \text{pivot} \\
 15 + 5x_1 + \epsilon, & \text{if } x_1 \geq \text{pivot}
 \end{cases}
-\]
+$$
 
-Here, \(\text{pivot} = \frac{x_{\text{range}[1]} + x_{\text{range}[2]}}{2}\), and \(\epsilon\) is a random noise term added to introduce variability.
-
+Here, $\text{pivot} = \frac{x_{\text{range}[1]} + x_{\text{range}[2]}}{2}$, and $\epsilon$ is a random noise term added to introduce variability.
 
 ```{r, fig.width=18, fig.height=20}
 # Generate and create missing data
@@ -217,7 +202,4 @@ imputation_plots <- log_result$imputation_plots
 grid.arrange(grobs = imputation_plots, ncol = 2)
 ```
 
-```{r, fig.width=18, fig.height=12}
-# Access the metrics plot
-metrics_plot <- log_result$metrics_plot
-print(metrics_plot)
+\`\`\`{r, fig.width=18, fig.height=12} \# Access the metrics plot metrics_plot \<- log_result\$metrics_plot print(metrics_plot)
