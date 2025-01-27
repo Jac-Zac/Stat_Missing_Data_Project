@@ -570,12 +570,41 @@ for (i in seq_along(set_ds)) {
   plots_list[[i]] <- my_diagnostic_plots(set_fit[[i]], set_ds[[i]], blue_nord)
 }
 
-# Now `plots_list` is a list of patchwork objects. You can print them one at a time:
+```
+
+***Residual analysis mean***
+
+```{r}
 plots_list[[1]]
+```
+
+***Residual analysis median***
+
+```{r}
 plots_list[[2]]
+```
+
+***Residual analysis deletion***
+
+```{r}
 plots_list[[3]]
+```
+
+***Residual analysis regression***
+
+```{r}
 plots_list[[4]]
+```
+
+***Residual analysis random forest***
+
+```{r}
 plots_list[[5]]
+```
+
+***Residual analysis gam***
+
+```{r}
 plots_list[[6]]
 ```
 

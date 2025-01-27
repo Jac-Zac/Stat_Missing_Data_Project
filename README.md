@@ -126,7 +126,7 @@ _This project is part of the Statistical Methods Examination._
 - [ ] Cambiamo percentuale in frequency missing data10. 
 - [x] Aggiustare boxplot Cristiano seconda parte
 - [ ] Aprire i codici nei summary
-- [ ] Aggiungere i titoli nei residui
+- [x] Aggiungere i titoli nei residui
 - [ ] Cambiare le leggende nei grafici mettendo originale
 - [ ] Aprire codice intervalli di confidenza
 - [ ] Togliere print da coefficient cut model year
