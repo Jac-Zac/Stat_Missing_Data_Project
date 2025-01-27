@@ -538,7 +538,7 @@ fit_rf<-lm(I(log(mpg))~weight+horsepower + cut_model_year, data = imp_ds_rf)
 fit_gam<-lm(I(log(mpg))~weight+horsepower + cut_model_year, data = imp_ds_gam)
 ```
 
-#### Summary and Analysis of coefficients
+### Summary and Analysis of coefficients
 
 In this section, we present a comprehensive summary and analysis of the coefficients derived from linear models fitted to datasets subjected to various imputation techniques. The imputation methods employed include mean imputation, median imputation, listwise deletion, regression imputation, random forest imputation, and GAM based imputation. For each imputed dataset, a linear model was fitted with the logarithm of miles per gallon as the response variable and weight, horsepower, and cat_model_year as predictor variables.
 
@@ -546,7 +546,7 @@ We begin by summarizing the fitted models, highlighting key statistics such as c
 
 By examining these comparisons, we aim to assess the impact of various imputation methods on the model coefficients and to identify which methods yield the most reliable and consistent estimates.
 
-##### Summary
+#### Summary
 
 ```{r class.source = 'fold-show'}
 summary(fit_mean)
@@ -557,7 +557,7 @@ summary(fit_rf)
 summary(fit_gam)
 ```
 
-##### Plot of the residual
+#### Plot of the residual
 
 ```{r}
 set_ds  <- list(imp_ds_mean, imp_ds_median, imp_del_list, imp_ds_reg, imp_ds_rf, imp_ds_gam)
@@ -607,7 +607,7 @@ plots_list[[5]]
 plots_list[[6]]
 ```
 
-##### Coefficient analysis
+#### Coefficient analysis
 
 ```{r}
 # Define models
@@ -620,7 +620,7 @@ fit_models <- list(
 coef_df <- extract_coefficients(fit_models)
 ```
 
-#### Intercept
+### Intercept
 
 ```{r}
 # Selected coefficient example: Intercept
@@ -631,7 +631,7 @@ intercept_df
 plot_coefficients(intercept_df, "Comparison of Intercept Coefficients with Confidence Intervals", y_limits = c(3.65, 4.05))
 ```
 
-#### Weight
+### Weight
 
 ```{r}
 # Selected coefficient example: Weight
@@ -642,7 +642,7 @@ weight_df
 plot_coefficients(weight_df, "Comparison of Weight Coefficients with Confidence Intervals")
 ```
 
-#### Horsepower
+### Horsepower
 
 ```{r}
 # Extract specific coefficients and their confidence intervals
@@ -655,7 +655,7 @@ horsepower_df
 plot_coefficients(horsepower_df, "Comparison of Horsepower Coefficients with Confidence Intervals")
 ```
 
-#### Cut_model_year
+### Cut_model_year
 
 ```{r}
 # Selected coefficients: Multiple terms (e.g., cut_model_year)
@@ -665,7 +665,7 @@ cut_model_year_df <- extract_coefficients(fit_models, coef_names = c("cut_model_
 plot_coefficients(cut_model_year_df, "Comparison of Cut Model Year Coefficients with Confidence Intervals")
 ```
 
-#### Predictions based on RMSE
+### Predictions based on RMSE
 
 ```{r}
 run_imputation_and_modeling <- function(train_data, test_data, missingMar) {
@@ -794,7 +794,7 @@ aggregate(RMSE ~ Method, data = combined_results, FUN = mean)
 
 The analysis revealed that advanced imputation methods, particularly random forest and GAM, yielded superior model performance, as evidenced by more accurate coefficient estimates and narrower confidence intervals. These methods were followed by regression imputation, while simpler approaches like mean imputation and listwise deletion demonstrated comparatively lower performance. This outcome aligns with expectations, as sophisticated imputation techniques are better equipped to capture complex data patterns, leading to more reliable and robust predictive models.
 
-### Multiple imputation
+## Multiple imputation
 
 ```{r}
 missingMar<-delete_MAR_1_to_x(data_original, p = c(0.3,0.3), cols_mis = c("weight", "horsepower"), cols_ctrl =c("displacement", "acceleration"), x =10)
@@ -834,7 +834,7 @@ missingComplex_no_year <- subset(missingComplex, select = -cut_model_year)
 no_categorical_dataset <- Filter(function(x) is.numeric(x), missingComplex)
 ```
 
-##### In this section we test:
+#### In this section we test:
 
 -   **Listwise deletion**
 -   **Mean imputation**
@@ -940,7 +940,7 @@ results_df <- do.call(rbind, results)
 results_df
 ```
 
-## Conclusions
+# Conclusions
 
 In this project, we analyzed the problem of missing data, focusing on the Missing at Random (MAR) missingness mechanism. We studied several imputation techniques, as discussed in the literature, and assessed their performance through two main approaches. First, we evaluated how well the distribution of the imputed dataset approximated the original one. Second, we examined the impact of different imputation methods on model fitting, specifically how the estimates of coefficients and the Root Mean Square Error (RMSE) were affected by imputation.
 
@@ -961,4 +961,3 @@ Based on our observations, we can draw the following conclusions:
 3.  **Missing Not at Random (MNAR)**: We did not address the scenario of missing data that is Missing Not at Random (MNAR), which is often the most challenging case. In such cases, missingness depends on unobserved data, rendering common imputation techniques insufficient. This is an important topic to explore, and we propose future developments in this area to improve the handling of MNAR data.
 
 4. **Noise**:  We tried different methods of adding noise, but this approach appears to be both "simple" (as supported by the literature) and effective. However, the drawback might be that it does not adequately account for the heteroscedasticity of the dataset.
-
