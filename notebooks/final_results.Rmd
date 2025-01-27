@@ -387,33 +387,6 @@ grid.arrange(final_plot2, final_plot3, final_plot4, final_plot5, ncol = 2)
 
 ```
 
-## Performance metrics between Datasets
-
-Since we possess the **original dataset prior to the introduction of
-missing values**, we will introduce *two metrics* to compare *the
-distributions of two datasets*: the **original dataset** without missing
-values and the dataset in which missing values have been **imputed**
-using various techniques
-
-We indeed care about comparing the distribution of the two datasets more
-than comparing pointwise the actual reconstruction of the dataset.
-
--   The **Jensen–Shannon Divergence (JSD)** quantifies the similarity or
-    divergence between two probability distributions $P$ and $Q$. It is
-    based on the midpoint distribution $M = \frac{1}{2}(P + Q)$ and is
-    calculated as the average of the Kullback-Leibler (KL) divergences
-    of $P$ and $Q$ relative to $M$. JSD is symmetric and always
-    non-negative, with values ranging between $0$ (identical
-    distributions) and $\log(2)$ (distributions with disjoint supports).
-
--   The **Wasserstein distance**, which involves spatial costs, JSD
-    operates on the information-theoretic differences between
-    distributions and can be transformed into a metric by taking its
-    square root, satisfying the triangle inequality. These two metrics
-    serve different purposes: while the Wasserstein distance considers
-    the geometry of the underlying space, JSD focuses on statistical
-    divergence.
-
 ```{r, echo = FALSE}
 # Define the child RMarkdown file path
 part_1 <- here("notebooks", "partial_analyses", "part_1.Rmd")
@@ -465,7 +438,3 @@ results)*
 #### References
 
 - Emmanuel, T., Maupong, T., Mpoeleng, D. et al. A survey on missing data in machine learning. J Big Data 8, 140 (2021). https://doi.org/10.1186/s40537-021-00516-9
-
-```{r}
-citation("pROC")
-```

@@ -368,33 +368,18 @@ Production year initially appears to have little influence, but there is a marke
 
 In this subsection, we consider the construction and assessment of a linear regression model utilizing the complete Auto MPG dataset. Initially, we partition the dataset into training and testing subsets, employing an 80-20 split to ensure robust model validation. Subsequently, we fit multiple linear regression models to identify the optimal combination of predictor variables. Our primary model focuses on predicting the natural logarithm of mpg based on variables such as weight, horsepower, and categorized model year. We then evaluate the performance of this model, comparing it against alternative models with different predictor combinations, to determine the most effective predictors for fuel efficiency.
 
-```{r}
+```{r, echo = F}
 #Train-test split
 train_index <- createDataPartition(auto_mpg$mpg, p = 0.8, list = FALSE)  # 80-20 split
 train_data <- auto_mpg[train_index, ]
 test_data <- auto_mpg[-train_index, ]
 
 test_data$mpg<-log(test_data$mpg)
-```
-
-```{r}
 data_original<-train_data
 ```
 
-Best fitted model
-
-```{r}
-fit_original <- lm(I(log(mpg))~weight+horsepower + cut_model_year,data = auto_mpg)#ottimo
-#fit_multi2 <- lm(I(log(mpg))~weight + cut_model_year,data = auto_mpg)#ni
-#fit_multi3 <- lm(I(log(mpg))~weight+displacement+cut_model_year ,data = auto_mpg)#bo
-#fit_multi4 <- lm(I(log(mpg))~weight,data = auto_mpg)#bo
-
-#summary(fit_original)
-#summary(fit_multi2)
-#summary(fit_multi3)
-#summary(fit_multi4)
-
-# plot(compare_performance(fit_original, fit_multi2, fit_multi3, fit_multi4))
+```{r, class.source = 'fold-show'}
+fit_original <- lm(I(log(mpg))~weight+horsepower + cut_model_year,data = auto_mpg)
 ```
 
 From the assessment of the models we obtain that the model that uses as predictors weight, horsepower and cut_model_year is the best in fitting data.
@@ -566,7 +551,7 @@ Post-imputation, we fit a linear regression model to each imputed dataset. The m
 
 By systematically applying these imputation techniques and fitting corresponding linear models, we aim to identify the most effective strategies for handling missing data in our analysis.
 
-```{r imp statistic model}
+```{r class.source = 'fold-show'}
 fit_mean<-lm(I(log(mpg))~weight+horsepower + cut_model_year, data = imp_ds_mean)
 fit_median<-lm(I(log(mpg))~weight+horsepower + cut_model_year, data = imp_ds_median)
 fit_list<-lm(I(log(mpg))~weight+horsepower + cut_model_year, data = imp_del_list)
@@ -585,7 +570,7 @@ By examining these comparisons, we aim to assess the impact of various imputatio
 
 ##### Summary
 
-```{r imp summary fit}
+```{r class.source = 'fold-show'}
 summary(fit_mean)
 summary(fit_median)
 summary(fit_list)
@@ -628,7 +613,7 @@ fit_models <- list(
 coef_df <- extract_coefficients(fit_models)
 ```
 
-##### Intercept
+#### Intercept
 
 ```{r}
 # Selected coefficient example: Intercept
@@ -639,7 +624,7 @@ print(intercept_df)
 plot_coefficients(intercept_df, "Comparison of Intercept Coefficients with Confidence Intervals", y_limits = c(3.65, 4.05))
 ```
 
-##### Weight
+#### Weight
 
 ```{r}
 # Selected coefficient example: Weight
@@ -650,7 +635,7 @@ print(weight_df)
 plot_coefficients(weight_df, "Comparison of Weight Coefficients with Confidence Intervals")
 ```
 
-##### Horsepower
+#### Horsepower
 
 ```{r}
 # Extract specific coefficients and their confidence intervals
@@ -663,7 +648,7 @@ print(horsepower_df)
 plot_coefficients(horsepower_df, "Comparison of Horsepower Coefficients with Confidence Intervals")
 ```
 
-##### Cut_model_year
+#### Cut_model_year
 
 ```{r}
 # Selected coefficients: Multiple terms (e.g., cut_model_year)
@@ -751,7 +736,6 @@ run_imputation_and_modeling <- function(train_data, test_data, missingMar) {
 ```
 
 ```{r kcross}
-set.seed(42)
 data_original<-auto_mpg
 K <- 5
 folds <- createFolds(1:nrow(data_original), k = K, list = TRUE)
@@ -862,7 +846,7 @@ fit_complex_mean<-lm(I(log(mpg))~weight+horsepower, data = complex_ds_mean)
 fit_complex_del<-lm(I(log(mpg))~weight+horsepower, data = complex_ds_del)
 ```
 
-```{r}
+```{r, include=FALSE}
 # Define custom mice imputation function
 mice.impute.forest.noise  <- mice_impute_forest 
 mice.impute.gam.noise  <- mice_impute_gam
@@ -1073,7 +1057,6 @@ run_imputation_and_modeling <- function(train_data, test_data) {
 ```
 
 ```{r}
-set.seed(123)
 K <- 5
 folds <- createFolds(1:nrow(data_original), k = K, list = TRUE)
 
@@ -1137,4 +1120,3 @@ Based on our observations, we can draw the following conclusions:
 2. **Bayesian Approaches**: This project utilized classical statistical methods with a frequentist approach. Incorporating Bayesian methods, as demonstrated by the MICE (Multivariate Imputation by Chained Equations) algorithm, could provide an interesting avenue for future work. Many studies suggest that Bayesian approaches may offer optimal solutions for imputing missing values, and integrating these methods into our analysis could enhance the results.
 
 3. **Missing Not at Random (MNAR)**: We did not address the scenario of missing data that is Missing Not at Random (MNAR), which is often the most challenging case. In such cases, missingness depends on unobserved data, rendering common imputation techniques insufficient. This is an important topic to explore, and we propose future developments in this area to improve the handling of MNAR data.
-

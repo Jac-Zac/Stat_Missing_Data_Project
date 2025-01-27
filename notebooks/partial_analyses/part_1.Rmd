@@ -42,6 +42,27 @@ This section reviews imputation techniques for handling missing data, from simpl
 | **Decision Tree / Random Forest** | Builds models using decision trees.            | Captures complex patterns; handles various data types. | Computationally heavy; prone to overfitting.   |
 | **K-Nearest Neighbors (KNN)**     | Imputes based on nearest neighbors.            | Flexible and captures patterns.             | High computational cost for large datasets.    |                                                                                                                   |
 
+## Performance metrics between Datasets
+
+Since we possess the **original dataset prior to the introduction of
+missing values**, we will introduce *two metrics* to compare *the
+distributions of two datasets*: the **original dataset** without missing
+values and the dataset in which missing values have been **imputed**
+using various techniques
+
+We indeed care about comparing the distribution of the two datasets more
+than comparing pointwise the actual reconstruction of the dataset.
+
+-   The **Jensen–Shannon Divergence (JSD)** quantifies the similarity or
+    divergence between two probability distributions $P$ and $Q$. It is
+    based on the midpoint distribution $M = \frac{1}{2}(P + Q)$ and is
+    calculated as the average of the Kullback-Leibler (KL) divergences
+    of $P$ and $Q$ relative to $M$. JSD is symmetric and always
+    non-negative, with values ranging between $0$ (identical
+    distributions) and $\log(2)$ (distributions with disjoint supports).
+
+-   The **Wasserstein distance**  provides a way to measure the cost of transforming one probability distribution into another. It can be viewed as the minimum “effort” required to transport all the mass of one distribution to match the other, where the cost depends on both the amount of mass moved and the distance it travels. Unlike divergence-based measures (e.g. KL or JS divergence), Wasserstein distance naturally accounts for the geometry of the sample space, making it particularly useful when the shapes or locations of the distributions differ.
+
 ## Visualization of the different techiques
 
 The following paragraph presents visualizations of various imputation techniques applied to different types of datasets to observe their impact. The reconstructed datasets are then evaluated and compared using two distribution-based metrics.
@@ -49,14 +70,12 @@ The following paragraph presents visualizations of various imputation techniques
 ```{r,  class.source = 'fold-show'}
 # Define methods with their display names and corresponding functions
 imputation_methods <- list(
+  # "Original Dataset" = function(data) { data },
   "Mean Imputation" = function(data) { simple_imputation(data, "mean") },
-  # Return only necessary collums
   "Hot Deck" = function(data) { hot_deck_imputation(data) },
-  # "EM" = function(data) { impute_EM(data) },
   "KNN Imputation" = function(data) { imputed_data <- kNN(data, imp_var = FALSE)},
   "Regression" = function(data) { regression_imputation(data) },
   "Regression with Noise" = function(data) { regression_imputation(data, noise = TRUE) },
-  # "Regression with Noise Emp" = function(data) { regression_imputation_emp(data, noise = TRUE) },
   "GAM" = function(data) { gam_based_imputation(data) },
   "GAM with Noise" = function(data) { gam_based_imputation(data, noise = TRUE) },
   "Random Forest" = function(data) { tree_based_imputation(data) },
@@ -87,7 +106,6 @@ linear_missing <- delete_MAR_1_to_x(linear_data, p, cols_mis = "x2", cols_ctrl =
 noise_imputation_methods <- list(
   "Regression" = function(data) { regression_imputation(data) },
   "Regression with Noise" = function(data) { regression_imputation(data, noise = TRUE) }
-  # "Regression with Noise Emp" = function(data) { regression_imputation_emp(data, noise = TRUE) }
 )
 
 # Use the new combined analysis function
@@ -203,46 +221,3 @@ grid.arrange(grobs = imputation_plots, ncol = 2)
 # Access the metrics plot
 metrics_plot <- log_result$metrics_plot
 print(metrics_plot)
-```
-
-### Conclusions
-
-
-The visualizations demonstrate that:
-
-1. Simple mean imputation tends to perform poorly as it ignores the relationship between variables
-2. kNN and hot deck methods can work well when there are similar cases nearby
-3. Regression imputation works best for linear relationships
-4. GAM and Random Forest methods are more flexible and can handle non-linear relationships better
-5. The choice of imputation method should depend on the underlying relationship between variables
-
-### Appendix
-
-```{r}
-# Custom method registration
-# Ensure the custom function is correctly named
-# mice.impute.custom_regression <- custom_regression_impute
-# Register the custom imputation function
-mice.impute.forest.noise  <- mice_impute_forest 
-
-# norm.predict: Deterministic regression imputation
-# norm: Deterministic regression imputation
-
-# Perform multiple imputation
-# imputed_data <- mice(linear_missing, method ="custom_regression", m = 5)
-imputed_data <- mice(piecewise_missing, method ="forest.noise", m = 5)
-
-# Extract completed data (first imputed dataset)
-completed_data <- complete(imputed_data, action = 1)
-
-# Identify observed and imputed values for x2
-is_imputed <- is.na(piecewise_missing$x2)
-observed_values <- completed_data[!is_imputed, ]
-imputed_values <- completed_data[is_imputed, ]
-
-# Custom plot
-plot(completed_data$x1, completed_data$x2, col = ifelse(is_imputed, red_nord, "black"),
-     pch = 19, xlab = "x1", ylab = "x2",
-     main = "Imputed Values (Red) vs Observed Values (Black)")
-legend("topright", legend = c("Observed", "Imputed"), col = c("black", red_nord), pch = 19)
-```
