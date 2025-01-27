@@ -58,7 +58,7 @@ The following paragraph presents visualizations of various imputation techniques
 ```{r,  class.source = 'fold-show'}
 # Define methods with their display names and corresponding functions
 imputation_methods <- list(
-  # "Original Dataset" = function(data) { data },
+  "Original Dataset" = function(data) { data }, # Custom if statement for this
   "Mean Imputation" = function(data) { simple_imputation(data, "mean") },
   "Hot Deck" = function(data) { hot_deck_imputation(data) },
   "KNN Imputation" = function(data) { imputed_data <- kNN(data, imp_var = FALSE)},

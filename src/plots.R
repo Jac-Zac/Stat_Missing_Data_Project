@@ -254,8 +254,13 @@ plot_imputations_and_metrics <- function(original_data, missing_data, imputation
   
   # Create a list to store the individual plots for each method
   plots <- lapply(names(imputation_methods), function(method_name) {
-    # Apply the imputation method to the missing_data
-    imputed_data <- imputation_methods[[method_name]](missing_data)
+    if (method_name == "Original Dataset") {
+      # Use the original_data directly for the "Original Dataset" method
+      imputed_data <- original_data
+    } else {
+      # Apply the imputation method to the missing_data for other methods
+      imputed_data <- imputation_methods[[method_name]](missing_data)
+    }
     
     # Store the imputed dataset in the list with method name as key
     imputed_datasets[[method_name]] <<- imputed_data  # Use global assignment to ensure persistence
@@ -263,7 +268,7 @@ plot_imputations_and_metrics <- function(original_data, missing_data, imputation
     # Create a plot comparing the imputed_data to the original_data
     create_imputation_plot(
       data = missing_data,            # Pass the dataset with missing values
-      imputed_data = imputed_data,    # Pass the imputed dataset
+      imputed_data = imputed_data,    # Pass the imputed dataset (or original data)
       title = paste("Imputation Method:", method_name)  # Add method name to the title
     )
   })
