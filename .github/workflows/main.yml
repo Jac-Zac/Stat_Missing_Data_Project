@@ -24,7 +24,7 @@ jobs:
 
       - name: Install dependencies
         run: |
-          R -e 'install.packages(c("rmarkdown", "ggplot2", "ggExtra", "GGally", "reshape2", "corrplot", "here", "pROC", "randomForest", "mgcv", "rpart", "mice", "missMethods", "VIM", "RColorBrewer", "nord", "transport", "philentropy", "gridExtra", "MASS", "norm", "plotly", "caret"))'
+          R -e 'install.packages(c("rmarkdown", "ggplot2", "ggExtra", "GGally", "reshape2", "corrplot", "here", "randomForest", "mgcv", "rpart", "mice", "missMethods", "VIM", "nord", "transport", "philentropy", "gridExtra", "MASS", "norm", "plotly", "caret"))'
 
       - name: Install Pandoc
         run: |
