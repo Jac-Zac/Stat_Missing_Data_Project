@@ -223,7 +223,7 @@ create_histogram <- function(data, var, label, title, color) {
   ggplot(data, mapping = aes(!!sym(var), fill = !!sym(color))) +
     geom_histogram(aes(y = after_stat(density)), color = "black", linewidth = 0.3, alpha = 0.6, fill = color, bins = 25) +
     geom_density(color = "black", linewidth = 0.3, fill = color, alpha = 0.6) +
-    labs(x = label, y = "Densità", title = title) +
+    labs(x = label, y = "Density", title = title) +
     theme_bw()
 }
 

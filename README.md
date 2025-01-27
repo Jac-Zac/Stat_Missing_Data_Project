@@ -120,7 +120,7 @@ _This project is part of the Statistical Methods Examination._
 - [x] Cambiare il nome di imputations e mettere techniques to deal with missing data
 - [ ] Cambiare grafici imputazione prima parte
 - [x] Togliere conclusioni prima parte e appendice
-- [ ] Cambiare densità 
+- [x] Cambiare densità 
 - [ ] Cancellare best fitted model
 - [ ] Cancellare roba a caso
 - [ ] Cambiamo percentuale in frequency missing data10.  Aggiustare boxplot Cristiano seconda parte
