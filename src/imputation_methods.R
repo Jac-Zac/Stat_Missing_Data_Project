@@ -330,10 +330,11 @@ mice_impute_gam <- function(y, ry, x, noise = TRUE, ...) {
   pred_data <- x[!ry, , drop = FALSE]
   predictions <- predict(gam_model, newdata = pred_data)
   
-  # Add empirical noise if requested
+  # Add normal noise if requested
   if (noise && length(predictions) > 0) {
     residuals <- residuals(gam_model)
-    predictions <- predictions + sample(residuals, size = length(predictions), replace = TRUE)
+    residual_sd <- sd(residuals)  # Calculate standard deviation of residuals
+    predictions <- predictions + rnorm(length(predictions), mean = 0, sd = residual_sd)
   }
   
   return(predictions)

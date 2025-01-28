@@ -796,6 +796,16 @@ The analysis revealed that advanced imputation methods, particularly random fore
 
 ## Multiple imputation
 
+```{r, echo = F}
+#Train-test split
+train_index <- createDataPartition(auto_mpg$mpg, p = 0.8, list = FALSE)  # 80-20 split
+train_data <- auto_mpg[train_index, ]
+test_data <- auto_mpg[-train_index, ]
+
+test_data$mpg<-log(test_data$mpg)
+data_original<-train_data
+```
+
 ```{r}
 missingMar<-delete_MAR_1_to_x(data_original, p = c(0.3,0.3), cols_mis = c("weight", "horsepower"), cols_ctrl =c("displacement", "acceleration"), x =10)
 
@@ -838,12 +848,13 @@ no_categorical_dataset <- Filter(function(x) is.numeric(x), missingComplex)
 
 -   **Listwise deletion**
 -   **Mean imputation**
+-   **Linear Regression imputation**
 -   **Custom Gam imputation**
 -   **Custom Random Forest imputation**
 
 ```{r}
-complex_ds_mean<-impute_mean(missingComplex)
-complex_ds_del<-listwise_deletion(missingComplex)
+complex_ds_mean<-impute_mean(no_categorical_dataset)
+complex_ds_del<-listwise_deletion(no_categorical_dataset)
 
 # Original model
 fit_original_bad <- lm(I(log(mpg))~weight+horsepower,data = auto_mpg)
@@ -906,7 +917,7 @@ plots_list[[2]]
 models <- list(
   "Listwise deletion" = fit_complex_del,
   "Mean Imputation" = fit_complex_mean,
-  "Linear regression (with noise)" = final_predictions_reg,
+  "Linear regression" = final_predictions_reg,
   "GAM Imputation" = final_predictions_gam,
   "Random Forest" = final_predictions_tree,
   "Original Dataset" = fit_original_bad
@@ -920,7 +931,7 @@ calculate_rmse <- function(model, new_data, true_values, is_final = FALSE) {
 }
 
 # Flag for final predictions
-final_methods <- c("Linear regression (with noise)", "GAM Imputation", "Random Forest")
+final_methods <- c("Linear regression", "GAM Imputation", "Random Forest")
 
 # Calculate RMSE for each model
 results <- lapply(names(models), function(method) {
@@ -935,6 +946,9 @@ results <- lapply(names(models), function(method) {
 
 # Combine results into a single data frame
 results_df <- do.call(rbind, results)
+
+# Sort them by RMSE
+results_df <- results_df[order(-results_df$RMSE), ]
 
 # Optional: View results in a structured format
 results_df
